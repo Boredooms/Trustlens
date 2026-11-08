@@ -722,16 +722,18 @@ any demo (free tier sleeps ~15 min); rotate every key the previous owner shared.
 
 These are verified mismatches, not suspicions. Each is small; each misleads the next reader.
 
-| # | Where | Says | Reality | Fix |
-| --- | --- | --- | --- | --- |
-| 1 | `docs/CLAUDE.md` §1 | "Supabase Postgres + **Auth** + Storage" | Identity is Clerk; Supabase is Postgres only (`users.clerk_user_id`) | Reword to Clerk; keep Supabase as database |
-| 2 | `docs/CLAUDE.md` §6 | `docker compose up -d db redis` | `docker-compose.yml` has no `redis` service | Drop `redis` or add the service |
-| 3 | `docs/CLAUDE.md` §6 | `mypy app/services app/risk` | README and CI use `mypy app` | Align on `mypy app` |
-| 4 | `docs/02-architecture/HOSTED_SERVICES.md` | object storage via `services/blobs.py`, `STORAGE_BUCKET=evidence` | No `blobs.py`, no such setting; logo pHash is computed in the browser | Mark storage as DEFERRED, or implement it |
-| 5 | `README.md` | "see `apps/extension/README.md`" | File does not exist | Write it or point at `docs/05-browser-extension/` |
-| 6 | `docs/INDEX.md` §3 tree | Shows `INDEX.md`, `AGENTS.md`, `CLAUDE.md`, `skills/` | Also has `handover/` (3 files) | Add `handover/` to the tree |
-| 7 | Machine state | Docs assume a working Python 3.12/3.13 venv | `.venv` is broken; system Python is 3.14 | Rebuild venv; note the supported range |
-| 8 | Test counts | Docs/handover claim 300/66/54/20/15 | Not re-measured after the move | Re-run and update the numbers honestly |
+**All eight rows closed on 2026-11-09** (commit history `chore: import existing tree` … `docs: …`):
+
+| # | Closed by |
+| --- | --- |
+| 1 | `CLAUDE.md`/`docs/CLAUDE.md` now say Supabase = database only, Clerk = identity |
+| 2 | `docker compose up -d db` (no redis service; Upstash is hosted, limits degrade in-process) |
+| 3 | `mypy app` everywhere (`AGENTS.md`, `docs/AGENTS.md`, `CLAUDE.md`, `docs/CLAUDE.md`) |
+| 4 | `HOSTED_SERVICES.md` marks object storage DEFERRED |
+| 5 | `apps/extension/README.md` written |
+| 6 | `INDEX.md` tree already listed `handover/`; now also lists the new owning docs and `evidence/` |
+| 7 | venv rebuilt on Python 3.12.10; supported range 3.12–3.13 stated in README; see `evidence/baseline.md` |
+| 8 | Re-measured: API 401, web 78, extension 54, SDK 21, demo-sites 15, contracts 9 (see `handover/PROGRESS_LOG.md` §6) |
 
 Rule: when you fix one of these, change docs and code in the same commit and delete the row above.
 

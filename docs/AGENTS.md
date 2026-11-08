@@ -113,7 +113,7 @@ If you must change one, update **every** document that contains it (grep for the
 
 ```bash
 pnpm lint && pnpm typecheck && pnpm test
-(cd apps/api && ruff check . && mypy app/services app/risk && pytest -q)
+(cd apps/api && ruff check . && mypy app && pytest -q)
 (cd apps/api && python -m app.scripts.dump_openapi && git diff --exit-code openapi.json)
 ```
 

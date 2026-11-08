@@ -24,8 +24,8 @@ short, opinionated version plus the things that are easy to get wrong.
 - **Differentiator:** Action Integrity Verification against a verified Organisation Trust Profile.
 - **Hard architectural law:** deterministic rules decide; the LLM narrates. Never the reverse.
 - **Stack:** React 18 + Vite + Tailwind (Vercel) · FastAPI + Python 3.12 (Render) · Supabase Postgres
-  + Auth + Storage · Upstash Redis + QStash · LangGraph for investigations · TypeScript SDK · Chrome
-  MV3 extension.
+  (database only) · Clerk (human identity) · Upstash Redis + QStash · LangGraph for investigations ·
+  TypeScript SDK · Chrome MV3 extension · Solidity registry on a local Hardhat chain (ADR-018).
 - **Docs are the spec.** `docs/` is authoritative. Code that contradicts it is a bug in one of them.
 
 ---
@@ -89,11 +89,11 @@ docs/skills/                design + frontend craft skills (read before UI work)
 
 ```bash
 pnpm install
-docker compose up -d db redis
-(cd apps/api && alembic upgrade head && uvicorn app.main:app --reload)
+docker compose up -d db   # no redis service: Upstash is hosted, rate limits degrade in-process locally
+(cd apps/api && alembic upgrade head && python -m app.serve)   # Windows-safe launcher; Linux: uvicorn app.main:app
 
 pnpm lint && pnpm typecheck && pnpm test
-(cd apps/api && ruff check . && mypy app/services app/risk && pytest -q)
+(cd apps/api && ruff check . && mypy app && pytest -q)
 (cd apps/api && python -m app.scripts.dump_openapi)
 ```
 

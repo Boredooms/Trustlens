@@ -44,3 +44,16 @@ earlier documentation.
 
 - Extension loaded unpacked in Chrome (manual step; built to `apps/extension/dist`).
 - Browser viewing of the dashboard (not viewed at baseline).
+
+## After the build (same machine, 2026-11-09)
+
+| Check | Result |
+| --- | --- |
+| `alembic upgrade head` | head `c5a0intel0001` (`c3a0web30001` report_anchors → `c4a0msg00001` message_analyses → `c5a0intel0001` intel_observations) |
+| `ruff check` / `ruff format --check` / `mypy app` | clean (100 source files, strict) |
+| `pytest -q` with `TEST_DATABASE_URL` | **401 passed**, 0 skipped |
+| `pnpm -r typecheck / lint / build` | clean |
+| `pnpm -r test` | web 78 · extension 54 · sdk 21 · demo-sites 15 · contracts 9 — all passed |
+| `demo_check` / `platform_check` | 26/26 · 42/42 |
+| `evidence_run --network` | 17/17 as expected ([`TESTING_REPORT.md`](TESTING_REPORT.md)) |
+| `chain_evidence` / `verify-report` | anchored, valid; tampered copy invalid; CLI independently matched the chain |

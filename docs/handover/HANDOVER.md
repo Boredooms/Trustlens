@@ -24,6 +24,15 @@ Full product: [`../00-project-foundation/PROJECT_OVERVIEW.md`](../00-project-fou
 
 **All features specified in `docs/` are implemented and tested.** Nothing is deployed yet.
 
+> **Update 2026-11-09:** the problem-statement build added the Web3 report registry
+> (`WEB3_REGISTRY.md`), message/scam analysis (`MESSAGE_ANALYSIS.md`), URLhaus intelligence
+> (`THREAT_INTELLIGENCE_SOURCES.md`) and certificate depth + header posture
+> (`CERTIFICATE_ANALYSIS.md`); engine 1.1.0; Alembic head `c5a0intel0001`. Current numbers and the
+> defects found against real sites are in [`PROGRESS_LOG.md`](PROGRESS_LOG.md) §6; observed results in
+> [`../evidence/TESTING_REPORT.md`](../evidence/TESTING_REPORT.md). The table below is the 2026-11-08
+> state. Local runs now also need a Hardhat node for anchoring (`pnpm --filter @trustlens/contracts
+> node`); without it only the anchor routes answer 503.
+
 | Area | State |
 | --- | --- |
 | API (FastAPI) | 55 OpenAPI paths (+ `/internal/jobs/*`, `/webhooks/clerk` excluded from OpenAPI). **300 tests pass** incl. DB-backed integration tests; ruff + mypy strict clean |

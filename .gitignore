@@ -35,3 +35,6 @@ Thumbs.db
 
 # Tool metadata
 .freebuff/project-id
+
+# Local dev logs (scripts/dev-up.sh)
+.dev-logs/

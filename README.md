@@ -1,93 +1,120 @@
-# TrustLens
+# TrustLens — AI-assisted web threat detection and digital trust intelligence
 
-Website trust intelligence: decides whether a website is **authorised** to ask for credentials,
-money or personal data. Every answer is `BLOCK`, `WARN`, `ALLOW`, `REVIEW` or `UNKNOWN` — and
-`ALLOW` never means "safe". Rules decide; the LLM only narrates.
+Paste a suspicious **link, domain, email or message** and get an evidence-based assessment: what the
+page or message asks for, who it claims to be, where the credentials and money would actually go,
+what its TLS certificate and headers say, whether threat intelligence knows it, and what to do.
+Confirmed reports can be **anchored on a blockchain** so anyone can check they were not altered.
 
-**The specification lives in [`docs/`](docs/INDEX.md) and is the source of truth.** This README only
-tells you how to run the code. If the code and the docs disagree, one of them has a defect.
+- **Rules decide, the model narrates.** Decisions come from a deterministic risk engine
+  (`apps/api/app/risk`). The LLM (optional) only explains findings it is given, citing them by id.
+- **`ALLOW` never means "safe".** It means "no known threat within the checks we ran"; coverage is
+  always shown. Unknown is not a pass.
+- **Language alone never condemns a message.** Urgency can reach `REVIEW`, never `BLOCK`, without
+  corroborating evidence (policy `O-8`/`O-9`).
+- **Nothing personal goes on chain.** Only salted hash commitments.
 
-| Start here | Why |
-| --- | --- |
-| [`docs/INDEX.md`](docs/INDEX.md) | Reading order and source-of-truth map |
-| [`docs/CLAUDE.md`](docs/CLAUDE.md) / [`docs/AGENTS.md`](docs/AGENTS.md) | Non-negotiables and traps |
-| [`docs/10-hackathon-demo/DEMO_RUNBOOK.md`](docs/10-hackathon-demo/DEMO_RUNBOOK.md) | The finish line |
+The specification is in [`docs/`](docs/INDEX.md) and is the source of truth.
 
-## Layout
+## Problem statement → where it is
 
-```text
-apps/api            FastAPI backend — the only verdict producer (risk engine, scanner, graph, LangGraph)
-apps/web            React + Vite SPA (public site + dashboard)
-apps/extension      Chrome MV3 extension (observes, asks the API, fails visible)
-apps/demo-sites     Inert lookalike + genuine demo pages for the browser (Node, zero deps)
-packages/sdk        @trustlens/sdk — assess(), verifyRecipient()
-```
+| Requirement | Implementation | Docs |
+| --- | --- | --- |
+| Module 1 · URL & domain analysis (normalise, typosquat, redirects, reputation, DNS, campaigns) | `apps/api/app/services/{guard,collectors}.py`, `app/risk/rules.py` | [`RISK_ENGINE.md`](docs/03-backend/RISK_ENGINE.md) |
+| Module 2 · TLS certificate & web trust (expiry, SAN, chain, OCSP/CRL revocation, CT, weak crypto, issuer advisories) | `app/services/certificates.py`, `app/risk/posture.py` | [`CERTIFICATE_ANALYSIS.md`](docs/03-backend/CERTIFICATE_ANALYSIS.md) |
+| Module 3 · AI scam & message analysis | `app/services/message_analysis.py`, `POST /api/v1/messages/analyse`, `/app/messages` | [`MESSAGE_ANALYSIS.md`](docs/03-backend/MESSAGE_ANALYSIS.md) |
+| Module 4 · Threat correlation | threat graph, campaigns, LangGraph investigations, message repeat/shared-domain correlation | [`THREAT_GRAPH.md`](docs/07-ai-intelligence/THREAT_GRAPH.md) |
+| Module 5 · Website security assessment (passive headers, cookies, mixed content) | `app/risk/posture.py` (unscored) | [`CERTIFICATE_ANALYSIS.md`](docs/03-backend/CERTIFICATE_ANALYSIS.md) §5 |
+| Module 6 · Decentralised threat intelligence | `packages/contracts` (Solidity), `app/services/{anchors,chain}.py`, `/verify/:id` | [`WEB3_REGISTRY.md`](docs/02-architecture/WEB3_REGISTRY.md) |
+| External intelligence source | URLhaus (abuse.ch), live with a key, labelled fixtures otherwise | [`THREAT_INTELLIGENCE_SOURCES.md`](docs/02-architecture/THREAT_INTELLIGENCE_SOURCES.md) |
+| Five risk classes | `Decision` ↔ `risk_class` (`app/risk/classes.py`) | `RISK_ENGINE.md` §8.7 |
+| Optional: browser extension, lookalike detection, CA monitoring, community reporting, org dashboard, SDK | `apps/extension`, `packages/sdk`, `apps/web` | [`docs/INDEX.md`](docs/INDEX.md) |
 
-## Run the demo locally (Windows/macOS/Linux)
+Deliverables: testing report [`docs/evidence/TESTING_REPORT.md`](docs/evidence/TESTING_REPORT.md) ·
+Web3 evidence [`docs/evidence/web3/`](docs/evidence/web3/README.md) · baseline
+[`docs/evidence/baseline.md`](docs/evidence/baseline.md) · demo script
+[`docs/evidence/demo.md`](docs/evidence/demo.md).
 
-Prerequisites: Node ≥ 20 with pnpm 9, Python 3.12+ (3.13 works), Docker.
+## Run it (about 10 minutes from a clean clone)
+
+Prerequisites: **Docker** (running), **Node ≥ 20 + pnpm 9**, **Python 3.12** (3.13 also works).
+
+**One command** — Windows: `pwsh scripts/dev-up.ps1` · macOS/Linux: `bash scripts/dev-up.sh`.
+It starts Postgres, a local blockchain, the API, the dashboard and the demo sites, migrates, seeds,
+deploys the registry, and runs the proof scripts.
+
+Or step by step:
 
 ```bash
-# 1. Database
-docker compose up -d db
+docker compose up -d db                                 # Postgres 16 on :5432
+pnpm install                                            # repo root
+pnpm --filter @trustlens/contracts node                 # terminal A: local chain :8545 (chainId 31337)
+pnpm --filter @trustlens/contracts run deploy:local     # deterministic address 0x5FbDB2…0aa3
 
-# 2. API (terminal 1)
 cd apps/api
-python -m venv .venv && . .venv/Scripts/activate      # macOS/Linux: . .venv/bin/activate
+python -m venv .venv && . .venv/Scripts/activate        # macOS/Linux: . .venv/bin/activate
 pip install -r requirements-dev.txt
-cp .env.example .env                                  # DEMO_MODE=true, add DEV_AUTH_ENABLED=true
+cp .env.example .env                                    # local DB, DEMO_MODE, dev sign-in, chain
 alembic upgrade head
-python -m app.scripts.seed_demo                       # idempotent canonical Northstar dataset
-python -m app.serve                                   # http://localhost:8000  (Linux: uvicorn app.main:app)
+python -m app.scripts.seed_demo                         # Northstar University demo data (simulated)
+python -m app.serve                                     # terminal B: API :8000 (Linux: uvicorn app.main:app)
 
-# 3. Web (terminal 2, repo root)
-pnpm install
-cp apps/web/.env.example apps/web/.env.local
-pnpm --filter @trustlens/web dev                      # http://localhost:5173 → Development sign-in
-
-# 4. Demo sites + extension (terminal 3, repo root) — see apps/demo-sites/README.md and
-#    apps/extension/README.md for loading the unpacked extension and pairing it.
+pnpm --filter @trustlens/web dev                        # terminal C (repo root): dashboard :5173
+node apps/demo-sites/server.mjs                         # terminal D: inert demo sites :8081
 ```
 
-## Prove the demo path
+Open <http://localhost:5173>, choose **Development sign-in**, then try **Scan**, **Messages**,
+**Reports** (anchor on chain) and the public page `/verify/<report-id>` in a private window.
+
+## Prove it
 
 ```bash
 cd apps/api
-python -m app.scripts.reset_demo && python -m app.scripts.seed_demo
-python -m app.scripts.demo_check     # 26 assertions over HTTP against the running API; exit 0 = intact
-python -m app.scripts.platform_check # 35 checks: orgs, domain verification, members/invites, appeals,
-                                     # certificates, redirect inspection, usage, audit (dev sign-in)
-```
-
-## Production operations
-
-```bash
-python -m app.scripts.register_schedules --api-base https://<api-host>   # QStash cron jobs (idempotent)
-python -m app.scripts.set_role <email|clerk_user_id> analyst|operator    # grant staff roles
-pip install -r requirements-deepscan.txt && playwright install chromium  # only if DEEP_SCAN_ENABLED
+python -m app.scripts.demo_check            # 26 assertions over HTTP (reset_demo first if re-running)
+python -m app.scripts.platform_check        # 42 checks (orgs, verification, members, appeals, …)
+python -m app.scripts.evidence_run --network  # writes docs/evidence/TESTING_REPORT.md from real runs
+python -m app.scripts.chain_evidence        # anchors demo reports, writes docs/evidence/web3/chain.json
+pnpm --filter @trustlens/contracts replay   # offline: deploy, register, verify true, tamper → false
+pnpm --filter @trustlens/contracts verify-report -- --report <id>   # verify without trusting the API
 ```
 
 ## Checks
 
 ```bash
 (cd apps/api && ruff check . && ruff format --check . && mypy app && pytest -q)
+#   DB integration tests run only with TEST_DATABASE_URL pointing at a migrated database
 pnpm -r typecheck && pnpm -r lint && pnpm -r test && pnpm -r build
 ```
 
-## Secrets you supply for a hosted deploy
+## Layout
 
-`DATABASE_URL` (Supabase pooler, 6543), `DIRECT_DATABASE_URL` (5432, migrations), `CLERK_ISSUER`,
-`CLERK_JWKS_URL`, `CLERK_AUTHORIZED_PARTY`, `CLERK_SECRET_KEY`, `VITE_CLERK_PUBLISHABLE_KEY`,
-`UPSTASH_REDIS_REST_URL/TOKEN`, `QSTASH_*`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `IP_HASH_SALT`,
-`JWT_SECRET`; optional `LLM_API_KEY` (without it investigations use the labelled template path).
+```text
+apps/api            FastAPI — the only verdict producer (risk engine, scanner, intel, messages, anchors)
+apps/web            React + Vite dashboard and public pages (incl. /verify/:reportId)
+apps/extension      Chrome MV3 extension (see apps/extension/README.md)
+apps/demo-sites     Inert genuine + lookalike demo pages (zero dependencies)
+packages/contracts  ThreatReportRegistry (Solidity 0.8.24, Hardhat) + replay/verify scripts
+packages/sdk        @trustlens/sdk
+packages/shared-types  generated from apps/api/openapi.json (pnpm gen:types)
+docs/               specification, evidence, handover
+```
 
-- NVIDIA NIM: `LLM_BASE_URL=https://integrate.api.nvidia.com/v1`,
-  `LLM_MODEL=nvidia/nemotron-3-ultra-550b-a55b`,
-  `LLM_EXTRA_BODY={"chat_template_kwargs":{"enable_thinking":false}}` (thinking otherwise eats the
-  output budget). Check what your key can call with `GET $LLM_BASE_URL/models`; NIM retires models.
-- Put the database in the same region as the API (Render `singapore` ⇒ Supabase `ap-southeast-1`).
-  Each statement through the transaction pooler costs ~3 network round trips.
-- Clerk users start as `user`. After their first sign-in:
-  `python -m app.scripts.set_role <email|clerk_user_id> analyst|operator` (no args lists users).
-  For emails instead of `<sub>@users.clerk`, add `{"email": "{{user.primary_email_address}}"}` to
-  the Clerk session token (Dashboard → Sessions → Customize session token).
+## Configuration and hosting
+
+Every variable: [`docs/08-infrastructure/ENVIRONMENT_CONFIGURATION.md`](docs/08-infrastructure/ENVIRONMENT_CONFIGURATION.md).
+Optional: `LLM_API_KEY` (narration; without it the deterministic template narrator is used),
+`URLHAUS_AUTH_KEY` (live URLhaus; without it demo hosts use labelled fixtures and other hosts are not
+consulted). Hosted deployment (Render + Vercel + Supabase + Clerk) is documented in
+[`docs/handover/HANDOVER.md`](docs/handover/HANDOVER.md) §8 and has **not** been performed for this
+build. Never put a secret in a `VITE_*` variable or commit a `.env` file.
+
+## Limitations (stated, not hidden)
+
+- Demo domains are RFC 2606 `.example` hosts answered by recorded fixtures (`simulated: true`).
+- The local chain is in-memory; restarting it erases the registry (existing anchors then honestly fail
+  `chain_commitment_matches`). API anchoring to a public testnet is not implemented.
+- Revocation is best-effort (OCSP, CRL fallback); a timeout is `unavailable`, never "good".
+- Header posture is a single unauthenticated response; it is reported, never scored.
+
+## License
+
+[MIT](LICENSE).

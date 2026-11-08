@@ -1,6 +1,6 @@
 import { ProtocolError } from "./errors.js";
-import { DECISIONS, MATCHES, RISK_LEVELS } from "./types.js";
-import type { Assessment, Decision, Investigation, Match, PaymentResult, RiskLevel, Scan } from "./types.js";
+import { DECISIONS, MATCHES, RISK_CLASSES, RISK_LEVELS } from "./types.js";
+import type { Assessment, Decision, Investigation, Match, PaymentResult, RiskClass, RiskLevel, Scan } from "./types.js";
 
 /** Unknown or missing decision values map to `UNKNOWN` (API_CONTRACTS.md §2). Never throws. */
 export function normaliseDecision(value: unknown): Decision {
@@ -13,6 +13,13 @@ export function normaliseRiskLevel(value: unknown): RiskLevel {
   return typeof value === "string" && (RISK_LEVELS as readonly string[]).includes(value)
     ? (value as RiskLevel)
     : "UNKNOWN";
+}
+
+/** Unknown risk classes map to `inconclusive`, never to `low`. */
+export function normaliseRiskClass(value: unknown): RiskClass {
+  return typeof value === "string" && (RISK_CLASSES as readonly string[]).includes(value)
+    ? (value as RiskClass)
+    : "inconclusive";
 }
 
 /** Unknown match values map to `unverifiable` ("we could not tell"), never to `exact`. */
@@ -36,6 +43,7 @@ export function normaliseAssessment(raw: unknown): Assessment {
     decision: normaliseDecision(obj.decision),
     risk_level: normaliseRiskLevel(obj.risk_level),
   };
+  if ("risk_class" in obj) out.risk_class = normaliseRiskClass(obj.risk_class);
   if (obj.action && typeof obj.action === "object") {
     const action = obj.action as Record<string, unknown>;
     out.action = { ...action, match: normaliseMatch(action.match) };

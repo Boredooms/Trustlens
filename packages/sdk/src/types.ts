@@ -17,6 +17,9 @@ export const MATCHES = ["exact", "none", "unverifiable"] as const;
  * claim that a site is harmless. Unknown future values are mapped to `UNKNOWN` by the SDK.
  */
 export type Decision = (typeof DECISIONS)[number];
+/** Problem-statement class derived by the API from `decision` (RISK_ENGINE.md §8.7). Never derive it client-side. */
+export const RISK_CLASSES = ["confirmed_malicious", "high", "suspicious", "low", "inconclusive"] as const;
+export type RiskClass = (typeof RISK_CLASSES)[number];
 export type RiskLevel = (typeof RISK_LEVELS)[number];
 export type Intent = (typeof INTENTS)[number];
 export type Match = (typeof MATCHES)[number];
@@ -67,6 +70,8 @@ export interface Assessment {
   assessment_id: string;
   decision: Decision;
   risk_level: RiskLevel;
+  /** Present from engine 1.1.0; unknown values normalise to `inconclusive`. */
+  risk_class?: RiskClass;
   risk_score: number | null;
   coverage: Coverage;
   reasons: string[];

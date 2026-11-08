@@ -28,7 +28,7 @@ Three rules govern every dependency:
 | Capability | Service | Protocol | Adapter module | Free-tier shape |
 | --- | --- | --- | --- | --- |
 | Relational DB | **Supabase Postgres 16** | Postgres wire (+ pooler) | `db/engine.py` | 500 MB, pauses after ~7 days idle |
-| Object storage | **Supabase Storage** | S3-compatible + signed URLs | `services/blobs.py` | 1 GB |
+| Object storage | **Supabase Storage** — **DEFERRED, not implemented** (no `services/blobs.py`; logo pHash is computed in the browser, evidence payloads live in Postgres) | S3-compatible + signed URLs | — | 1 GB |
 | Human auth | **Clerk** | OIDC/JWT (JWKS) | `security/identity.py` | 10k MAU (free plan) |
 | Cache / limits | **Upstash Redis** | Redis over REST/TLS | `security/cache.py`, `security/ratelimit.py` | 10k commands/day, 256 MB |
 | Cron | **Upstash QStash** | Signed HTTPS | `api/routes/internal_jobs.py` | 500 messages/day |
@@ -67,7 +67,7 @@ Three rules govern every dependency:
 | --- | --- | --- |
 | Supabase DB | `DATABASE_URL`, `DIRECT_DATABASE_URL` | Render env (API), local `.env` |
 | Clerk | `CLERK_SECRET_KEY`, `CLERK_ISSUER`, `CLERK_JWKS_URL`, `CLERK_AUTHORIZED_PARTY` (server), `VITE_CLERK_PUBLISHABLE_KEY` (web) | Render + Vercel |
-| Supabase Storage | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `STORAGE_BUCKET=evidence` | Render |
+| Supabase Storage | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (`STORAGE_BUCKET` deferred with storage) | Render |
 | Upstash Redis | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Render |
 | QStash | `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY` | Render |
 | Resend | `RESEND_API_KEY`, `EMAIL_FROM` | Render |

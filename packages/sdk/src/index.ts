@@ -15,6 +15,6 @@ export {
   ProtocolError,
 } from "./errors.js";
 export { shouldBlock, requiresConfirmation } from "./helpers.js";
-export { normaliseDecision, normaliseRiskLevel, normaliseMatch } from "./normalise.js";
-export { DECISIONS, RISK_LEVELS, INTENTS, MATCHES } from "./types.js";
+export { normaliseDecision, normaliseRiskLevel, normaliseRiskClass, normaliseMatch } from "./normalise.js";
+export { DECISIONS, RISK_LEVELS, RISK_CLASSES, INTENTS, MATCHES } from "./types.js";
 export type * from "./types.js";

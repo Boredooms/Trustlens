@@ -75,6 +75,39 @@ public info pages. E2E script `platform_check` (42).
 - Expired domain verifications still vouched for a domain → expiry filter in risk context.
 - Flaky 5 s web test timeouts under parallel runs → 20 s.
 
+## 6. 2026-11-09 — problem-statement build (BUILD_PROMPT.md workstreams A–E)
+
+| Commit | Change |
+| --- | --- |
+| `chore: import existing tree` | First git history; secret scan of the tracked tree |
+| `fix: baseline on Node 24 / Python 3.12` | venv rebuilt (3.12.10); vitest AbortSignal shim for Node 24 undici; mypy override for the optional playwright extra |
+| `feat(web3)` | `ThreatReportRegistry` (Solidity 0.8.24, Hardhat), anchor/verify API (#68–#71), `report_anchors`, on-chain proof panel, public `/verify/:id`, independent CLI verifier, offline replay (ADR-018) |
+| `feat(messages)` | Deterministic message/scam analysis (#72), `R-MSG-*`, policy O-8…O-10, `risk_class`, `message_analyses`, `/app/messages`, engine 1.1.0 |
+| `feat(intel,certs)` | URLhaus feed (live/fixture/off, Postgres cache), `LISTED_BY_EXTERNAL_FEED` (O-6), certificate depth `R-INF-16…20` + OCSP, certificate report, unscored header posture `R-HDR-*` |
+| `fix: NAT64 guard, certifi roots, …` | Defects found by the evidence run against real sites (below) |
+| `docs: …` | README, LICENSE, extension README, owning docs, evidence bundle, drift rows closed |
+
+Bugs found by running real targets, each with a regression test:
+
+- **NAT64 refused every IPv4-only site** on DNS64 networks (github.com, paypal.com → `TARGET_NOT_ALLOWED`):
+  `64:ff9b::/96` is now judged by its embedded IPv4 (`64:ff9b::a00:1` is still refused as 10.0.0.1).
+- **Valid public chains looked untrusted on Windows** (example.com): TLS now verifies against certifi's
+  Mozilla roots instead of the OS store.
+- **Let's Encrypt certificates had no revocation answer** (OCSP retired in 2025): CRL fallback, accepted only
+  when signed by the issuer and current.
+- **A self-signed certificate alone banded to `ALLOW`** (score 7): TLS trust floor §8.5a → `REVIEW`.
+- **A non-resolving lookalike banded to `ALLOW`** (score 24; O-7 unreachable because `DOMAIN_NXDOMAIN`
+  counted as "another finding"): O-7 fixed and §8.5b (an unreached target is never `ALLOW`).
+- **Fixture intel answered "not listed" for real hosts**: fixture mode now covers demo hosts only; other
+  hosts are not consulted.
+
+Verification record (2026-11-09, local Docker Postgres, local Hardhat node): API **401 passed** (incl. DB
+integration, 0 skipped) · ruff/format/mypy strict clean (100 files) · web **78** · extension **54** · SDK
+**21** · demo-sites **15** · contracts **9** · all builds pass · `demo_check` **26/26** · `platform_check`
+**42/42** · `evidence_run --network` **17/17** · `chain_evidence` original valid / tampered invalid ·
+independent `verify-report` matched the chain. Not done: hosted deployment, browser viewing of the UI,
+manual extension load.
+
 ## 5. Verification record at handover
 
 API 300 tests (incl. DB integration) · ruff/format/mypy strict clean · web 66 · extension 54 · sdk 20 ·

@@ -168,3 +168,18 @@ Any change to an anchor in §2 requires:
    (for example `rg "30 / 25 / 20 / 15 / 10"`).
 
 Documentation drift is treated as a defect of the same severity as a failing test.
+
+
+## Addendum — problem-statement build (2026-11-09)
+
+| Area | Owning document | Code | Tests |
+| --- | --- | --- | --- |
+| Web3 report registry (ADR-018) | `02-architecture/WEB3_REGISTRY.md` | `packages/contracts`, `app/services/{anchors,chain}.py`, `app/api/routes/anchors.py` | contract 9, `test_web3.py`, `test_anchors_db.py`, `verify.test.tsx` |
+| Message analysis, O-8…O-10 | `03-backend/MESSAGE_ANALYSIS.md`, `RISK_ENGINE.md` §7.7, §8.1a | `app/services/message_analysis.py`, `app/api/routes/messages.py`, `app/agents/message_narrative.py` | `test_messages.py`, `test_messages_db.py`, `messages.test.tsx` |
+| External intelligence | `02-architecture/THREAT_INTELLIGENCE_SOURCES.md` | `app/intelligence/feeds.py` | `test_cert_intel_posture.py` |
+| Certificate depth, report, header posture | `03-backend/CERTIFICATE_ANALYSIS.md`, `RISK_ENGINE.md` §7.5, §7.8, §8.5a–b | `app/services/certificates.py`, `app/risk/posture.py` | `test_cert_intel_posture.py`, `trust-reports.test.tsx` |
+| Risk classes | `RISK_ENGINE.md` §8.7 | `app/risk/classes.py`, SDK `normaliseRiskClass` | `test_messages.py`, SDK test |
+| Evidence | `evidence/` (generated) | `app/scripts/{evidence_run,chain_evidence}.py`, contracts `replay`/`verify-report` | the scripts themselves |
+
+Consistency notes: endpoint count is now 69 active (71 numbered rows, three delegated to Clerk);
+Alembic head `c5a0intel0001`; engine `1.1.0`. `MASTER_PROMPT.md` §14 drift rows are all closed.

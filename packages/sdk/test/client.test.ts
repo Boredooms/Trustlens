@@ -368,3 +368,13 @@ describe("contract enums", () => {
     expect([...DECISIONS]).toEqual(enums.decision);
   });
 });
+
+describe("risk_class (engine 1.1.0)", () => {
+  it("passes known classes through and maps unknown ones to inconclusive, never low", async () => {
+    const { normaliseRiskClass, RISK_CLASSES } = await import("../src/index.js");
+    expect([...RISK_CLASSES]).toEqual(["confirmed_malicious", "high", "suspicious", "low", "inconclusive"]);
+    expect(normaliseRiskClass("suspicious")).toBe("suspicious");
+    expect(normaliseRiskClass("probably_fine")).toBe("inconclusive");
+    expect(normaliseRiskClass(undefined)).toBe("inconclusive");
+  });
+});
