@@ -108,6 +108,12 @@ integration, 0 skipped) · ruff/format/mypy strict clean (100 files) · web **78
 independent `verify-report` matched the chain. Not done: hosted deployment, browser viewing of the UI,
 manual extension load.
 
+Process note: during the session one API process inherited `DATABASE_URL` for `trustlens_test` from a
+shell used for integration tests, so an intermediate e2e run used the test database. It was caught
+(an anchor written by a CLI script was not visible to the API), the API was restarted with the variable
+cleared, and every number above was re-measured against the dev database. Keep `TEST_DATABASE_URL`
+runs in their own shell.
+
 ## 5. Verification record at handover
 
 API 300 tests (incl. DB integration) · ruff/format/mypy strict clean · web 66 · extension 54 · sdk 20 ·
