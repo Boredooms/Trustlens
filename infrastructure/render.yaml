@@ -1,0 +1,59 @@
+# Render Blueprint for the API (DEPLOYMENT_ARCHITECTURE.md, ADR-015).
+# Migrations are a release step, not a startup step: run `alembic upgrade head` against
+# DIRECT_DATABASE_URL (port 5432, never the pooler) before deploying a new version.
+services:
+  - type: web
+    name: trustlens-api
+    runtime: python
+    plan: free
+    region: singapore
+    rootDir: apps/api
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2
+    healthCheckPath: /health
+    autoDeploy: false
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: ENVIRONMENT
+        value: production
+      - key: DEMO_MODE
+        value: "true"          # demo deployment only; logs a warning and shows the demo banner
+      - key: ALLOW_DEMO_SEED
+        value: "true"
+      - key: DATABASE_URL          # Supabase pooler, transaction mode, port 6543
+        sync: false
+      - key: DIRECT_DATABASE_URL   # Supabase direct, port 5432 (migrations, checkpointer)
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: IP_HASH_SALT
+        generateValue: true
+      - key: ALLOWED_ORIGINS       # https://<vercel-app>,https://<preview-domain>
+        sync: false
+      - key: CLERK_ISSUER
+        sync: false
+      - key: CLERK_JWKS_URL
+        sync: false
+      - key: CLERK_AUTHORIZED_PARTY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false
+      - key: QSTASH_CURRENT_SIGNING_KEY
+        sync: false
+      - key: LLM_API_KEY           # optional: absent ⇒ labelled template narratives
+        sync: false
+      - key: LLM_BASE_URL
+        value: https://integrate.api.nvidia.com/v1
+      - key: LLM_MODEL
+        value: nvidia/nemotron-3-ultra-550b-a55b
+      - key: LLM_EXTRA_BODY        # NIM reasoning models: thinking off, or it eats the output budget
+        value: '{"chat_template_kwargs":{"enable_thinking":false}}'

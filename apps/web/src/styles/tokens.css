@@ -1,0 +1,92 @@
+/*
+ * TrustLens design tokens — DESIGN_SYSTEM.md §2.2, copied verbatim.
+ * This is the ONLY file in apps/web/src allowed to contain raw colour values
+ * (enforced by scripts/check-tokens.mjs). Mapped once in tailwind.config.ts.
+ */
+:root {
+  /* surfaces */
+  --background: #f6f5f1;
+  --foreground: #111111;
+  --surface: #ffffff;
+  --surface-secondary: #ebe9e3;
+  --surface-inverse: #111111;
+
+  /* lines & text */
+  --border: #dad9d3;
+  --border-strong: #c4c2ba;
+  --muted: #777777;
+  --muted-strong: #5c5c5c;
+
+  /* actions */
+  --primary: #171717;
+  --primary-foreground: #ffffff;
+  --primary-hover: #2b2b2b;
+
+  /* security states (semantic only) */
+  --danger: #c03939;
+  --danger-surface: #f7e9e9;
+  --warning: #a87526;
+  --warning-surface: #f6efdf;
+  --success: #397653;
+  --success-surface: #e8f0ea;
+  --unknown: #626262;
+  --unknown-surface: #ececea;
+
+  /* focus */
+  --focus-ring: #171717;
+  --focus-offset: #f6f5f1;
+
+  /* graph */
+  --node-domain: #171717;
+  --node-ip: #626262;
+  --node-cert: #8a6a3a;
+  --node-payee: #7a3b3b;
+  --node-org: #397653;
+  --edge-strong: #444444;
+  --edge-weak: #c4c2ba;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  /* overlays — DESIGN_SYSTEM.md §4.3 and §7.6 (modal/drawer only) */
+  --shadow-overlay: 0 24px 48px -24px rgb(0 0 0 / 0.25);
+  --backdrop: rgb(0 0 0 / 0.4);
+}
+
+.dark {
+  --background: #090909;
+  --foreground: #f2f1ed;
+  --surface: #151515;
+  --surface-secondary: #202020;
+  --surface-inverse: #f2f1ed;
+
+  --border: #303030;
+  --border-strong: #3d3d3d;
+  --muted: #999999;
+  --muted-strong: #b4b4b4;
+
+  --primary: #f2f1ed;
+  --primary-foreground: #111111;
+  --primary-hover: #e2e1db;
+
+  --danger: #e07a7a;
+  --danger-surface: #2a1a1a;
+  --warning: #d3a45e;
+  --warning-surface: #2a2318;
+  --success: #7fb894;
+  --success-surface: #17241c;
+  --unknown: #9a9a9a;
+  --unknown-surface: #1d1d1d;
+
+  --focus-ring: #f2f1ed;
+  --focus-offset: #090909;
+
+  --node-domain: #f2f1ed;
+  --node-ip: #9a9a9a;
+  --node-cert: #d3a45e;
+  --node-payee: #e07a7a;
+  --node-org: #7fb894;
+  --edge-strong: #b4b4b4;
+  --edge-weak: #3d3d3d;
+}

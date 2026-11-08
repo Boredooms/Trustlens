@@ -1,0 +1,18 @@
+# Runtime dependencies (deploy image). Every entry is in TECH_STACK.md §4.
+fastapi==0.115.14
+uvicorn[standard]==0.34.3
+pydantic==2.11.7
+pydantic-settings==2.10.1
+SQLAlchemy[asyncio]==2.0.41
+asyncpg==0.30.0
+alembic==1.16.2
+psycopg[binary]==3.2.9
+httpx==0.28.1
+python-ulid==3.0.0
+dnspython==2.7.0
+python-jose[cryptography]==3.5.0
+# AI orchestration (ADR-014): LangGraph StateGraph + Postgres checkpointer
+langgraph==1.0.10
+langgraph-checkpoint==4.3.1
+langgraph-checkpoint-postgres==3.2.0
+psycopg-pool==3.3.3

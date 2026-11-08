@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TrustLens settings</title>
+    <link rel="stylesheet" href="page.css" />
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <div class="top">
+        <h1>TrustLens settings</h1>
+        <span class="muted" id="version"></span>
+      </div>
+      <section class="card" aria-labelledby="api-heading">
+        <h2 id="api-heading">API status</h2>
+        <p id="api-status" role="status">Checking…</p>
+        <p class="muted" id="api-origin"></p>
+        <div class="row"><button type="button" id="api-recheck">Check again</button></div>
+      </section>
+      <section class="card" aria-labelledby="pair-heading">
+        <h2 id="pair-heading">Pairing</h2>
+        <p id="pair-state" role="status"></p>
+        <form id="pair-form" class="row" novalidate>
+          <label for="pair-code" class="sr">Pairing code</label>
+          <input id="pair-code" class="code" name="code" autocomplete="off" spellcheck="false" maxlength="9" placeholder="7K4Q-2M9X" />
+          <button type="submit" class="primary">Connect</button>
+        </form>
+        <p class="error" id="pair-error" role="alert"></p>
+        <div class="row"><button type="button" id="unpair">Disconnect this browser</button></div>
+      </section>
+      <section class="card" aria-labelledby="protect-heading">
+        <h2 id="protect-heading">Protection</h2>
+        <div class="row">
+          <input type="checkbox" id="enabled" class="check" />
+          <label for="enabled">Check logins and payments on pages</label>
+        </div>
+        <p class="muted">Blocking on a verified payee or login mismatch cannot be turned off. You can still override a single action with a second confirmation.</p>
+      </section>
+      <section class="card" aria-labelledby="privacy-heading">
+        <h2 id="privacy-heading">What TrustLens sends</h2>
+        <ul id="privacy"></ul>
+      </section>
+      <section class="card" aria-labelledby="data-heading">
+        <h2 id="data-heading">Local data</h2>
+        <p class="muted">Removes the device token, cached results and settings from this browser.</p>
+        <div class="row"><button type="button" id="clear">Clear all local data</button></div>
+        <p class="status" id="clear-status" role="status"></p>
+      </section>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>

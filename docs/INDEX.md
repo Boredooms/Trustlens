@@ -1,0 +1,238 @@
+# TrustLens — Documentation Index
+
+> **Status:** DECIDED · **Version:** 1.0 · **Last updated:** 2026-11-07
+> **Scope:** Entry point for the entire TrustLens documentation system.
+> **Audience:** Every contributor, reviewer and AI coding agent working on TrustLens.
+
+TrustLens is a **website trust intelligence platform**: it verifies whether a website is
+*authorised* to ask a user for credentials, money or personal data, investigates connected
+malicious infrastructure, and distributes verified findings through a shared threat network.
+
+Every website has an identity. Every action has a risk. We verify both.
+
+---
+
+> **Handover (2026-11-08):** the implementation is complete and was transferred to a new owner.
+> Start with [`handover/HANDOVER.md`](handover/HANDOVER.md) (state, run, deploy, traps) and
+> [`handover/PROGRESS_LOG.md`](handover/PROGRESS_LOG.md) (history and decisions).
+
+## 1. How to use this documentation
+
+This directory is the **source of truth** for the product. Code follows documentation; when code
+and documentation disagree, that is a defect in one of them and must be resolved by a pull
+request that updates *both*.
+
+Read in this order:
+
+0. `handover/HANDOVER.md` then `handover/PROGRESS_LOG.md` — the state you are inheriting, and why.
+   `MASTER_PROMPT.md` is the paste-ready brief for a new agent session (inventory, bring-up,
+   test matrix, drift register). `BUILD_PROMPT.md` is the graded build brief: the four missing
+   capability areas, their acceptance bars and the order to build them.
+1. `00-project-foundation/PROJECT_OVERVIEW.md` — what we are building and why.
+2. `00-project-foundation/TECH_STACK.md` — what it is built with.
+3. `02-architecture/SYSTEM_ARCHITECTURE.md` — how the parts fit together.
+4. `02-architecture/API_CONTRACTS.md` → `03-backend/API_ENDPOINTS.md` — the wire contract.
+5. `02-architecture/DATABASE_DESIGN.md` — the data contract.
+6. The documents for the module you own.
+
+An AI coding agent must additionally read `00-project-foundation/DEVELOPMENT_GUIDELINES.md`
+(section "Instructions for AI coding agents") before writing code.
+
+---
+
+## 2. Source-of-truth map
+
+Several facts appear in many documents. Only one document owns each fact; the others **reference**
+it. If a number, name or schema appears in two documents, the owner wins and the other must link.
+
+| Fact | Owning document |
+| --- | --- |
+| Product vision, scope, non-goals, terminology | `00-project-foundation/PROJECT_OVERVIEW.md` |
+| Technology choices and rejected alternatives | `00-project-foundation/TECH_STACK.md` |
+| Coding, branching, review and documentation rules | `00-project-foundation/DEVELOPMENT_GUIDELINES.md` |
+| Functional / non-functional requirements, requirement IDs (`PR-*`) | `01-product/PRODUCT_REQUIREMENTS.md` |
+| Feature catalogue and feature IDs (`TL-###`) | `01-product/FEATURE_SPECIFICATIONS.md` |
+| Component boundaries, request lifecycle, trust boundaries | `02-architecture/SYSTEM_ARCHITECTURE.md` |
+| End-to-end data flows and sequence diagrams | `02-architecture/DATA_FLOW.md` |
+| Tables, columns, indexes, ER diagrams | `02-architecture/DATABASE_DESIGN.md` |
+| Envelope formats, enums, error codes, versioning, pagination | `02-architecture/API_CONTRACTS.md` |
+| Per-endpoint request/response schemas | `03-backend/API_ENDPOINTS.md` |
+| Signal weights, rule IDs (`R-*`), finding codes, decision policy | `03-backend/RISK_ENGINE.md` |
+| Trust-profile and verification lifecycle | `03-backend/ORGANISATION_TRUST_PROFILES.md` |
+| Design tokens, component rules | `04-frontend/DESIGN_SYSTEM.md` |
+| Screens, states and interactions | `04-frontend/UI_UX_SPECIFICATIONS.md` |
+| Extension permissions and observation limits | `05-browser-extension/EXTENSION_ARCHITECTURE.md` |
+| Extension decision behaviour and fail modes | `05-browser-extension/BROWSER_PROTECTION_LOGIC.md` |
+| SDK public surface | `06-sdk/SDK_SPECIFICATION.md` |
+| Graph node/edge vocabulary and confidence | `07-ai-intelligence/THREAT_GRAPH.md` |
+| Hosted service inventory, free-tier limits, failure behaviour | `02-architecture/HOSTED_SERVICES.md` |
+| AI orchestration, prompts, output schemas | `07-ai-intelligence/AI_INVESTIGATION_ENGINE.md` |
+| Environment variables | `08-infrastructure/ENVIRONMENT_CONFIGURATION.md` |
+| Health/readiness contracts and observability | `08-infrastructure/MONITORING_HEALTHCHECKS.md` |
+| Threats, mitigations, residual risk | `09-testing-security/SECURITY_THREAT_MODEL.md` |
+| Demo script and seeded data | `10-hackathon-demo/DEMO_RUNBOOK.md` |
+
+---
+
+## 3. Documentation tree
+
+```text
+docs/
+├── INDEX.md                         ← you are here
+├── DOCUMENTATION_COVERAGE.md        ← coverage + consistency matrix
+│
+├── 00-project-foundation/
+│   ├── PROJECT_OVERVIEW.md
+│   ├── TECH_STACK.md
+│   └── DEVELOPMENT_GUIDELINES.md
+│
+├── 01-product/
+│   ├── PRODUCT_REQUIREMENTS.md
+│   ├── USER_PERSONAS.md
+│   ├── USER_JOURNEYS.md
+│   ├── FEATURE_SPECIFICATIONS.md
+│   └── PRODUCT_ROADMAP.md
+│
+├── 02-architecture/
+│   ├── SYSTEM_ARCHITECTURE.md
+│   ├── DATA_FLOW.md
+│   ├── DATABASE_DESIGN.md
+│   ├── API_CONTRACTS.md
+│   └── HOSTED_SERVICES.md          ← supporting: Supabase/Upstash/Vercel limits
+│
+├── 03-backend/
+│   ├── BACKEND_OVERVIEW.md
+│   ├── AUTHENTICATION_AUTHORIZATION.md
+│   ├── API_ENDPOINTS.md
+│   ├── RISK_ENGINE.md
+│   └── ORGANISATION_TRUST_PROFILES.md
+│
+├── 04-frontend/
+│   ├── FRONTEND_ARCHITECTURE.md
+│   ├── DESIGN_SYSTEM.md
+│   ├── UI_UX_SPECIFICATIONS.md
+│   ├── ANIMATION_GUIDELINES.md
+│   └── ACCESSIBILITY_RESPONSIVENESS.md
+│
+├── 05-browser-extension/
+│   ├── EXTENSION_ARCHITECTURE.md
+│   ├── BROWSER_PROTECTION_LOGIC.md
+│   └── EXTENSION_API_INTEGRATION.md
+│
+├── 06-sdk/
+│   ├── SDK_SPECIFICATION.md
+│   └── SDK_INTEGRATION_GUIDE.md
+│
+├── 07-ai-intelligence/
+│   ├── THREAT_INTELLIGENCE_ENGINE.md
+│   ├── AI_INVESTIGATION_ENGINE.md
+│   └── THREAT_GRAPH.md
+│
+├── 08-infrastructure/
+│   ├── DEPLOYMENT_ARCHITECTURE.md
+│   ├── ENVIRONMENT_CONFIGURATION.md
+│   └── MONITORING_HEALTHCHECKS.md
+│
+├── 09-testing-security/
+│   ├── TESTING_STRATEGY.md
+│   └── SECURITY_THREAT_MODEL.md
+│
+└── 10-hackathon-demo/
+    └── DEMO_RUNBOOK.md
+
+Root of docs/
+├── MASTER_PROMPT.md               ← paste-ready start brief for a new agent session
+├── BUILD_PROMPT.md                ← graded build brief: gap register, Web3/message/intel/TLS specs
+├── AGENTS.md                      ← agent operating rules
+├── CLAUDE.md                      ← Claude project memory
+├── handover/
+│   ├── HANDOVER.md                ← state, runbook, traps (read first)
+│   ├── PROGRESS_LOG.md            ← what was built and why
+│   └── CONVERSATION_LOG.md        ← redacted build conversation (grep, do not read whole)
+└── skills/
+    ├── impeccable-frontend/SKILL.md
+    └── design-system-guardrails/SKILL.md
+```
+
+36 core documents, one supporting architecture document (`HOSTED_SERVICES.md`), two meta documents
+(`INDEX.md`, `DOCUMENTATION_COVERAGE.md`), a handover folder (three files), two agent start briefs
+(`MASTER_PROMPT.md`, `BUILD_PROMPT.md`), two agent instruction files, and two skill files.
+
+---
+
+## 4. Reading paths by role
+
+| Role | Read first | Then |
+| --- | --- | --- |
+| Product / PM | PROJECT_OVERVIEW, PRODUCT_REQUIREMENTS, FEATURE_SPECIFICATIONS | USER_JOURNEYS, PRODUCT_ROADMAP |
+| Backend engineer | SYSTEM_ARCHITECTURE, API_CONTRACTS, DATABASE_DESIGN | BACKEND_OVERVIEW, API_ENDPOINTS, RISK_ENGINE |
+| Scanner / security engineer | RISK_ENGINE, SECURITY_THREAT_MODEL | DATA_FLOW, BACKEND_OVERVIEW |
+| Frontend engineer | DESIGN_SYSTEM, FRONTEND_ARCHITECTURE | UI_UX_SPECIFICATIONS, ANIMATION_GUIDELINES, ACCESSIBILITY_RESPONSIVENESS |
+| Extension engineer | EXTENSION_ARCHITECTURE, BROWSER_PROTECTION_LOGIC | EXTENSION_API_INTEGRATION, API_CONTRACTS |
+| SDK engineer | SDK_SPECIFICATION, API_CONTRACTS | SDK_INTEGRATION_GUIDE, AUTHENTICATION_AUTHORIZATION |
+| AI / intelligence engineer | AI_INVESTIGATION_ENGINE, THREAT_GRAPH | THREAT_INTELLIGENCE_ENGINE, RISK_ENGINE |
+| DevOps / QA | DEPLOYMENT_ARCHITECTURE, HOSTED_SERVICES, MONITORING_HEALTHCHECKS | ENVIRONMENT_CONFIGURATION, TESTING_STRATEGY |
+| UI work (any role) | skills/impeccable-frontend, skills/design-system-guardrails | DESIGN_SYSTEM, UI_UX_SPECIFICATIONS |
+| Demo presenter | DEMO_RUNBOOK | PRODUCT_OVERVIEW, RISK_ENGINE (verdict semantics) |
+| AI coding agent | DEVELOPMENT_GUIDELINES (agent section) | your module's docs + API_CONTRACTS + DATABASE_DESIGN |
+
+---
+
+## 5. Documentation categories
+
+| Group | Documents | Purpose |
+| --- | --- | --- |
+| 00 Foundation | 3 | Vision, stack, working rules |
+| 01 Product | 5 | Requirements, personas, journeys, features, roadmap |
+| 02 Architecture | 4 | System shape, flows, data model, wire contract |
+| 03 Backend | 5 | FastAPI design, auth, endpoints, risk engine, trust profiles |
+| 04 Frontend | 5 | React app, design system, screens, motion, accessibility |
+| 05 Extension | 3 | MV3 architecture, protection logic, API integration |
+| 06 SDK | 2 | Public TypeScript SDK surface and integration guide |
+| 07 AI & intelligence | 3 | Ingestion/correlation, AI investigator, threat graph |
+| 08 Infrastructure | 3 | Deployment, environment, monitoring |
+| 09 Testing & security | 2 | Test strategy, threat model |
+| 10 Demo | 1 | Reproducible hackathon demonstration |
+
+---
+
+## 6. Status labels used across the documentation
+
+Every non-trivial statement is tagged so nobody mistakes a plan for a shipped feature.
+
+| Label | Meaning |
+| --- | --- |
+| **DECIDED** | Confirmed; changing it requires an ADR in `SYSTEM_ARCHITECTURE.md` §13. |
+| **PROPOSED** | Recommended, awaiting confirmation. Do not build against it without checking. |
+| **OPTIONAL** | Nice to have; not required for the MVP. |
+| **FUTURE** | Deliberately after the MVP. |
+| **OPEN QUESTION** | Needs an owner decision; listed in `DOCUMENTATION_COVERAGE.md` §5. |
+| **DEFERRED** | Intentionally postponed, no further work planned now. |
+
+No security control described here is *implemented* until code and tests exist. The
+`SECURITY_THREAT_MODEL.md` §12 table is the authoritative implementation-status record.
+
+---
+
+## 7. Implementation phase mapping
+
+| Phase | Documents that must be read/agreed | Exit criterion |
+| --- | --- | --- |
+| 1 Foundation | 00-*, 01-PRODUCT_REQUIREMENTS, 02-SYSTEM_ARCHITECTURE, 02-DATABASE_DESIGN, 02-API_CONTRACTS, 04-DESIGN_SYSTEM | Contracts frozen, design tokens agreed |
+| 2 Backend & scanner | 03-*, 07-THREAT_INTELLIGENCE_ENGINE, 09-SECURITY_THREAT_MODEL | `/health`, `/ready`, `POST /scans` and `POST /assess` pass contract tests |
+| 3 Frontend | 04-* (all), 02-API_CONTRACTS | Landing + dashboard + scan report render against the live API |
+| 4 Extension & SDK | 05-*, 06-* | Extension warns on the demo lookalike; SDK returns typed verdicts |
+| 5 Intelligence & AI | 07-* (all), 03-RISK_ENGINE | Graph query and investigation report work end-to-end |
+| 6 Deployment & demo | 08-*, 09-TESTING_STRATEGY, 10-DEMO_RUNBOOK | Cold-start-aware deploy, two rehearsed demo runs |
+
+---
+
+## 8. Conventions in this documentation
+
+- Mermaid is used for diagrams; all diagrams are consistent with the prose next to them.
+- Tables define contracts. A table row is normative unless marked illustrative.
+- JSON blocks are **illustrative** unless the section is inside `API_CONTRACTS.md` or
+  `API_ENDPOINTS.md`.
+- Cross-references use relative links so the docs work in any Markdown renderer.
+- Anything numeric that looks like a security probability is an **engineering weight**, not a
+  measured statistic, and is labelled as such.

@@ -1,0 +1,24 @@
+{
+  "name": "@trustlens/extension",
+  "version": "0.4.1",
+  "private": true,
+  "type": "module",
+  "description": "TrustLens Chrome MV3 extension. Observes and enforces; the server decides.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "lint": "eslint . && node scripts/check-bundle.mjs --src",
+    "lint:webext": "web-ext lint --source-dir dist"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@types/chrome": "^0.1.43",
+    "esbuild": "^0.25.12",
+    "eslint": "^9.39.0",
+    "happy-dom": "^18.0.1",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.0",
+    "vitest": "^3.2.4"
+  }
+}

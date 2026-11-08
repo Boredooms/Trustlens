@@ -1,0 +1,34 @@
+{
+  "_source": "docs/02-architecture/API_CONTRACTS.md §5.5 — the single shared fixture (§14). Web, extension and SDK tests read this file too.",
+  "decision": ["BLOCK", "WARN", "ALLOW", "REVIEW", "UNKNOWN"],
+  "risk_level": ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"],
+  "scan_status": ["queued", "running", "completed", "partial", "failed"],
+  "intent": ["browse", "login", "payment", "download", "data_submission"],
+  "signal_group": [
+    "reputation",
+    "identity",
+    "credential_destination",
+    "payment_destination",
+    "infrastructure"
+  ],
+  "severity": ["critical", "high", "medium", "low", "info"],
+  "coverage_state": ["collected", "unavailable", "skipped"],
+  "report_status": ["pending", "reviewing", "confirmed", "dismissed"],
+  "investigation_status": ["queued", "running", "completed", "partial", "failed"],
+  "recipient_type": ["upi_vpa", "iban", "bank_account", "wallet_address", "payment_link"],
+  "match": ["exact", "none", "unverifiable"],
+  "verification_status": ["pending", "verifying", "verified", "failed", "expired", "revoked"],
+  "entity_type": [
+    "domain",
+    "url",
+    "ip",
+    "asn",
+    "nameserver",
+    "certificate",
+    "certificate_authority",
+    "organisation",
+    "payment_recipient",
+    "campaign",
+    "threat_report"
+  ]
+}

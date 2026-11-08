@@ -1,0 +1,5 @@
+# Optional: deep scans (DEEP_SCAN_ENABLED=true). Not installed by default — Playwright + Chromium need
+# ~400 MB and the free 512 MB instance should not carry them unless deep scans are switched on.
+#   pip install -r requirements-deepscan.txt && python -m playwright install --with-deps chromium
+-r requirements.txt
+playwright==1.52.0

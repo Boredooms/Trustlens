@@ -1,0 +1,15 @@
+{
+  "name": "@trustlens/demo-sites",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Inert seeded demo sites (genuine Northstar University + lookalikes) for the TrustLens demo. Zero dependencies.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test \"test/**/*.test.mjs\"",
+    "lint": "node --check server.mjs && node --check static/demo.js && node --check test/server.test.mjs"
+  }
+}

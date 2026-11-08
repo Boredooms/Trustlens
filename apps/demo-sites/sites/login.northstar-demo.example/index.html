@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Log in — Northstar University</title>
+<link rel="stylesheet" href="/static/demo.css">
+<script src="/static/demo.js" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="{{link:northstar-demo.example:/}}">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="6" fill="#b8913a"/><path d="M20 6l3.6 9.4L33 16l-7.4 6 2.6 9.6L20 26.4l-8.2 5.2 2.6-9.6L7 16l9.4-.6z" fill="#141f3a"/></svg>
+      <span class="brand-name">Northstar University<span class="brand-sub">Student login</span></span>
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="{{link:northstar-demo.example:/}}">Home</a>
+      <a href="{{link:login.northstar-demo.example:/}}">Student login</a>
+      <a href="{{link:pay.northstar-demo.example:/}}">Pay fees</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <div class="grid">
+    <section class="card" aria-labelledby="login-title">
+      <h2 id="login-title">Log in to your applicant account</h2>
+      <p>Use the email address you registered with.</p>
+      <form method="post" action="https://login.northstar-demo.example/session">
+        <label>Email
+          <input type="email" name="username" autocomplete="username">
+        </label>
+        <label>Password
+          <input type="password" name="password" autocomplete="current-password">
+        </label>
+        <button type="submit">Log in</button>
+      </form>
+    </section>
+    <section class="card">
+      <h2>Need help?</h2>
+      <p>Contact the admissions office from the home page. We will never ask for your password by email or phone.</p>
+    </section>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p class="demo-footer">Demonstration site — do not enter real information.</p>
+    <p class="footer-meta">Northstar University (fictional) · login.northstar-demo.example</p>
+  </div>
+</footer>
+</body>
+</html>

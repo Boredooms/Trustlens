@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TrustLens</title>
+    <link rel="stylesheet" href="page.css" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <div class="top">
+        <h1>TrustLens</h1>
+        <span class="muted" id="version"></span>
+      </div>
+      <section class="card" aria-labelledby="page-heading">
+        <h2 id="page-heading">This page</h2>
+        <div id="page-status" aria-live="polite"><p class="muted">Checking…</p></div>
+      </section>
+      <section class="card" id="pair-card" hidden aria-labelledby="pair-heading">
+        <h2 id="pair-heading">Connect TrustLens</h2>
+        <p class="muted" id="pair-body"></p>
+        <form id="pair-form" class="row" novalidate>
+          <label for="pair-code" class="sr">Pairing code</label>
+          <input id="pair-code" class="code" name="code" autocomplete="off" spellcheck="false" maxlength="9" placeholder="7K4Q-2M9X" />
+          <button type="submit" class="primary" id="pair-submit">Connect</button>
+        </form>
+        <p class="error" id="pair-error" role="alert"></p>
+      </section>
+      <section class="card" id="report-card" hidden aria-labelledby="report-heading">
+        <h2 id="report-heading">Report this site</h2>
+        <label for="report-text" id="report-hint"></label>
+        <textarea id="report-text" maxlength="500"></textarea>
+        <div class="row"><button type="button" id="report-send">Report this site</button></div>
+        <p class="status" id="report-status" role="status"></p>
+      </section>
+      <div class="row">
+        <button type="button" id="watch">Watch this tab for logins and payments</button>
+        <button type="button" id="open-options">Settings</button>
+      </div>
+      <p class="status" id="watch-status" role="status"></p>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pay fees — Northstar University</title>
+<link rel="stylesheet" href="/static/demo.css">
+<script src="/static/demo.js" defer></script>
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="{{link:northstar-demo.example:/}}">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="6" fill="#b8913a"/><path d="M20 6l3.6 9.4L33 16l-7.4 6 2.6 9.6L20 26.4l-8.2 5.2 2.6-9.6L7 16l9.4-.6z" fill="#141f3a"/></svg>
+      <span class="brand-name">Northstar University<span class="brand-sub">Fee payment</span></span>
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="{{link:northstar-demo.example:/}}">Home</a>
+      <a href="{{link:login.northstar-demo.example:/}}">Student login</a>
+      <a href="{{link:pay.northstar-demo.example:/}}">Pay fees</a>
+    </nav>
+  </div>
+</header>
+
+<main class="container">
+  <div class="grid">
+    <section class="card" id="payment" aria-labelledby="pay-title">
+      <h2 id="pay-title">Application fee</h2>
+      <p class="amount">₹1,200</p>
+      <div class="payee-box">
+        <dl>
+          <dt>Payee</dt><dd>Northstar University — Admissions fee account</dd>
+          <dt>UPI ID</dt><dd><span data-payee="upi_vpa">fees@northstar-demo</span></dd>
+        </dl>
+      </div>
+      <form method="post" action="https://pay.northstar-demo.example/checkout">
+        <button type="submit" class="pay">Pay ₹1,200</button>
+      </form>
+    </section>
+    <section class="card">
+      <h2>Before you pay</h2>
+      <p>The university's only UPI ID for admissions fees is shown on this page. Do not pay fees to any other account.</p>
+    </section>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p class="demo-footer">Demonstration site — do not enter real information.</p>
+    <p class="footer-meta">Northstar University (fictional) · pay.northstar-demo.example</p>
+  </div>
+</footer>
+</body>
+</html>
