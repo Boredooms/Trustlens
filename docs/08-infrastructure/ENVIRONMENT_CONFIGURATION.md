@@ -121,6 +121,13 @@ Rules:
   design (the anon key is constrained by RLS).
 - Redis and QStash tokens are never given to the frontend or the extension.
 
+### 2.8 External intelligence (owner: `02-architecture/THREAT_INTELLIGENCE_SOURCES.md` §3)
+
+| Variable | Required | Secret | Meaning / default |
+| --- | --- | --- | --- |
+| `INTEL_MODE` | no | no | `auto` (default): live with a key, fixture in DEMO_MODE, else off. Also `live`, `fixture`, `off` |
+| `URLHAUS_AUTH_KEY` | no | **yes** | abuse.ch Auth-Key. Absent ⇒ no live lookups (the source is absent, never faked) |
+
 ### 2.7 Web3 report registry (owner: `02-architecture/WEB3_REGISTRY.md` §7)
 
 | Variable | Required | Secret | Meaning / default |

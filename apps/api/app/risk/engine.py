@@ -183,7 +183,8 @@ def overrides_for(
     third_party = by_code.get("CREDENTIALS_POSTED_TO_THIRD_PARTY")
     if third_party is not None and intent == Intent.LOGIN:
         fired.append(("O-5", Decision.BLOCK))
-    if "KNOWN_MALICIOUS_REPUTATION" in by_code:
+    if "KNOWN_MALICIOUS_REPUTATION" in by_code or "LISTED_BY_EXTERNAL_FEED" in by_code:
+        # O-6: confirmed internally, or listed by an attributed external feed (R-REP-06).
         fired.append(("O-6", Decision.BLOCK))
     scored = [f for f in by_code.values() if f.severity != Severity.INFO]
     if target_unreachable and not scored:

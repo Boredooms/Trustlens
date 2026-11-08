@@ -51,6 +51,20 @@ class TlsObs:
     key_bits: int | None = None
     signature_algorithm: str | None = None
     chain_length: int | None = None
+    # Certificate depth (CERTIFICATE_ANALYSIS.md §2). None = not determined, never "fine".
+    self_signed: bool = False
+    not_yet_valid: bool = False
+    sct_count: int | None = None  # embedded SCTs in the leaf
+    # {"status": good|revoked|unknown|unavailable|skipped, "responder", "this_update", "reason"}
+    revocation: dict[str, Any] = field(default_factory=lambda: {"status": "skipped"})
+
+
+@dataclass
+class IntelObs:
+    """External intelligence lookups (THREAT_INTELLIGENCE_SOURCES.md). Attribution is mandatory."""
+
+    status: Status = "skipped"
+    sources: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -71,6 +85,10 @@ class PageObs:
     payees: list[dict[str, str]] = field(default_factory=list)  # [{"type","value"}]
     logo_phash: str | None = None
     dom_source: str = "static"
+    # Header posture inputs (one response, headers only; CERTIFICATE_ANALYSIS.md §5).
+    response_headers: dict[str, str] | None = None  # None = not observed
+    set_cookies: list[dict[str, Any]] = field(default_factory=list)  # {name, secure, httponly}
+    mixed_content: int = 0  # http:// subresources on an https page (static markup)
 
 
 @dataclass
@@ -104,6 +122,7 @@ class Observations:
     page: PageObs
     simulated: bool = False
     evidence: list[EvidenceDraft] = field(default_factory=list)
+    intel: IntelObs = field(default_factory=IntelObs)
 
     def result_blocks(self) -> dict[str, Any]:
         """The denormalised ``scans.result`` JSON (API_ENDPOINTS.md §4)."""
@@ -141,5 +160,6 @@ class Observations:
                 "dom_source": self.page.dom_source,
                 "status": self.page.status,
             },
+            "intel": {"status": self.intel.status, "sources": self.intel.sources},
             "simulated": self.simulated,
         }

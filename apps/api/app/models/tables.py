@@ -724,3 +724,25 @@ class MessageAnalysis(Base):
     engine_version: Mapped[str] = mapped_column(Text, nullable=False)
     simulated: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     created_at: Mapped[datetime] = created_at()
+
+
+# ── External intelligence cache (THREAT_INTELLIGENCE_SOURCES.md §4) ─────────────
+class IntelObservation(Base):
+    """Cached answer from an external feed, keyed by a hash of the indicator. Failures are never
+    cached. ``result`` is the attributed lookup result shown in scans."""
+
+    __tablename__ = "intel_observations"
+    __table_args__ = (
+        CheckConstraint(in_check("status", ("listed", "not_listed")), name="status"),
+        Index("ix_intel_observations_lookup", "source", "indicator_hash", "expires_at"),
+    )
+    id: Mapped[str] = ulid_pk()
+    source: Mapped[str] = mapped_column(Text, nullable=False)
+    indicator_type: Mapped[str] = mapped_column(Text, nullable=False)
+    indicator_hash: Mapped[str] = mapped_column(CHAR(64), nullable=False)
+    status: Mapped[str] = mapped_column(Text, nullable=False)
+    listing_id: Mapped[str | None] = mapped_column(Text)
+    result: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    queried_at: Mapped[datetime] = ts(False)
+    expires_at: Mapped[datetime] = ts(False)
+    created_at: Mapped[datetime] = created_at()

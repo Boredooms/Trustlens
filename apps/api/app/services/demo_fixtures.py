@@ -48,8 +48,15 @@ _GENUINE_DNS = {
 _BAD_DNS = {"a": ["203.0.113.10"], "ns": ["ns1.badhost.example", "ns2.badhost.example"]}
 
 
-def _tls(issuer: str, days: int, fingerprint: str, cn: str, root: str) -> dict[str, Any]:
+def _tls(
+    issuer: str, days: int, fingerprint: str, cn: str, root: str, **extra: Any
+) -> dict[str, Any]:
     return {
+        "verified": True,
+        "self_signed": False,
+        "sct_count": 2,
+        "revocation": {"status": "good", "responder": "ocsp.demo-ca.example", "simulated": True},
+        **extra,
         "issuer_cn": issuer,
         "root_issuer_cn": root,
         "subject_cn": cn,
@@ -163,7 +170,99 @@ _FIXTURES: dict[str, dict[str, Any]] = {
         "tls": _tls("R3", 60, _fp("07"), "collect.badhost.example", "ISRG Root X1"),
         "page": {"title": None, "text": "", "forms": [], "payees": [], "logo": None},
     },
+    # ── Certificate / intelligence / header demos (CERTIFICATE_ANALYSIS.md §6) ──
+    "old.northstar-demo.example": {  # genuine, but a misconfiguration: expiring certificate
+        "dns": _GENUINE_DNS,
+        "age_days": 3650,
+        "registrar": "Example Registrar",
+        "tls": _tls(
+            "Demo Intermediate CA", 5, _fp("18"), "old.northstar-demo.example", "Demo Root CA"
+        ),
+        "page": {
+            "title": "Northstar University — Archive",
+            "text": "northstar university archive of past newsletters",
+            "forms": [],
+            "payees": [],
+            "logo": NORTHSTAR_LOGO_PHASH,
+        },
+    },
+    "selfsigned.badhost.example": {  # trust: no authority vouches for the certificate
+        "dns": _BAD_DNS,
+        "age_days": 4,
+        "registrar": "Cheap Names Ltd",
+        "tls": _tls(
+            "selfsigned.badhost.example",
+            300,
+            _fp("29"),
+            "selfsigned.badhost.example",
+            "selfsigned.badhost.example",
+            verified=False,
+            self_signed=True,
+            sct_count=0,
+            revocation={"status": "skipped", "reason": "chain_not_verified"},
+            chain_length=1,
+        ),
+        "page": {
+            "title": "Account verification",
+            "text": "verify your account",
+            "forms": [],
+            "payees": [],
+            "logo": None,
+        },
+    },
+    "revoked.badhost.example": {  # trust: the issuer revoked the certificate
+        "dns": _BAD_DNS,
+        "age_days": 40,
+        "registrar": "Cheap Names Ltd",
+        "tls": _tls(
+            "R3",
+            50,
+            _fp("3a"),
+            "revoked.badhost.example",
+            "ISRG Root X1",
+            revocation={
+                "status": "revoked",
+                "responder": "ocsp.demo-ca.example",
+                "this_update": "2026-11-08T00:00:00+00:00",
+                "revoked_at": "2026-11-07T09:00:00+00:00",
+                "reason": "keyCompromise",
+                "simulated": True,
+            },
+        ),
+        "page": {
+            "title": "Parcel redelivery",
+            "text": "pay redelivery fee",
+            "forms": [],
+            "payees": [],
+            "logo": None,
+        },
+    },
+    "secure-pay.badhost.example": {  # reputation: listed by the external feed (fixture mode)
+        "dns": _BAD_DNS,
+        "age_days": 6,
+        "registrar": "Cheap Names Ltd",
+        "tls": _tls("R3", 85, _fp("4b"), "secure-pay.badhost.example", "ISRG Root X1"),
+        "page": {
+            "title": "Secure payment",
+            "text": "complete your payment",
+            "forms": [],
+            "payees": [],
+            "logo": None,
+        },
+    },
 }
+
+# Response headers per demo registrable domain (header posture, unscored).
+_HEADERS: dict[str, dict[str, str]] = {
+    "northstar-demo.example": {
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "content-security-policy": "default-src 'self'; script-src 'self'",
+        "x-content-type-options": "nosniff",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "camera=(), microphone=()",
+    },
+}
+_BAD_HEADERS = {"server": "nginx/1.18.0", "x-powered-by": "PHP/7.2.24"}
 
 
 def is_demo_host(host: str, registrable: str) -> bool:
@@ -212,7 +311,10 @@ def demo_observations(
         tls=TlsObs(
             status="collected",
             presented=True,
-            verified=True,
+            verified=t["verified"],
+            self_signed=t["self_signed"],
+            sct_count=t["sct_count"],
+            revocation=dict(t["revocation"]),
             hostname_ok=True,
             issuer_cn=t["issuer_cn"],
             root_issuer_cn=t["root_issuer_cn"],
@@ -234,6 +336,12 @@ def demo_observations(
             forms=forms,
             payees=list(page["payees"]),
             logo_phash=page["logo"],
+            response_headers=dict(_HEADERS.get(registrable, _BAD_HEADERS)),
+            set_cookies=(
+                []
+                if registrable in _HEADERS
+                else [{"name": "sid", "secure": False, "httponly": False}]
+            ),
         ),
         simulated=True,
     )

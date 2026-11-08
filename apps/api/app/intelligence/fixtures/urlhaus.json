@@ -1,0 +1,19 @@
+{
+  "_note": "SIMULATED URLhaus-shaped listings for the RFC 2606 demo hosts only. Not real abuse.ch data. Used when INTEL_MODE resolves to 'fixture' (THREAT_INTELLIGENCE_SOURCES.md §3).",
+  "hosts": {
+    "collect.badhost.example": {
+      "listing_id": "SIM-URLHAUS-000101",
+      "threat": "phishing_credential_sink",
+      "url_status": "online",
+      "tags": ["phishing", "simulated"],
+      "date_added": "2026-11-01 08:00:00 UTC"
+    },
+    "secure-pay.badhost.example": {
+      "listing_id": "SIM-URLHAUS-000102",
+      "threat": "payment_fraud",
+      "url_status": "online",
+      "tags": ["payment", "simulated"],
+      "date_added": "2026-11-03 10:30:00 UTC"
+    }
+  }
+}

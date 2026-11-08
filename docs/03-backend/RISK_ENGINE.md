@@ -228,6 +228,22 @@ live here; collectors may lower confidence with a documented reason.
 | `R-INF-13` | `PAGE_FETCH_BLOCKED` | low | Target refused/blocked content fetch |
 | `R-INF-14` | `DOM_FINGERPRINT_MATCH` | medium | Structure hash matches a confirmed phishing kit |
 | `R-INF-15` | `ALL_CHECKS_UNAVAILABLE` | high | No collector succeeded |
+| `R-INF-16` | `CERT_EXPIRING_SOON` | low | 0–14 days to expiry |
+| `R-INF-17` | `CERT_NOT_YET_VALID` | medium | `not_before` in the future |
+| `R-INF-18` | `CERT_SELF_SIGNED` | high | Issuer = subject (subsumes `R-INF-06`) |
+| `R-INF-19` | `CERT_REVOKED` | critical | OCSP says revoked (timeouts are `unavailable`, never good) |
+| `R-INF-20` | `CERT_NO_EMBEDDED_SCT` | low (conf 0.5) | Verified chain, no embedded SCTs |
+
+Owner of `R-INF-16`…`R-INF-20` and the certificate report: [`CERTIFICATE_ANALYSIS.md`](CERTIFICATE_ANALYSIS.md).
+
+`R-REP-06` `LISTED_BY_EXTERNAL_FEED` (reputation, critical): an attributed external feed (URLhaus)
+lists the host. Owner: [`../02-architecture/THREAT_INTELLIGENCE_SOURCES.md`](../02-architecture/THREAT_INTELLIGENCE_SOURCES.md).
+
+### 7.8 Posture checks (unscored)
+
+`R-HDR-01`…`R-HDR-09` live in `codes.POSTURE`, not `RULES`: they are reported in
+`result.security_posture` with impact, remediation and limitations, and **never** contribute points
+or change a decision. List: `CERTIFICATE_ANALYSIS.md` §5.
 
 ### 7.6a Subsumption (one fact is never counted twice in a group)
 
@@ -280,7 +296,7 @@ Emitted only by message analysis (`POST /messages/analyse`); never by a URL scan
 | `O-3` | `PAYEE_LINKED_TO_REPORTED_SCAM`, intent `payment` | `BLOCK` |
 | `O-4` | `CREDENTIAL_DESTINATION_MISMATCH` **or** `CREDENTIALS_POSTED_OVER_HTTP`, intent `login` | `BLOCK` |
 | `O-5` | `CREDENTIALS_POSTED_TO_THIRD_PARTY` with action origin cross-registrable-domain, intent `login` | `BLOCK` |
-| `O-6` | `KNOWN_MALICIOUS_REPUTATION` | `BLOCK` |
+| `O-6` | `KNOWN_MALICIOUS_REPUTATION` **or** `LISTED_BY_EXTERNAL_FEED` | `BLOCK` |
 | `O-7` | `TARGET_UNREACHABLE` and no other findings | `UNKNOWN` |
 
 Overrides are additive and recorded in `overrides[]` with their ID. An override can only raise the

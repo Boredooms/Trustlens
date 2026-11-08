@@ -142,6 +142,36 @@ def evaluate(
             f"{obs.host} has a reputation of {ctx.domain_reputation} from confirmed reports.",
             observed={"reputation_score": ctx.domain_reputation},
         )
+    for src in obs.intel.sources:
+        if src.get("status") == "listed":
+            # Attribution travels with the finding; a fixture hit is labelled simulated.
+            ev.findings.append(
+                Finding(
+                    code="LISTED_BY_EXTERNAL_FEED",
+                    confidence=D("1.00"),
+                    detail=(
+                        f"{src['source_name']} lists {src['indicator']} "
+                        f"({src.get('threat') or 'malicious'}), queried {src['queried_at']}."
+                    ),
+                    observed={
+                        k: src.get(k)
+                        for k in (
+                            "source",
+                            "source_name",
+                            "mode",
+                            "indicator",
+                            "listing_id",
+                            "threat",
+                            "url_status",
+                            "reference",
+                            "queried_at",
+                        )
+                    },
+                    evidence_keys=("intel",),
+                    simulated=sim or src.get("mode") == "fixture",
+                )
+            )
+            break
     strongest = max(ctx.related_threats, key=lambda t: t.confidence, default=None)
     if strongest is not None and strongest.confidence >= D("0.70"):
         add(
@@ -377,11 +407,56 @@ def evaluate(
                 f"The certificate does not cover {obs.host}.",
                 keys=("tls",),
             )
+        elif t.self_signed:
+            # Subsumes CERT_CHAIN_UNVERIFIED: the same fact, stated precisely (§7.6a).
+            add(
+                "CERT_SELF_SIGNED",
+                "1.00",
+                f"The certificate is issued by itself ({t.issuer_cn}).",
+                observed={"issuer": t.issuer_cn, "subject": t.subject_cn},
+                keys=("tls",),
+            )
         elif not t.verified:
             add(
                 "CERT_CHAIN_UNVERIFIED",
                 "1.00",
                 "The certificate chain could not be verified.",
+                keys=("tls",),
+            )
+        if t.days_to_expiry is not None and 0 <= t.days_to_expiry <= 14:
+            add(
+                "CERT_EXPIRING_SOON",
+                "1.00",
+                f"The certificate expires in {t.days_to_expiry} days.",
+                observed={"days_to_expiry": t.days_to_expiry, "not_after": t.not_after},
+                keys=("tls",),
+            )
+        if t.not_yet_valid:
+            add(
+                "CERT_NOT_YET_VALID",
+                "1.00",
+                "The certificate is not valid yet.",
+                observed={"not_before": t.not_before},
+                keys=("tls",),
+            )
+        if t.revocation.get("status") == "revoked":
+            add(
+                "CERT_REVOKED",
+                "1.00",
+                "The issuer reports this certificate as revoked.",
+                observed={
+                    k: t.revocation.get(k)
+                    for k in ("responder", "this_update", "revoked_at", "reason")
+                },
+                keys=("tls",),
+            )
+        if t.sct_count == 0 and t.verified:
+            # Low confidence: SCTs can also arrive in the TLS handshake or a stapled OCSP response.
+            add(
+                "CERT_NO_EMBEDDED_SCT",
+                "0.50",
+                "The certificate carries no embedded Certificate Transparency timestamps.",
+                observed={"embedded_scts": 0},
                 keys=("tls",),
             )
         if t.key_bits and (

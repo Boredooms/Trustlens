@@ -64,6 +64,16 @@ TEMPLATES: dict[str, str] = {
     "PAGE_FETCH_BLOCKED": "{domain} refused our fetch, so page checks could not run.",
     "DOM_FINGERPRINT_MATCH": "The page structure matches a known phishing kit.",
     "ALL_CHECKS_UNAVAILABLE": "None of our checks could complete for {domain}.",
+    "CERT_EXPIRING_SOON": "The certificate for {domain} expires in {days_to_expiry} days.",
+    "CERT_NOT_YET_VALID": "The certificate for {domain} is not valid yet.",
+    "CERT_SELF_SIGNED": "The certificate for {domain} is self-signed; no authority vouches for it.",
+    "CERT_REVOKED": "The issuer has revoked the certificate for {domain}.",
+    "CERT_NO_EMBEDDED_SCT": (
+        "The certificate for {domain} carries no embedded Certificate Transparency proof."
+    ),
+    "LISTED_BY_EXTERNAL_FEED": (
+        "{source_name} lists {indicator} as malicious ({threat}); listing {listing_id}."
+    ),
     # Messages (MESSAGE_ANALYSIS.md §4)
     "MESSAGE_CREDENTIAL_REQUEST": "The message asks you to share {categories}.",
     "MESSAGE_PAYMENT_DEMAND": "The message asks you to make a payment.",

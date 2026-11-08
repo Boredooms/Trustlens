@@ -167,6 +167,26 @@ _RULES = [
         "R-INF-14", "DOM_FINGERPRINT_MATCH", INF, M, "Page structure matches a known phishing kit"
     ),
     Rule("R-INF-15", "ALL_CHECKS_UNAVAILABLE", INF, H, "No check could complete"),
+    # Certificate depth (CERTIFICATE_ANALYSIS.md §2)
+    Rule("R-INF-16", "CERT_EXPIRING_SOON", INF, L, "Certificate expires within 14 days"),
+    Rule("R-INF-17", "CERT_NOT_YET_VALID", INF, M, "Certificate is not valid yet"),
+    Rule("R-INF-18", "CERT_SELF_SIGNED", INF, H, "Certificate is self-signed"),
+    Rule("R-INF-19", "CERT_REVOKED", INF, C, "Certificate has been revoked by its issuer"),
+    Rule(
+        "R-INF-20",
+        "CERT_NO_EMBEDDED_SCT",
+        INF,
+        L,
+        "Certificate carries no Certificate Transparency proof",
+    ),
+    # External intelligence (THREAT_INTELLIGENCE_SOURCES.md)
+    Rule(
+        "R-REP-06",
+        "LISTED_BY_EXTERNAL_FEED",
+        REP,
+        C,
+        "Listed as malicious by an external threat feed",
+    ),
     # 7.7 Messages (MESSAGE_ANALYSIS.md §4) — emitted only by message analysis
     Rule("R-MSG-01", "MESSAGE_CREDENTIAL_REQUEST", CRD, H, "Message asks for secret credentials"),
     Rule("R-MSG-02", "MESSAGE_PAYMENT_DEMAND", PAY, H, "Message asks for a payment"),
@@ -202,6 +222,100 @@ _RULES = [
         "No malicious indicator found in the executed checks",
     ),
 ]
+
+
+@dataclass(frozen=True)
+class PostureCheck:
+    """Unscored security-posture finding (RISK_ENGINE.md §7.8). Never changes a verdict: missing
+    hardening headers say nothing about whether a site is a phishing page."""
+
+    check_id: str
+    code: str
+    severity: Severity
+    title: str
+    impact: str
+    remediation: str
+
+
+POSTURE_LIMITATION = (
+    "Based on one unauthenticated response; other pages, server-side validation and "
+    "authenticated areas were not tested."
+)
+_POSTURE = [
+    PostureCheck(
+        "R-HDR-01",
+        "HSTS_MISSING",
+        L,
+        "No Strict-Transport-Security header",
+        "Browsers may be downgraded to HTTP on a first visit or a hostile network.",
+        "Send Strict-Transport-Security: max-age=31536000; includeSubDomains.",
+    ),
+    PostureCheck(
+        "R-HDR-02",
+        "CSP_MISSING_OR_WEAK",
+        L,
+        "No or permissive Content-Security-Policy",
+        "Injected scripts would run with the page's privileges.",
+        "Define a CSP without 'unsafe-inline' or wildcard script sources.",
+    ),
+    PostureCheck(
+        "R-HDR-03",
+        "NOSNIFF_MISSING",
+        NFO,
+        "No X-Content-Type-Options: nosniff",
+        "Browsers may guess content types and execute uploaded files.",
+        "Send X-Content-Type-Options: nosniff.",
+    ),
+    PostureCheck(
+        "R-HDR-04",
+        "REFERRER_POLICY_MISSING",
+        NFO,
+        "No Referrer-Policy",
+        "Full URLs, including tokens in query strings, can leak to other sites.",
+        "Send Referrer-Policy: strict-origin-when-cross-origin (or stricter).",
+    ),
+    PostureCheck(
+        "R-HDR-05",
+        "PERMISSIONS_POLICY_MISSING",
+        NFO,
+        "No Permissions-Policy",
+        "Embedded content can request powerful browser features.",
+        "Send a Permissions-Policy that disables unused features.",
+    ),
+    PostureCheck(
+        "R-HDR-06",
+        "COOKIE_WITHOUT_SECURE_OR_HTTPONLY",
+        M,
+        "Cookie set without Secure or HttpOnly",
+        "Session cookies can be read by scripts or sent over plain HTTP.",
+        "Set Secure and HttpOnly (and SameSite) on session cookies.",
+    ),
+    PostureCheck(
+        "R-HDR-07",
+        "SERVER_VERSION_DISCLOSED",
+        L,
+        "Server software version disclosed",
+        "Exact versions help attackers match known vulnerabilities.",
+        "Remove version numbers from Server and X-Powered-By.",
+    ),
+    PostureCheck(
+        "R-HDR-08",
+        "MIXED_CONTENT",
+        M,
+        "HTTP resources on an HTTPS page",
+        "Scripts or images loaded over HTTP can be modified in transit.",
+        "Load every subresource over HTTPS.",
+    ),
+    PostureCheck(
+        "R-HDR-09",
+        "PLAIN_HTTP_SITE",
+        M,
+        "Site served over plain HTTP",
+        "Everything sent to or from the site can be read and changed in transit.",
+        "Serve the site over HTTPS and redirect HTTP to HTTPS.",
+    ),
+]
+POSTURE: dict[str, PostureCheck] = {p.code: p for p in _POSTURE}
 
 # Message policy sets (RISK_ENGINE.md §8.1a).
 LANGUAGE_ONLY_CODES = frozenset({"MESSAGE_URGENCY_PRESSURE", "MESSAGE_CONTACT_CHANNEL_MISMATCH"})

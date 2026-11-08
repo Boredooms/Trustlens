@@ -118,6 +118,11 @@ class Settings(BaseSettings):
     qstash_token: SecretStr | None = None
     qstash_url: str = "https://qstash.upstash.io"
 
+    # ── 2.8 External intelligence (docs/02-architecture/THREAT_INTELLIGENCE_SOURCES.md) ─
+    # auto = live with URLHAUS_AUTH_KEY, else fixture in DEMO_MODE, else off.
+    intel_mode: Literal["auto", "live", "fixture", "off"] = "auto"
+    urlhaus_auth_key: SecretStr | None = None
+
     # ── 2.7 Web3 report registry (docs/02-architecture/WEB3_REGISTRY.md §7) ──────
     # Unset CHAIN_RPC_URL disables anchoring; scans and reports never depend on the chain.
     chain_rpc_url: str | None = None

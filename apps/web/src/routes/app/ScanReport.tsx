@@ -7,6 +7,7 @@ import { CoverageMeter, ScoreDial } from "@/components/domain/Meters";
 import { FindingRow, ObservedExpected } from "@/components/domain/FindingRow";
 import { EvidenceDrawer } from "@/components/domain/EvidenceDrawer";
 import { TechnicalPanel } from "@/components/domain/TechnicalPanel";
+import { CertificateReportCard, ExternalIntelLine, SecurityPostureCard } from "@/components/domain/TrustReports";
 import { ReportSiteDialog } from "@/components/domain/ReportSiteDialog";
 import { TimeText, UrlText } from "@/components/domain/Text";
 import { Button } from "@/components/ui/Button";
@@ -498,6 +499,12 @@ export default function ScanReport() {
                 payee strings the findings rely on.
               </p>
             </Card>
+            <CertificateReportCard result={scan.result} />
+            <Card title="External intelligence">
+              <ExternalIntelLine result={scan.result} />
+              <p className="mt-2 text-xs text-muted">Feed data is attributed to its source; absence from a feed is not evidence of safety.</p>
+            </Card>
+            <SecurityPostureCard result={scan.result} />
             <Card title="Technical results">
               <TechnicalPanel result={scan.result} />
             </Card>

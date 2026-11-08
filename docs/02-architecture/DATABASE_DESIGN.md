@@ -501,6 +501,13 @@ correlation), `char_count 1–20000`, `decision`, `risk_score`, `finding_codes T
 **No raw text, email, phone or payee is stored.** RLS: `user_id = current user`. Owner:
 [`../03-backend/MESSAGE_ANALYSIS.md`](../03-backend/MESSAGE_ANALYSIS.md) §7.
 
+### 7.6 `intel_observations` (external feed cache, migration `c5a0intel0001`)
+
+`id`, `source`, `indicator_type`, `indicator_hash CHAR(64)` (sha256 of `host:<host>`), `status`
+(`listed|not_listed` — failures are never cached), `listing_id`, `result JSONB` (attributed answer),
+`queried_at`, `expires_at` (TTL 6 h), `created_at`. Index `(source, indicator_hash, expires_at)`.
+RLS on, no policy. Owner: [`THREAT_INTELLIGENCE_SOURCES.md`](THREAT_INTELLIGENCE_SOURCES.md) §4.
+
 ---
 
 ## 8. Representative DDL

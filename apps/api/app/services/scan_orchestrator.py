@@ -13,6 +13,7 @@ import time
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
+from urllib.parse import urlsplit
 
 import httpx
 from fastapi import FastAPI
@@ -21,11 +22,13 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.config import Settings
 from app.errors import DomainError
+from app.intelligence import feeds
 from app.intelligence.graph import EdgeRow, EntityRow, upsert_edges, upsert_entities
 from app.logging import get_logger
 from app.models.tables import Evidence, Scan, ScanFinding
 from app.risk.codes import ENGINE_VERSION
 from app.risk.engine import Finding, Verdict, compute_coverage, decide
+from app.risk.posture import certificate_report, header_posture
 from app.risk.reasons import reasons as render_reasons
 from app.risk.rules import Evaluation, TrustContext, evaluate, normalise_payee
 from app.schemas.enums import Intent
@@ -33,7 +36,7 @@ from app.security.redaction import redact
 from app.services import guard
 from app.services.collectors import collect
 from app.services.context import build_context
-from app.services.observations import ClientObservation, Observations
+from app.services.observations import ClientObservation, EvidenceDraft, Observations
 from app.utils import new_ulid, utcnow
 
 log = get_logger("scan")
@@ -129,6 +132,28 @@ async def execute(
             page=PageObs(status="unavailable"),
         )
 
+    # External intelligence (THREAT_INTELLIGENCE_SOURCES.md): the scanned host and the final hop.
+    if obs.dns.status == "collected" and not obs.dns.nxdomain:
+        final_host = urlsplit(obs.redirects.final_url or "").hostname
+        obs.intel = await feeds.lookup(
+            db_factory, settings, http, [obs.host, final_host or obs.host]
+        )
+        if obs.intel.sources:
+            listed = [s for s in obs.intel.sources if s["status"] == "listed"]
+            obs.evidence.append(
+                EvidenceDraft(
+                    "intel",
+                    "intel",
+                    (
+                        f"{listed[0]['source_name']} lists {listed[0]['indicator']}"
+                        if listed
+                        else f"{obs.intel.sources[0]['source_name']}: {obs.intel.status}"
+                    )
+                    + (" (simulated)" if obs.intel.sources[0]["mode"] == "fixture" else ""),
+                    {"sources": obs.intel.sources, "simulated": obs.simulated},
+                )
+            )
+
     async with db_factory() as db:
         ctx = await build_context(db, obs, settings, organisation_id=org_id, client=client)
         evaluation = evaluate(obs, ctx, intent, client)
@@ -163,6 +188,8 @@ async def execute(
         scan.overrides = list(verdict.overrides)
         scan.result = {
             **obs.result_blocks(),
+            "certificate": certificate_report(obs.tls, evaluation.findings, obs.scheme),
+            "security_posture": header_posture(obs),
             "action": _action_block(evaluation, ctx, intent),
             "engine_version": ENGINE_VERSION,
         }

@@ -207,12 +207,50 @@ async def collect_page(
         return PageObs(status="unavailable"), RedirectObs(status="unavailable")
     if resp is None:
         return PageObs(status="unavailable"), redirects
+    headers, cookies = response_posture(resp)
     if resp.status_code in (401, 403, 429, 503):
-        return PageObs(status="unavailable", fetch_blocked=True), redirects
+        return PageObs(
+            status="unavailable", fetch_blocked=True, response_headers=headers, set_cookies=cookies
+        ), redirects
     if "html" not in resp.headers.get("content-type", "html"):
-        return PageObs(status="collected"), redirects
+        return PageObs(status="collected", response_headers=headers, set_cookies=cookies), redirects
     html = body.decode(resp.encoding or "utf-8", errors="replace")
-    return analyse_html(html, redirects.final_url or url), redirects
+    page = analyse_html(html, redirects.final_url or url)
+    page.response_headers, page.set_cookies = headers, cookies
+    if (redirects.final_url or url).startswith("https://"):
+        page.mixed_content = len(MIXED_CONTENT_RE.findall(html))
+    return page, redirects
+
+
+# Header posture (CERTIFICATE_ANALYSIS.md §5): headers of the one response we already fetched.
+POSTURE_HEADERS = (
+    "strict-transport-security",
+    "content-security-policy",
+    "x-content-type-options",
+    "referrer-policy",
+    "permissions-policy",
+    "server",
+    "x-powered-by",
+)
+MIXED_CONTENT_RE = re.compile(
+    r"(?is)<(?:script|img|iframe|link|audio|video|source|embed|object)\b[^>]*?"
+    r"\b(?:src|href|data)\s*=\s*[\"']http://"
+)
+
+
+def response_posture(resp: httpx.Response) -> tuple[dict[str, str], list[dict[str, Any]]]:
+    headers = {h: resp.headers[h][:300] for h in POSTURE_HEADERS if h in resp.headers}
+    cookies = []
+    for raw in resp.headers.get_list("set-cookie")[:20]:
+        parts = [p.strip().lower() for p in raw.split(";")]
+        cookies.append(
+            {
+                "name": raw.split("=", 1)[0].strip()[:64],  # name only: never the value
+                "secure": "secure" in parts,
+                "httponly": "httponly" in parts,
+            }
+        )
+    return headers, cookies
 
 
 async def collect_rdap(
@@ -239,7 +277,9 @@ async def collect_rdap(
         return RegistrationObs(status="unavailable")
 
 
-async def collect_tls(target: guard.Target, settings: Settings) -> TlsObs:
+async def collect_tls(
+    target: guard.Target, settings: Settings, client: httpx.AsyncClient | None = None
+) -> TlsObs:
     if target.scheme != "https":
         return TlsObs(status="collected", presented=False)
     from cryptography import x509
@@ -302,7 +342,18 @@ async def collect_tls(target: guard.Target, settings: Settings) -> TlsObs:
     )
     key_bits = getattr(key, "key_size", None)
     not_after = cert.not_valid_after_utc
+    from app.services import certificates
+
+    # Revocation only for a chain that otherwise validates: an untrusted chain is already a
+    # finding, and its AIA URLs deserve no extra fetches. Failures are "unavailable".
+    revocation: dict[str, Any] = {"status": "skipped", "reason": "chain_not_verified"}
+    if verified and client is not None:
+        revocation = await certificates.check_revocation(cert, client, settings)
     return TlsObs(
+        self_signed=cert.issuer == cert.subject,
+        not_yet_valid=cert.not_valid_before_utc > datetime.now(UTC),
+        sct_count=certificates.sct_count(cert),
+        revocation=revocation,
         status="collected",
         presented=True,
         verified=verified,
@@ -333,7 +384,7 @@ async def collect(
 
     dns_obs, tls_obs, (page_obs, redirect_obs), reg_obs = await asyncio.gather(
         collect_dns(target.host, settings.dns_timeout_seconds),
-        collect_tls(target, settings),
+        collect_tls(target, settings, client),
         collect_page(client, target.normalised_url, settings),
         collect_rdap(client, target.registrable_domain, settings),
     )
