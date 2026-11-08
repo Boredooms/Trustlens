@@ -492,6 +492,15 @@ snapshot), `payload_hash`, `salt_ciphertext` (Fernet, never logged), `commitment
 `tx_hash`, `block_number`, `anchored_at`, `created_by`. CHECKs enforce `0x`+64-hex hashes. RLS on, no
 policy. Owner and full column list: [`WEB3_REGISTRY.md`](WEB3_REGISTRY.md) §6.
 
+### 7.5 `message_analyses` (message analysis, migration `c4a0msg00001`)
+
+`id`, `user_id` (FK users SET NULL), `api_key_id` (FK api_keys SET NULL), `channel`
+(`email|sms|dm|other`), `text_sha256 CHAR(64)` (normalised-text hash, indexed, exact-repeat
+correlation), `char_count 1–20000`, `decision`, `risk_score`, `finding_codes TEXT[]`,
+`link_domains TEXT[]`, `link_scan_ids CHAR(26)[]`, `engine_version`, `simulated`, `created_at`.
+**No raw text, email, phone or payee is stored.** RLS: `user_id = current user`. Owner:
+[`../03-backend/MESSAGE_ANALYSIS.md`](../03-backend/MESSAGE_ANALYSIS.md) §7.
+
 ---
 
 ## 8. Representative DDL

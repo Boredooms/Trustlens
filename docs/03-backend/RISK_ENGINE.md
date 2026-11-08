@@ -242,6 +242,22 @@ When a specific rule fires, the generic rule it refines for the same fact is not
 Without this the worked example (§5.2) would score 64, not 62: `CREDENTIALS_POSTED_TO_THIRD_PARTY`
 describes the same form action as `CREDENTIAL_DESTINATION_MISMATCH`.
 
+### 7.7 Message codes (owner: [`MESSAGE_ANALYSIS.md`](MESSAGE_ANALYSIS.md) §4)
+
+Emitted only by message analysis (`POST /messages/analyse`); never by a URL scan.
+
+| Rule | Code | Group | Sev | Trigger |
+| --- | --- | --- | --- | --- |
+| `R-MSG-01` | `MESSAGE_CREDENTIAL_REQUEST` | credential_destination | high | Asks for OTP, PIN, password, CVV, KYC, seed phrase or remote access (negated sentences skipped) |
+| `R-MSG-02` | `MESSAGE_PAYMENT_DEMAND` | payment_destination | high | Asks for a transfer or fee (confirmations and negations skipped) |
+| `R-MSG-03` | `MESSAGE_IMPERSONATES_ORGANISATION` | identity | medium | Claims X; `From:` domain is not verified by X |
+| `R-MSG-04` | `MESSAGE_LINK_TO_UNVERIFIED_CLAIM` | identity | medium | Claims X; links to a domain X has not verified |
+| `R-MSG-05` | `MESSAGE_URGENCY_PRESSURE` | identity | low | Urgency lexicon (language-only) |
+| `R-MSG-06` | `MESSAGE_CONTACT_CHANNEL_MISMATCH` | identity | low | Free-mail sender for an organisation claim, or off-channel contact (language-only) |
+| `R-MSG-07` | `MESSAGE_LINK_BLOCKED` | reputation | critical | A link's own scan decided `BLOCK` |
+| `R-MSG-08` | `MESSAGE_LINK_WARNED` | reputation | medium | A link's own scan decided `WARN` |
+| `R-MSG-09` | `MESSAGE_NO_MALICIOUS_INDICATOR` | identity | info | Nothing else fired |
+
 ### 7.6 Cross-cutting codes (not scored)
 
 | Code | Purpose |
@@ -269,6 +285,22 @@ describes the same form action as `CREDENTIAL_DESTINATION_MISMATCH`.
 
 Overrides are additive and recorded in `overrides[]` with their ID. An override can only raise the
 decision; it never lowers it.
+
+### 8.1a Message policy (messages only; owner: `MESSAGE_ANALYSIS.md` §5)
+
+Applied by `decide_message` after `decide`. These are the only rules allowed to **lower** a decision,
+and only for messages, because the problem statement forbids condemning a message on language alone.
+
+| ID | Condition | Effect |
+| --- | --- | --- |
+| `O-10` | `MESSAGE_LINK_BLOCKED` | `BLOCK` |
+| `O-8` | Only language-only findings (`MESSAGE_URGENCY_PRESSURE`, `MESSAGE_CONTACT_CHANNEL_MISMATCH`) | exactly `REVIEW` |
+| `O-9` | Non-info findings, none corroborating, sender not verified | clamp to `REVIEW`…`WARN` |
+| — | Any corroborating finding | floor `WARN` |
+
+Corroborating codes: `PAYEE_NOT_IN_VERIFIED_PROFILE`, `PAYEE_LINKED_TO_REPORTED_SCAM`,
+`KNOWN_MALICIOUS_REPUTATION`, `MESSAGE_IMPERSONATES_ORGANISATION`, `MESSAGE_LINK_TO_UNVERIFIED_CLAIM`,
+`MESSAGE_LINK_BLOCKED`, `MESSAGE_LINK_WARNED`.
 
 ### 8.2 Band table (no override applies)
 
@@ -318,6 +350,21 @@ payment page) could score `LOW` and band to `ALLOW`. Overrides still decide `BLO
 - Overrides change the decision, never the band: the worked example is `BLOCK` with `risk_level: HIGH`.
 
 ---
+
+### 8.7 Problem-statement risk classes (derived, never stored)
+
+`app/risk/classes.py` is the single mapping; read models (scans, assessments, messages) expose it as
+`risk_class`. Clients never map it themselves.
+
+| `Decision` | `risk_class` | Problem statement | Meaning here |
+| --- | --- | --- | --- |
+| `BLOCK` | `confirmed_malicious` | Confirmed Malicious | Authoritative intelligence or a forced override says stop |
+| `WARN` | `high` | High Risk | Multiple significant indicators |
+| `REVIEW` | `suspicious` | Suspicious | One or more indicators need investigation |
+| `ALLOW` | `low` | Low Risk | No known threat **within executed checks** — never "safe" |
+| `UNKNOWN` | `inconclusive` | Inconclusive | Insufficient data or unavailable sources |
+
+`low` and `inconclusive` always carry: "Absence of evidence is not evidence of safety."
 
 ## 9. Reasons and explainability
 

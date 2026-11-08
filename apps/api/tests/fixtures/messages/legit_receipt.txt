@@ -1,0 +1,4 @@
+From: Northstar University Accounts <accounts@northstar-demo.example>
+
+Payment received. Thank you for your payment of Rs 45,000 towards the semester fee.
+Receipt number NS-2026-0042. Your receipt is available at https://northstar-demo.example/receipts.

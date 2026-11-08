@@ -9,6 +9,7 @@ import {
   LayoutGrid,
   LogOut,
   Menu,
+  MessageSquareWarning,
   Network,
   ScanSearch,
   Settings,
@@ -39,6 +40,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { to: "/app", label: "Overview", icon: LayoutGrid, end: true },
   { to: "/app/scan", label: "Scan", icon: ScanSearch },
+  { to: "/app/messages", label: "Messages", icon: MessageSquareWarning },
   { to: "/app/intelligence", label: "Intelligence", icon: Network },
   { to: "/app/campaigns", label: "Campaigns", icon: Waypoints },
   { to: "/app/organisations", label: "Organisations", icon: Building2 },

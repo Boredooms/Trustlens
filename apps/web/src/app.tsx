@@ -11,6 +11,7 @@ import { NotFound } from "@/routes/public/NotFound";
 const Overview = lazy(() => import("@/routes/app/Overview"));
 const ScanIndex = lazy(() => import("@/routes/app/ScanIndex"));
 const ScanReport = lazy(() => import("@/routes/app/ScanReport"));
+const Messages = lazy(() => import("@/routes/app/Messages"));
 const InvestigationView = lazy(() => import("@/routes/app/Investigation"));
 const Intelligence = lazy(() => import("@/routes/app/Intelligence"));
 const Campaigns = lazy(() => import("@/routes/app/Campaigns"));
@@ -70,6 +71,7 @@ export const routes: RouteObject[] = [
       { index: true, element: <Overview />, errorElement: <RouteError /> },
       { path: "scan", element: <ScanIndex />, errorElement: <RouteError /> },
       { path: "scan/:scanId", element: <ScanReport />, errorElement: <RouteError /> },
+      { path: "messages", element: <Messages />, errorElement: <RouteError /> },
       { path: "investigations/:investigationId", element: <InvestigationView />, errorElement: <RouteError /> },
       { path: "intelligence", element: <Intelligence />, errorElement: <RouteError /> },
       { path: "campaigns", element: <Campaigns />, errorElement: <RouteError /> },

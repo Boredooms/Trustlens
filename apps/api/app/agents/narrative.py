@@ -302,7 +302,10 @@ def template_narrative(pack: dict[str, Any]) -> dict[str, Any]:
 
 
 async def llm_narrative(
-    pack: dict[str, Any], settings: Settings, repair_hint: str | None = None
+    pack: dict[str, Any],
+    settings: Settings,
+    repair_hint: str | None = None,
+    headings: tuple[str, ...] = HEADINGS,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """OpenAI-compatible chat call. Only the evidence pack is sent (trust boundary B3)."""
     if settings.llm_api_key is None:
@@ -312,7 +315,7 @@ async def llm_narrative(
         "Write the incident narrative as one JSON object with exactly this shape:\n"
         '{"sections": [{"heading": "<one allowed heading>", "claims": '
         '[{"text": "<one sentence, 20-400 chars>", "refs": ["F-1", "E-2"]}]}]}\n'
-        f"Allowed headings, in this order: {json.dumps(list(HEADINGS))}.\n"
+        f"Allowed headings, in this order: {json.dumps(list(headings))}.\n"
         "refs are bare reference ids from the pack (F-n findings, E-n evidence, R-n related), "
         "without brackets. Use 3-7 sections and 1-4 claims per section.\n"
         "Evidence pack:\n" + json.dumps({k: v for k, v in pack.items() if k != "references"})
@@ -356,7 +359,7 @@ async def llm_narrative(
 
 
 def validate(
-    draft: Any, pack: dict[str, Any]
+    draft: Any, pack: dict[str, Any], headings: tuple[str, ...] = HEADINGS
 ) -> tuple[dict[str, Any] | None, list[dict[str, Any]], str | None]:
     """Schema + reference check. Returns (narrative|None, dropped_claims, error)."""
     known = {r["id"] for r in pack["references"]}
@@ -366,7 +369,7 @@ def validate(
     dropped: list[dict[str, Any]] = []
     sections = []
     for sec in draft["sections"][:6]:
-        if not isinstance(sec, dict) or sec.get("heading") not in HEADINGS:
+        if not isinstance(sec, dict) or sec.get("heading") not in headings:
             continue
         claims = []
         for c in (sec.get("claims") or [])[:4]:

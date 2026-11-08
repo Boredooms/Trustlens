@@ -564,6 +564,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/messages/analyse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Analyse a pasted message */
+        post: operations["analyse_message_api_v1_messages_analyse_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organisations": {
         parameters: {
             query?: never;
@@ -1347,6 +1364,8 @@ export interface components {
             identity_verified: boolean;
             /** Reasons */
             reasons: string[];
+            /** Risk Class */
+            risk_class?: ("confirmed_malicious" | "high" | "suspicious" | "low" | "inconclusive") | null;
             risk_level: components["schemas"]["RiskLevel"];
             /** Risk Score */
             risk_score: number;
@@ -1572,6 +1591,15 @@ export interface components {
             refs: string[];
             /** Text */
             text: string;
+        };
+        /** ClaimedOrganisation */
+        ClaimedOrganisation: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Verified Domains */
+            verified_domains: string[];
         };
         /** Coverage */
         Coverage: {
@@ -2203,6 +2231,155 @@ export interface components {
             /** Role */
             role: string;
         };
+        /** MessageAnalyseRequest */
+        MessageAnalyseRequest: {
+            /**
+             * Channel
+             * @default other
+             * @enum {string}
+             */
+            channel: "email" | "sms" | "dm" | "other";
+            /** Organisation Id */
+            organisation_id?: string | null;
+            /** Text */
+            text: string;
+        };
+        /** MessageAnalysisOut */
+        MessageAnalysisOut: {
+            /** Analysed At */
+            analysed_at: string;
+            /** Caveat */
+            caveat: string | null;
+            /** Channel */
+            channel: string;
+            claimed_organisation: components["schemas"]["ClaimedOrganisation"] | null;
+            correlation: components["schemas"]["MessageCorrelation"];
+            coverage: components["schemas"]["Coverage"];
+            decision: components["schemas"]["Decision"];
+            /** Engine Version */
+            engine_version: string;
+            /** Findings */
+            findings: components["schemas"]["MessageFinding"][];
+            /** Id */
+            id: string;
+            indicators: components["schemas"]["MessageIndicators"];
+            /** Links */
+            links: components["schemas"]["MessageLink"][];
+            narrative: components["schemas"]["MessageNarrative"];
+            /** Overrides */
+            overrides: string[];
+            /** Reasons */
+            reasons: string[];
+            /**
+             * Risk Class
+             * @enum {string}
+             */
+            risk_class: "confirmed_malicious" | "high" | "suspicious" | "low" | "inconclusive";
+            risk_level: components["schemas"]["RiskLevel"];
+            /** Risk Score */
+            risk_score: number;
+            /** Simulated */
+            simulated: boolean;
+        };
+        /** MessageCorrelation */
+        MessageCorrelation: {
+            /**
+             * Same Text Count
+             * @description Earlier analyses of exactly this text (normalised)
+             */
+            same_text_count: number;
+            /**
+             * Shared Link Domains
+             * @description Link domains seen in earlier analyses, with counts
+             */
+            shared_link_domains: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** MessageFinding */
+        MessageFinding: {
+            /** Code */
+            code: string;
+            /** Confidence */
+            confidence: number;
+            /** Detail */
+            detail: string;
+            /** Expected */
+            expected?: {
+                [key: string]: unknown;
+            } | null;
+            /** Observed */
+            observed?: {
+                [key: string]: unknown;
+            } | null;
+            /** Rule Id */
+            rule_id: string;
+            /** Severity */
+            severity: string;
+            /** Signal Group */
+            signal_group: string;
+            /**
+             * Simulated
+             * @default false
+             */
+            simulated: boolean;
+            /** Title */
+            title: string;
+        };
+        /** MessageIndicators */
+        MessageIndicators: {
+            /**
+             * Emails
+             * @description Masked: first character and domain only
+             */
+            emails: string[];
+            /** Payees */
+            payees: {
+                [key: string]: string;
+            }[];
+            /**
+             * Phones
+             * @description Digit count and country code only
+             */
+            phones: {
+                [key: string]: unknown;
+            }[];
+            /** Sender Domain */
+            sender_domain: string | null;
+            /** Urls */
+            urls: string[];
+        };
+        /** MessageLink */
+        MessageLink: {
+            decision: components["schemas"]["Decision"] | null;
+            /** Error */
+            error?: string | null;
+            /** Finding Codes */
+            finding_codes: string[];
+            /** Registrable Domain */
+            registrable_domain: string;
+            /** Scan Id */
+            scan_id: string | null;
+            /**
+             * Simulated
+             * @default false
+             */
+            simulated: boolean;
+            /** Url */
+            url: string;
+        };
+        /** MessageNarrative */
+        MessageNarrative: {
+            /** Fallback Reason */
+            fallback_reason?: string | null;
+            /** Sections */
+            sections: components["schemas"]["NarrativeSection"][];
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "template" | "llm";
+        };
         /** MonitorCreate */
         MonitorCreate: {
             /** Domain */
@@ -2238,6 +2415,20 @@ export interface components {
         Narrative: {
             /** Sections */
             sections: components["schemas"]["Section"][];
+        };
+        /** NarrativeClaim */
+        NarrativeClaim: {
+            /** Refs */
+            refs: string[];
+            /** Text */
+            text: string;
+        };
+        /** NarrativeSection */
+        NarrativeSection: {
+            /** Claims */
+            claims: components["schemas"]["NarrativeClaim"][];
+            /** Heading */
+            heading: string;
         };
         /** NodeOut */
         NodeOut: {
@@ -2735,6 +2926,8 @@ export interface components {
             result: {
                 [key: string]: unknown;
             };
+            /** Risk Class */
+            risk_class?: ("confirmed_malicious" | "high" | "suspicious" | "low" | "inconclusive") | null;
             risk_level: components["schemas"]["RiskLevel"] | null;
             /** Risk Score */
             risk_score: number | null;
@@ -2760,6 +2953,8 @@ export interface components {
             intent: string;
             /** Registrable Domain */
             registrable_domain: string;
+            /** Risk Class */
+            risk_class?: ("confirmed_malicious" | "high" | "suspicious" | "low" | "inconclusive") | null;
             risk_level: components["schemas"]["RiskLevel"] | null;
             /** Risk Score */
             risk_score: number | null;
@@ -5989,6 +6184,93 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InviteAccepted"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Missing or invalid credentials */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not permitted */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not found or not visible */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation failure or policy rejection */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    analyse_message_api_v1_messages_analyse_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageAnalyseRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageAnalysisOut"];
                 };
             };
             /** @description Malformed request */

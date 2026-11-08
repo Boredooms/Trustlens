@@ -64,6 +64,23 @@ TEMPLATES: dict[str, str] = {
     "PAGE_FETCH_BLOCKED": "{domain} refused our fetch, so page checks could not run.",
     "DOM_FINGERPRINT_MATCH": "The page structure matches a known phishing kit.",
     "ALL_CHECKS_UNAVAILABLE": "None of our checks could complete for {domain}.",
+    # Messages (MESSAGE_ANALYSIS.md §4)
+    "MESSAGE_CREDENTIAL_REQUEST": "The message asks you to share {categories}.",
+    "MESSAGE_PAYMENT_DEMAND": "The message asks you to make a payment.",
+    "MESSAGE_IMPERSONATES_ORGANISATION": (
+        "The message claims to be {org} but was sent from {sender_domain}, "
+        "which {org} does not use."
+    ),
+    "MESSAGE_LINK_TO_UNVERIFIED_CLAIM": (
+        "The message claims to be {org} but links to {link_domain}, which {org} has not verified."
+    ),
+    "MESSAGE_URGENCY_PRESSURE": (
+        "The message uses pressure ({categories}); language alone is not proof."
+    ),
+    "MESSAGE_CONTACT_CHANNEL_MISMATCH": "The message moves contact to an unofficial channel.",
+    "MESSAGE_LINK_BLOCKED": "A link in the message ({link_domain}) was assessed BLOCK.",
+    "MESSAGE_LINK_WARNED": "A link in the message ({link_domain}) was assessed WARN.",
+    "MESSAGE_NO_MALICIOUS_INDICATOR": "No malicious indicator was found in the checks we ran.",
 }
 
 FORBIDDEN_WORDS = ("safe", "secure", "trusted")

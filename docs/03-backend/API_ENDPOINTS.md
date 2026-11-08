@@ -7,7 +7,12 @@
 
 ---
 
-## 1. Index of endpoints (68 active)
+## 1. Index of endpoints (69 active)
+
+#72 (message analysis) is owned by [`MESSAGE_ANALYSIS.md`](MESSAGE_ANALYSIS.md) §2: auth `assess:read`,
+rate group `messages` (60/h user, 600/h API key), body `{text ≤ 20000, channel, organisation_id?}`,
+response `MessageAnalysis`. Assessment responses and scan read models also carry the derived
+`risk_class` (RISK_ENGINE.md §8.7).
 
 Health 3 · Auth 3 (+4 delegated to Clerk) · Devices 2 · Scans 3 · Assess 4 ·
 Organisations 5 · Domains 4 · Recipients 4 · Members 4 · Reports 4 · Appeals 1 ·
@@ -92,6 +97,7 @@ to it, stays stable.
 | 69 | GET | `/api/v1/reports/{reportId}/anchor` |
 | 70 | GET | `/api/v1/public/verify/{reportId}` |
 | 71 | POST | `/api/v1/public/verify/{reportId}` |
+| 72 | POST | `/api/v1/messages/analyse` |
 
 ---
 

@@ -1,0 +1,5 @@
+From: Northstar University Accounts <accounts@northstar-demo.example>
+
+Final reminder: your semester fee of Rs 45,000 is due within 24 hours.
+Pay only through the official portal https://pay.northstar-demo.example/fees or by UPI to fees@northstar-demo.
+Northstar University will never ask for your OTP or password. Never share them with anyone.

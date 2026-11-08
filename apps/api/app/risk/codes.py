@@ -8,7 +8,8 @@ from dataclasses import dataclass
 
 from app.schemas.enums import Severity, SignalGroup
 
-ENGINE_VERSION = "1.0.0"
+# 1.1.0: message codes + policy (O-8…O-10), certificate depth, external intel, header posture.
+ENGINE_VERSION = "1.1.0"
 
 REP = SignalGroup.REPUTATION
 IDN = SignalGroup.IDENTITY
@@ -166,7 +167,56 @@ _RULES = [
         "R-INF-14", "DOM_FINGERPRINT_MATCH", INF, M, "Page structure matches a known phishing kit"
     ),
     Rule("R-INF-15", "ALL_CHECKS_UNAVAILABLE", INF, H, "No check could complete"),
+    # 7.7 Messages (MESSAGE_ANALYSIS.md §4) — emitted only by message analysis
+    Rule("R-MSG-01", "MESSAGE_CREDENTIAL_REQUEST", CRD, H, "Message asks for secret credentials"),
+    Rule("R-MSG-02", "MESSAGE_PAYMENT_DEMAND", PAY, H, "Message asks for a payment"),
+    Rule(
+        "R-MSG-03",
+        "MESSAGE_IMPERSONATES_ORGANISATION",
+        IDN,
+        M,
+        "Sender is not an address the organisation uses",
+    ),
+    Rule(
+        "R-MSG-04",
+        "MESSAGE_LINK_TO_UNVERIFIED_CLAIM",
+        IDN,
+        M,
+        "Link goes to a domain the named organisation has not verified",
+    ),
+    Rule("R-MSG-05", "MESSAGE_URGENCY_PRESSURE", IDN, L, "Message uses pressure or urgency"),
+    Rule(
+        "R-MSG-06",
+        "MESSAGE_CONTACT_CHANNEL_MISMATCH",
+        IDN,
+        L,
+        "Message moves contact to an unofficial channel",
+    ),
+    Rule("R-MSG-07", "MESSAGE_LINK_BLOCKED", REP, C, "A link in the message was assessed BLOCK"),
+    Rule("R-MSG-08", "MESSAGE_LINK_WARNED", REP, M, "A link in the message was assessed WARN"),
+    Rule(
+        "R-MSG-09",
+        "MESSAGE_NO_MALICIOUS_INDICATOR",
+        IDN,
+        NFO,
+        "No malicious indicator found in the executed checks",
+    ),
 ]
+
+# Message policy sets (RISK_ENGINE.md §8.1a).
+LANGUAGE_ONLY_CODES = frozenset({"MESSAGE_URGENCY_PRESSURE", "MESSAGE_CONTACT_CHANNEL_MISMATCH"})
+CORROBORATING_CODES = frozenset(
+    {
+        "PAYEE_NOT_IN_VERIFIED_PROFILE",
+        "PAYEE_LINKED_TO_REPORTED_SCAM",
+        "KNOWN_MALICIOUS_REPUTATION",
+        "MESSAGE_IMPERSONATES_ORGANISATION",
+        "MESSAGE_LINK_TO_UNVERIFIED_CLAIM",
+        "MESSAGE_LINK_BLOCKED",
+        "MESSAGE_LINK_WARNED",
+    }
+)
+SENDER_VERIFIED_CODES = frozenset({"IDENTITY_MATCH_CONFIRMED", "PAYEE_MATCH_CONFIRMED"})
 
 RULES: dict[str, Rule] = {r.code: r for r in _RULES}
 

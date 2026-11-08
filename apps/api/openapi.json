@@ -1100,6 +1100,24 @@
             "title": "Reasons",
             "type": "array"
           },
+          "risk_class": {
+            "anyOf": [
+              {
+                "enum": [
+                  "confirmed_malicious",
+                  "high",
+                  "suspicious",
+                  "low",
+                  "inconclusive"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Class"
+          },
           "risk_level": {
             "$ref": "#/components/schemas/RiskLevel"
           },
@@ -1870,6 +1888,32 @@
           "refs"
         ],
         "title": "Claim",
+        "type": "object"
+      },
+      "ClaimedOrganisation": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "verified_domains": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Verified Domains",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "verified_domains"
+        ],
+        "title": "ClaimedOrganisation",
         "type": "object"
       },
       "Coverage": {
@@ -3617,6 +3661,429 @@
         "title": "MembershipOut",
         "type": "object"
       },
+      "MessageAnalyseRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "channel": {
+            "default": "other",
+            "enum": [
+              "email",
+              "sms",
+              "dm",
+              "other"
+            ],
+            "title": "Channel",
+            "type": "string"
+          },
+          "organisation_id": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organisation Id"
+          },
+          "text": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "MessageAnalyseRequest",
+        "type": "object"
+      },
+      "MessageAnalysisOut": {
+        "properties": {
+          "analysed_at": {
+            "title": "Analysed At",
+            "type": "string"
+          },
+          "caveat": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Caveat"
+          },
+          "channel": {
+            "title": "Channel",
+            "type": "string"
+          },
+          "claimed_organisation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClaimedOrganisation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "correlation": {
+            "$ref": "#/components/schemas/MessageCorrelation"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/Coverage"
+          },
+          "decision": {
+            "$ref": "#/components/schemas/Decision"
+          },
+          "engine_version": {
+            "title": "Engine Version",
+            "type": "string"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/MessageFinding"
+            },
+            "title": "Findings",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "indicators": {
+            "$ref": "#/components/schemas/MessageIndicators"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/MessageLink"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "narrative": {
+            "$ref": "#/components/schemas/MessageNarrative"
+          },
+          "overrides": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Overrides",
+            "type": "array"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "risk_class": {
+            "enum": [
+              "confirmed_malicious",
+              "high",
+              "suspicious",
+              "low",
+              "inconclusive"
+            ],
+            "title": "Risk Class",
+            "type": "string"
+          },
+          "risk_level": {
+            "$ref": "#/components/schemas/RiskLevel"
+          },
+          "risk_score": {
+            "title": "Risk Score",
+            "type": "integer"
+          },
+          "simulated": {
+            "title": "Simulated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "decision",
+          "risk_level",
+          "risk_score",
+          "risk_class",
+          "caveat",
+          "coverage",
+          "overrides",
+          "reasons",
+          "claimed_organisation",
+          "indicators",
+          "findings",
+          "links",
+          "correlation",
+          "narrative",
+          "channel",
+          "engine_version",
+          "simulated",
+          "analysed_at"
+        ],
+        "title": "MessageAnalysisOut",
+        "type": "object"
+      },
+      "MessageCorrelation": {
+        "properties": {
+          "same_text_count": {
+            "description": "Earlier analyses of exactly this text (normalised)",
+            "title": "Same Text Count",
+            "type": "integer"
+          },
+          "shared_link_domains": {
+            "description": "Link domains seen in earlier analyses, with counts",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Shared Link Domains",
+            "type": "array"
+          }
+        },
+        "required": [
+          "same_text_count",
+          "shared_link_domains"
+        ],
+        "title": "MessageCorrelation",
+        "type": "object"
+      },
+      "MessageFinding": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "confidence": {
+            "title": "Confidence",
+            "type": "number"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "expected": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected"
+          },
+          "observed": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed"
+          },
+          "rule_id": {
+            "title": "Rule Id",
+            "type": "string"
+          },
+          "severity": {
+            "title": "Severity",
+            "type": "string"
+          },
+          "signal_group": {
+            "title": "Signal Group",
+            "type": "string"
+          },
+          "simulated": {
+            "default": false,
+            "title": "Simulated",
+            "type": "boolean"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "signal_group",
+          "severity",
+          "confidence",
+          "title",
+          "detail",
+          "rule_id"
+        ],
+        "title": "MessageFinding",
+        "type": "object"
+      },
+      "MessageIndicators": {
+        "properties": {
+          "emails": {
+            "description": "Masked: first character and domain only",
+            "items": {
+              "type": "string"
+            },
+            "title": "Emails",
+            "type": "array"
+          },
+          "payees": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Payees",
+            "type": "array"
+          },
+          "phones": {
+            "description": "Digit count and country code only",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Phones",
+            "type": "array"
+          },
+          "sender_domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sender Domain"
+          },
+          "urls": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Urls",
+            "type": "array"
+          }
+        },
+        "required": [
+          "urls",
+          "emails",
+          "sender_domain",
+          "phones",
+          "payees"
+        ],
+        "title": "MessageIndicators",
+        "type": "object"
+      },
+      "MessageLink": {
+        "properties": {
+          "decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Decision"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "finding_codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Finding Codes",
+            "type": "array"
+          },
+          "registrable_domain": {
+            "title": "Registrable Domain",
+            "type": "string"
+          },
+          "scan_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scan Id"
+          },
+          "simulated": {
+            "default": false,
+            "title": "Simulated",
+            "type": "boolean"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "registrable_domain",
+          "scan_id",
+          "decision",
+          "finding_codes"
+        ],
+        "title": "MessageLink",
+        "type": "object"
+      },
+      "MessageNarrative": {
+        "properties": {
+          "fallback_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback Reason"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/NarrativeSection"
+            },
+            "title": "Sections",
+            "type": "array"
+          },
+          "source": {
+            "enum": [
+              "template",
+              "llm"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "sections"
+        ],
+        "title": "MessageNarrative",
+        "type": "object"
+      },
       "MonitorCreate": {
         "additionalProperties": false,
         "properties": {
@@ -3745,6 +4212,48 @@
           "sections"
         ],
         "title": "Narrative",
+        "type": "object"
+      },
+      "NarrativeClaim": {
+        "properties": {
+          "refs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Refs",
+            "type": "array"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "refs"
+        ],
+        "title": "NarrativeClaim",
+        "type": "object"
+      },
+      "NarrativeSection": {
+        "properties": {
+          "claims": {
+            "items": {
+              "$ref": "#/components/schemas/NarrativeClaim"
+            },
+            "title": "Claims",
+            "type": "array"
+          },
+          "heading": {
+            "title": "Heading",
+            "type": "string"
+          }
+        },
+        "required": [
+          "heading",
+          "claims"
+        ],
+        "title": "NarrativeSection",
         "type": "object"
       },
       "NodeOut": {
@@ -5485,6 +5994,24 @@
             "title": "Result",
             "type": "object"
           },
+          "risk_class": {
+            "anyOf": [
+              {
+                "enum": [
+                  "confirmed_malicious",
+                  "high",
+                  "suspicious",
+                  "low",
+                  "inconclusive"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Class"
+          },
           "risk_level": {
             "anyOf": [
               {
@@ -5596,6 +6123,24 @@
           "registrable_domain": {
             "title": "Registrable Domain",
             "type": "string"
+          },
+          "risk_class": {
+            "anyOf": [
+              {
+                "enum": [
+                  "confirmed_malicious",
+                  "high",
+                  "suspicious",
+                  "low",
+                  "inconclusive"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Class"
           },
           "risk_level": {
             "anyOf": [
@@ -10205,6 +10750,112 @@
         "summary": "Accept an organisation invite (signed-in user's email must match)",
         "tags": [
           "organisations"
+        ]
+      }
+    },
+    "/api/v1/messages/analyse": {
+      "post": {
+        "operationId": "analyse_message_api_v1_messages_analyse_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageAnalyseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageAnalysisOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Malformed request"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Missing or invalid credentials"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not permitted"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not found or not visible"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Validation failure or policy rejection"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Rate limited"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unexpected server error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Analyse a pasted message",
+        "tags": [
+          "messages"
         ]
       }
     },

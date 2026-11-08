@@ -19,6 +19,7 @@ from app.models.tables import (
     VerifiedDomain,
     VerifiedRecipient,
 )
+from app.risk.classes import risk_class
 from app.schemas.common import ERROR_RESPONSES
 from app.schemas.enums import ErrorCode, Intent
 from app.schemas.platform import InspectRedirectRequest, InspectRedirectResponse
@@ -253,6 +254,7 @@ async def assess(
             "decision": s.decision,
             "risk_level": s.risk_level,
             "risk_score": s.risk_score,
+            "risk_class": risk_class(s.decision) if s.decision else None,
             "coverage": s.coverage,
             "reasons": s.reasons,
             "identity_verified": identity_verified,

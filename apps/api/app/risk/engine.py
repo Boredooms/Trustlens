@@ -237,3 +237,49 @@ def decide(
 
 def is_unreachable_code(code: str) -> bool:
     return code == TARGET_UNREACHABLE
+
+
+def decide_message(findings: list[Finding], coverage: CoverageResult, intent: Intent) -> Verdict:
+    """Message decision policy (RISK_ENGINE.md §8.1a, MESSAGE_ANALYSIS.md §5).
+
+    ``decide`` first; then O-10 (a linked page was blocked), O-8 (language alone is exactly REVIEW),
+    O-9 (uncorroborated requests stay between REVIEW and WARN), and a WARN floor once anything
+    corroborates. These caps exist only for messages: language must never condemn on its own.
+    """
+    from app.risk.codes import CORROBORATING_CODES, LANGUAGE_ONLY_CODES, SENDER_VERIFIED_CODES
+
+    base = decide(findings, coverage, intent)
+    if base.decision == Decision.UNKNOWN:
+        return base  # coverage gate: nothing to cap
+    decision: Decision = base.decision
+    level: RiskLevel = base.risk_level
+    fired = list(base.overrides)
+    codes = {f.code for f in findings}
+    scored = {f.code for f in findings if f.severity != Severity.INFO}
+    corroborated = bool(codes & CORROBORATING_CODES)
+
+    def apply(new: Decision, override_id: str) -> None:
+        nonlocal decision
+        if new != decision:
+            decision = new
+            fired.append(override_id)
+
+    if "MESSAGE_LINK_BLOCKED" in codes:
+        apply(Decision.BLOCK, "O-10")
+    elif scored and scored <= LANGUAGE_ONLY_CODES:
+        apply(Decision.REVIEW, "O-8")
+    elif scored and not corroborated and not (codes & SENDER_VERIFIED_CODES):
+        if _DECISION_RANK[decision] > _DECISION_RANK[Decision.WARN]:
+            apply(Decision.WARN, "O-9")
+        elif _DECISION_RANK[decision] < _DECISION_RANK[Decision.REVIEW]:
+            apply(Decision.REVIEW, "O-9")
+    elif corroborated and _DECISION_RANK[decision] < _DECISION_RANK[Decision.WARN]:
+        decision = Decision.WARN
+    return Verdict(
+        decision=decision,
+        risk_level=level,
+        risk_score=base.risk_score,
+        coverage=coverage,
+        overrides=tuple(dict.fromkeys(fired)),
+        contributions=base.contributions,
+    )

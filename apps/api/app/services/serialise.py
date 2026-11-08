@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Any
 
 from app.models.tables import Entity, Evidence, Scan, ScanFinding
+from app.risk.classes import risk_class
 from app.services.scan_orchestrator import finding_to_wire
 from app.utils import iso_z
 
@@ -24,6 +25,8 @@ def scan_summary(scan: Scan) -> dict[str, Any]:
         "decision": scan.decision,
         "risk_level": scan.risk_level,
         "risk_score": scan.risk_score,
+        # Derived problem-statement class (RISK_ENGINE.md §8.7); never stored.
+        "risk_class": risk_class(scan.decision) if scan.decision else None,
         "coverage_percent": (scan.coverage or {}).get("percent"),
         "simulated": scan.simulated,
         "created_at": ts(scan.created_at),

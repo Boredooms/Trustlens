@@ -11,6 +11,8 @@ from app.schemas.enums import Decision, Intent, RecipientType, RiskLevel
 
 Ulid = Annotated[str, Field(pattern=r"^[0-9A-HJKMNP-TV-Z]{26}$")]
 Url = Annotated[str, Field(min_length=1, max_length=2048)]
+# Derived from Decision in app/risk/classes.py (RISK_ENGINE.md §8.7); never stored.
+RiskClass = Literal["confirmed_malicious", "high", "suspicious", "low", "inconclusive"]
 
 
 # ── Findings / evidence ─────────────────────────────────────────────────────────
@@ -64,6 +66,7 @@ class ScanSummary(WireModel):
     decision: Decision | None
     risk_level: RiskLevel | None
     risk_score: int | None
+    risk_class: RiskClass | None = None
     coverage_percent: int | None
     simulated: bool
     created_at: str
@@ -86,6 +89,7 @@ class ScanOut(WireModel):
     decision: Decision | None
     risk_level: RiskLevel | None
     risk_score: int | None
+    risk_class: RiskClass | None = None
     coverage: Coverage | None
     reasons: list[str]
     overrides: list[str]
@@ -131,6 +135,7 @@ class AssessResponse(WireModel):
     decision: Decision
     risk_level: RiskLevel
     risk_score: int
+    risk_class: RiskClass | None = None
     coverage: Coverage
     reasons: list[str]
     identity_verified: bool

@@ -30,6 +30,7 @@ from app.api.routes import (  # platform
     internal_jobs,
     investigations,
     invites,  # governance
+    messages,  # message analysis
     organisations,
     reports,
     scans,
@@ -191,6 +192,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(webhooks.router)  # Clerk user sync (not in the public OpenAPI)
     app.include_router(admin.router)  # operator demo controls
     app.include_router(anchors.router)  # web3 report registry (WEB3_REGISTRY.md)
+    app.include_router(messages.router)  # message analysis (MESSAGE_ANALYSIS.md)
     return app
 
 

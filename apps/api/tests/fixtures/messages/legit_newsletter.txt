@@ -1,0 +1,6 @@
+From: Northstar University <news@northstar-demo.example>
+
+Northstar University weekly newsletter.
+This week: the library extends its opening hours, the robotics club demo day is on Friday,
+and scholarship results are published on https://northstar-demo.example/news.
+You can unsubscribe from these emails in your account settings.

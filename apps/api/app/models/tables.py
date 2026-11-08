@@ -690,3 +690,37 @@ class ReportAnchor(Base):
     created_by: Mapped[str | None] = fk("users.id", "SET NULL")
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
+
+
+# ── Message analysis (MESSAGE_ANALYSIS.md §7) ───────────────────────────────────
+class MessageAnalysis(Base):
+    """One analysed message. Never the raw text: a hash, counts, codes and link domains only."""
+
+    __tablename__ = "message_analyses"
+    __table_args__ = (
+        CheckConstraint(in_check("channel", ("email", "sms", "dm", "other")), name="channel"),
+        CheckConstraint(in_check("decision", DECISIONS), name="decision"),
+        CheckConstraint("char_count BETWEEN 1 AND 20000", name="char_count"),
+        Index(None, "text_sha256"),
+        Index("ix_message_analyses_user_recent", "user_id", text("created_at DESC")),
+    )
+    id: Mapped[str] = ulid_pk()
+    user_id: Mapped[str | None] = fk("users.id", "SET NULL")
+    api_key_id: Mapped[str | None] = fk("api_keys.id", "SET NULL")
+    channel: Mapped[str] = mapped_column(Text, nullable=False)
+    text_sha256: Mapped[str] = mapped_column(CHAR(64), nullable=False)
+    char_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    decision: Mapped[str] = mapped_column(Text, nullable=False)
+    risk_score: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    finding_codes: Mapped[list[str]] = mapped_column(
+        ARRAY(Text), nullable=False, server_default="{}"
+    )
+    link_domains: Mapped[list[str]] = mapped_column(
+        ARRAY(Text), nullable=False, server_default="{}"
+    )
+    link_scan_ids: Mapped[list[str]] = mapped_column(
+        ARRAY(CHAR(26)), nullable=False, server_default="{}"
+    )
+    engine_version: Mapped[str] = mapped_column(Text, nullable=False)
+    simulated: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    created_at: Mapped[datetime] = created_at()

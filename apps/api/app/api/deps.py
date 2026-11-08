@@ -120,6 +120,8 @@ LIMITS: dict[str, dict[str, tuple[int, int]]] = {
     # attempts" budget applied to the public appeal path).
     "appeals": {"anonymous": (5, 3600), "user": (5, 3600)},
     "appeal_verify": {"anonymous": (20, 3600), "user": (20, 3600)},
+    # Message analysis (MESSAGE_ANALYSIS.md §2): each call may assess up to 3 links.
+    "messages": {"user": (60, 3600), "api_key": (600, 3600)},
     # Public report verification (WEB3_REGISTRY.md §5): every call reads the chain.
     "public_verify": {"anonymous": (60, 3600), "user": (120, 3600)},
 }

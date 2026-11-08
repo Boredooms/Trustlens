@@ -1,0 +1,6 @@
+From: Northstar University IT Desk <it-helpdesk@northstar-placement.example>
+Subject: Action required: student portal
+
+Dear student, your Northstar University portal account will be deactivated within 24 hours.
+To keep access, log in at https://portal.northstar-placement.example/login and enter your password.
+Then reply with the OTP sent to your phone to confirm your identity.
