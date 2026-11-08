@@ -25,7 +25,8 @@ plugins = ["pydantic.mypy"]
 warn_unused_ignores = true
 
 [[tool.mypy.overrides]]
-module = ["asyncpg.*", "ulid.*", "jose.*"]
+# playwright is the optional deep-scan extra (requirements-deepscan.txt); absent in the default venv.
+module = ["asyncpg.*", "ulid.*", "jose.*", "playwright.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
