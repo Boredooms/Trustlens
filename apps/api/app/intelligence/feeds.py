@@ -72,7 +72,13 @@ def _result(host: str, mode: str, status: str, **kw: Any) -> dict[str, Any]:
     }
 
 
-def fixture_lookup(host: str) -> dict[str, Any]:
+def fixture_lookup(host: str) -> dict[str, Any] | None:
+    """Fixture mode covers the RFC 2606 demo hosts only. Any other host is *not consulted* (None):
+    answering "not listed" for a real site from a canned file would be a fabricated result."""
+    from app.services.demo_fixtures import DEMO_REGISTRABLE_DOMAINS
+
+    if guard.registrable_domain(host) not in DEMO_REGISTRABLE_DOMAINS:
+        return None
     hit = _fixture_hosts().get(host)
     if hit is None:
         return _result(host, "fixture", "not_listed", simulated=True)
@@ -152,7 +158,9 @@ async def lookup(
     sources: list[dict[str, Any]] = []
     for host in dict.fromkeys(h.lower() for h in hosts if h):
         if mode == "fixture":
-            sources.append(fixture_lookup(host))
+            answer = fixture_lookup(host)
+            if answer is not None:
+                sources.append(answer)
             continue
         key = _indicator_hash(host)
         async with factory() as db:
@@ -188,6 +196,8 @@ async def lookup(
                 )
                 await db.commit()
             sources.append(result)
+    if not sources:
+        return IntelObs(status="skipped")
     status: Literal["collected", "unavailable"] = (
         "collected" if all(s["status"] != "unavailable" for s in sources) else "unavailable"
     )

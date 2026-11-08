@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import quote
 
@@ -21,6 +22,7 @@ from cryptography.x509.oid import AuthorityInformationAccessOID
 from app.config import Settings
 
 REVOCATION_BUDGET_SECONDS = 4.0
+CRL_MAX = 2_000_000
 
 
 def sct_count(cert: x509.Certificate) -> int | None:
@@ -84,8 +86,11 @@ async def check_revocation(
     from app.services.collectors import guarded_get  # local import: collectors imports us
 
     ocsp_urls, issuer_urls = aia_urls(cert)
-    if not ocsp_urls or not issuer_urls:
-        return {"status": "unavailable", "reason": "no_ocsp_or_issuer_url"}
+    crls = crl_urls(cert)
+    if not issuer_urls:
+        return {"status": "unavailable", "reason": "no_issuer_url"}
+    if not ocsp_urls and not crls:
+        return {"status": "unavailable", "reason": "no_revocation_endpoint"}
     try:
         async with asyncio.timeout(REVOCATION_BUDGET_SECONDS):
             resp, body, _ = await guarded_get(client, issuer_urls[0], settings, max_bytes=65_536)
@@ -95,6 +100,14 @@ async def check_revocation(
                 issuer = x509.load_der_x509_certificate(body)
             except ValueError:
                 issuer = x509.load_pem_x509_certificate(body)
+            if not ocsp_urls:
+                # Issuers that dropped OCSP (e.g. Let's Encrypt, 2025) publish CRLs instead.
+                resp, body, _ = await guarded_get(client, crls[0], settings, max_bytes=CRL_MAX)
+                if resp is None or resp.status_code != 200:
+                    return {"status": "unavailable", "reason": "crl_fetch_failed"}
+                result = interpret_crl(body, cert, issuer)
+                result["responder"] = httpx.URL(crls[0]).host
+                return result
             req = (
                 ocsp.OCSPRequestBuilder()
                 .add_certificate(cert, issuer, hashes.SHA1())  # noqa: S303 — RFC 6960 CertID
@@ -111,4 +124,41 @@ async def check_revocation(
         return {"status": "unavailable", "reason": "timeout_or_error"}
     result = interpret_ocsp(body)
     result["responder"] = httpx.URL(ocsp_urls[0]).host
+    result["method"] = "ocsp"
     return result
+
+
+def crl_urls(cert: x509.Certificate) -> list[str]:
+    try:
+        points = cert.extensions.get_extension_for_class(x509.CRLDistributionPoints).value
+    except (x509.ExtensionNotFound, ValueError):
+        return []
+    urls = [
+        name.value
+        for point in points
+        for name in (point.full_name or [])
+        if isinstance(name, x509.UniformResourceIdentifier)
+        and name.value.lower().startswith(("http://", "https://"))
+    ]
+    return urls[:2]
+
+
+def interpret_crl(der: bytes, cert: x509.Certificate, issuer: x509.Certificate) -> dict[str, Any]:
+    """Revocation from a CRL. It must be signed by the issuer and current, or it says nothing."""
+    try:
+        crl = x509.load_der_x509_crl(der)
+    except ValueError:
+        return {"status": "unavailable", "reason": "unparseable_crl", "method": "crl"}
+    if crl.issuer != issuer.subject or not crl.is_signature_valid(issuer.public_key()):  # type: ignore[arg-type]
+        return {"status": "unavailable", "reason": "crl_signature_invalid", "method": "crl"}
+    if crl.next_update_utc is not None and crl.next_update_utc < datetime.now(UTC):
+        return {"status": "unavailable", "reason": "crl_stale", "method": "crl"}
+    entry = crl.get_revoked_certificate_by_serial_number(cert.serial_number)
+    out: dict[str, Any] = {
+        "status": "revoked" if entry is not None else "good",
+        "this_update": crl.last_update_utc.isoformat(),
+        "method": "crl",
+    }
+    if entry is not None:
+        out["revoked_at"] = entry.revocation_date_utc.isoformat()
+    return out

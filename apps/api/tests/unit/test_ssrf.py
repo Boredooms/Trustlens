@@ -41,6 +41,22 @@ def test_metadata_address_named() -> None:
     assert classify_ip("169.254.169.254") == "metadata_address"
 
 
+@pytest.mark.parametrize(
+    ("address", "expected"),
+    [
+        # NAT64 (RFC 6052) answers from DNS64 resolvers: judged by the embedded IPv4 address.
+        ("64:ff9b::14cf:4952", None),  # 20.207.73.82 (github.com seen through DNS64)
+        ("64:ff9b::a00:1", "private_range"),  # 10.0.0.1
+        ("64:ff9b::7f00:1", "loopback"),  # 127.0.0.1
+        ("64:ff9b::a9fe:a9fe", "metadata_address"),  # 169.254.169.254
+    ],
+)
+def test_nat64_addresses_are_judged_by_the_embedded_ipv4(
+    address: str, expected: str | None
+) -> None:
+    assert classify_ip(address) == expected
+
+
 def test_ipv4_mapped_reports_inner_class() -> None:
     assert classify_ip("::ffff:127.0.0.1") == "loopback"
 

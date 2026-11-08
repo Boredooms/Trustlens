@@ -16,6 +16,7 @@ from html.parser import HTMLParser
 from typing import Any
 from urllib.parse import urljoin, urlsplit
 
+import certifi
 import dns.exception
 import dns.resolver
 import httpx
@@ -288,7 +289,9 @@ async def collect_tls(
 
     address = target.addresses[0] if target.addresses else target.host
     verified, hostname_ok, der = True, True, None
-    context = ssl.create_default_context()
+    # Mozilla's root store via certifi (already shipped with httpx), not the OS store: on Windows,
+    # OpenSSL cannot fetch missing roots on demand, which made valid public chains look untrusted.
+    context = ssl.create_default_context(cafile=certifi.where())
     try:
         async with asyncio.timeout(settings.probe_timeout_seconds):
             reader, writer = await asyncio.open_connection(

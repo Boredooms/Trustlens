@@ -24,6 +24,7 @@ _EXTRA_BLOCKED_V4 = [
     )
 ]
 _METADATA_HOSTS = {"169.254.169.254", "fd00:ec2::254", "100.100.100.200"}
+_NAT64_WELL_KNOWN = ipaddress.ip_network("64:ff9b::/96")
 _BLOCKED_HOSTNAMES = {
     "localhost",
     "metadata",
@@ -43,6 +44,10 @@ def classify_ip(raw: str) -> str | None:
         return classify_ip(str(ip.ipv4_mapped))
     if isinstance(ip, ipaddress.IPv6Address) and ip.sixtofour is not None:
         return classify_ip(str(ip.sixtofour))
+    if isinstance(ip, ipaddress.IPv6Address) and ip in _NAT64_WELL_KNOWN:
+        # RFC 6052 NAT64 (DNS64 networks answer AAAA in 64:ff9b::/96): the connection reaches the
+        # embedded IPv4 address, so that is what must be judged — 64:ff9b::a00:1 is 10.0.0.1.
+        return classify_ip(str(ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF)))
     if str(ip) in _METADATA_HOSTS:
         return "metadata_address"
     if ip.is_loopback:

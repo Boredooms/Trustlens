@@ -297,7 +297,7 @@ Emitted only by message analysis (`POST /messages/analyse`); never by a URL scan
 | `O-4` | `CREDENTIAL_DESTINATION_MISMATCH` **or** `CREDENTIALS_POSTED_OVER_HTTP`, intent `login` | `BLOCK` |
 | `O-5` | `CREDENTIALS_POSTED_TO_THIRD_PARTY` with action origin cross-registrable-domain, intent `login` | `BLOCK` |
 | `O-6` | `KNOWN_MALICIOUS_REPUTATION` **or** `LISTED_BY_EXTERNAL_FEED` | `BLOCK` |
-| `O-7` | `TARGET_UNREACHABLE` and no other findings | `UNKNOWN` |
+| `O-7` | `TARGET_UNREACHABLE` and no other findings (the unreachability facts `DOMAIN_NXDOMAIN` and `ALL_CHECKS_UNAVAILABLE` do not count as "other") | `UNKNOWN` |
 
 Overrides are additive and recorded in `overrides[]` with their ID. An override can only raise the
 decision; it never lowers it.
@@ -355,6 +355,20 @@ reputation. Rules:
 `ALLOW` is unreachable while any `critical` finding is present: the decision is raised to at least
 `WARN`. Without it, a critical finding in a ≤ 20-weight group (e.g. `CREDENTIALS_POSTED_OVER_HTTP` on a
 payment page) could score `LOW` and band to `ALLOW`. Overrides still decide `BLOCK` where they apply.
+
+### 8.5a TLS trust floor (engine 1.1.0)
+
+`ALLOW` is unreachable while a non-info `CERT_SELF_SIGNED`, `CERT_CHAIN_UNVERIFIED`,
+`CERT_HOSTNAME_MISMATCH`, `CERT_REVOKED` or `TLS_HANDSHAKE_FAILED` is present: the decision becomes at
+least `REVIEW`. Found by the evidence run: a self-signed certificate alone scored 7 (infrastructure
+weighs 10) and banded to `ALLOW`, while every browser shows a full-page warning for it.
+
+### 8.5b Unreached target (engine 1.1.0)
+
+A target we never reached (`target_unreachable`) cannot be `ALLOW`: it becomes `UNKNOWN` and `O-7`
+is recorded. Evidence from the hostname alone (for example brand impersonation) can still raise it
+to `WARN`. Found by the evidence run: a non-resolving lookalike scored 24 and banded to `ALLOW`
+because `DOMAIN_NXDOMAIN` was counted as an "other finding", which made `O-7` unreachable.
 
 ### 8.6 Notes on §6.2 as implemented
 

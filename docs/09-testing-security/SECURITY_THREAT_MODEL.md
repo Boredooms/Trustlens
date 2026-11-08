@@ -120,6 +120,20 @@ Reject before any connection:
 4. In the verification-file fetch (same guard, different caller).
 5. In any future probe — the guard is the only way to get an HTTP client.
 
+### 6.2a Embedded IPv4 in IPv6 answers
+
+IPv4-mapped (`::ffff:a.b.c.d`), 6to4 (`2002::/16`) and **NAT64 well-known prefix (`64:ff9b::/96`,
+RFC 6052)** addresses are judged by the IPv4 address they reach. DNS64 networks return NAT64 AAAA
+records for every IPv4-only site; refusing the prefix outright rejected github.com and paypal.com,
+while allowing it blindly would let `64:ff9b::a00:1` reach `10.0.0.1`. Tested in `test_ssrf.py`.
+
+### 6.2b Certificate verification store
+
+TLS verification uses Mozilla's root store via `certifi` (shipped with httpx), not the OS store:
+OpenSSL on Windows cannot fetch missing roots on demand, which made valid public chains (for example
+example.com's) look untrusted. Revocation fetches (AIA issuer, OCSP, CRL) are guarded like any
+other outbound request; a CRL counts only when signed by the issuer and current.
+
 ### 6.3 Rebinding defence
 
 Resolution happens once per hop; the request is made to the **validated IP** with the `Host` header set

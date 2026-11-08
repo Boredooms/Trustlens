@@ -36,7 +36,12 @@ def obs(url: str) -> Observations:
 
 def verdict(o: Observations, intent: Intent = Intent.BROWSE):  # type: ignore[no-untyped-def]
     ev = evaluate(o, TrustContext(), intent)
-    v = decide(ev.findings, compute_coverage(ev.coverage), intent)
+    v = decide(
+        ev.findings,
+        compute_coverage(ev.coverage),
+        intent,
+        target_unreachable=ev.target_unreachable,
+    )
     return {f.code for f in ev.findings}, v, ev
 
 
@@ -266,3 +271,123 @@ def test_unobserved_headers_are_unavailable_not_clean() -> None:
     o.page = dataclasses.replace(o.page, response_headers=None)
     o.simulated = False
     assert header_posture(o)["status"] == "unavailable"
+
+
+# ── Regressions found by the evidence run against real targets (2026-11-09) ──────
+def _f(code: str):  # type: ignore[no-untyped-def]
+    from decimal import Decimal
+
+    from app.risk.engine import Finding
+
+    return Finding(code=code, confidence=Decimal("1.00"), detail="t")
+
+
+def test_regression_nxdomain_lookalike_is_unknown_not_allow() -> None:
+    """A non-resolving brand lookalike scored 24 → ALLOW: NXDOMAIN was counted as an 'other finding'
+    so O-7 never fired, and an unreached target could still be ALLOW."""
+    from app.risk.engine import CoverageResult
+    from app.schemas.enums import SignalGroup
+
+    cov = CoverageResult(55, (SignalGroup.REPUTATION, SignalGroup.IDENTITY), (), ())
+    alone = decide([_f("DOMAIN_NXDOMAIN")], cov, Intent.BROWSE, target_unreachable=True)
+    assert alone.decision == Decision.UNKNOWN and "O-7" in alone.overrides
+    with_claim = decide(
+        [_f("DOMAIN_NXDOMAIN"), _f("DOMAIN_NOT_REGISTERED_BY_BRAND")],
+        cov,
+        Intent.BROWSE,
+        target_unreachable=True,
+    )
+    # The hostname impersonation is real evidence, so a high enough score may WARN — never ALLOW.
+    assert with_claim.decision != Decision.ALLOW
+    o = obs("https://ghost.northstar-admissions.example/")
+    assert verdict(o)[1].decision == Decision.UNKNOWN
+
+
+@pytest.mark.parametrize(
+    "code", ["CERT_SELF_SIGNED", "CERT_CHAIN_UNVERIFIED", "CERT_HOSTNAME_MISMATCH"]
+)
+def test_regression_tls_trust_failure_alone_is_review_not_allow(code: str) -> None:
+    """A self-signed certificate alone scored 7 → ALLOW; the trust floor (§8.5a) makes it REVIEW."""
+    from app.risk.engine import CoverageResult
+    from app.schemas.enums import SignalGroup
+
+    cov = CoverageResult(100, tuple(SignalGroup), (), ())
+    assert decide([_f(code)], cov, Intent.BROWSE).decision == Decision.REVIEW
+    assert verdict(obs("https://selfsigned.badhost.example/"))[1].decision != Decision.ALLOW
+
+
+async def test_regression_fixture_intel_never_answers_for_real_hosts() -> None:
+    """Fixture mode reported 'URLhaus: not_listed' for example.com — a fabricated answer."""
+    assert feeds.fixture_lookup("example.com") is None
+    settings = make_settings(demo_mode=True)
+    async with httpx.AsyncClient() as http:
+        out = await feeds.lookup(None, settings, http, ["example.com"])  # type: ignore[arg-type]
+    assert out.status == "skipped" and out.sources == []
+
+
+def test_nat64_target_resolution_is_allowed_when_embedded_ipv4_is_public() -> None:
+    from app.security.ssrf import classify_ip
+
+    assert classify_ip("64:ff9b::9765:d115") is None  # 151.101.209.21
+
+
+def _crl(issuer_key, issuer_name, *, revoked_serial=None, next_update_days=7):  # type: ignore[no-untyped-def]
+    now = datetime.now(UTC)
+    b = (
+        x509.CertificateRevocationListBuilder()
+        .issuer_name(issuer_name)
+        .last_update(now - timedelta(days=10))
+        .next_update(now + timedelta(days=next_update_days))
+    )
+    if revoked_serial is not None:
+        b = b.add_revoked_certificate(
+            x509.RevokedCertificateBuilder()
+            .serial_number(revoked_serial)
+            .revocation_date(now - timedelta(minutes=5))
+            .build()
+        )
+    from cryptography.hazmat.primitives import serialization
+
+    return b.sign(issuer_key, hashes.SHA256()).public_bytes(serialization.Encoding.DER)
+
+
+def _issuer_and_leaf():  # type: ignore[no-untyped-def]
+    ikey = ec.generate_private_key(ec.SECP256R1())
+    iname = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "Test Issuing CA")])
+    now = datetime.now(UTC)
+    issuer = (
+        x509.CertificateBuilder()
+        .subject_name(iname)
+        .issuer_name(iname)
+        .public_key(ikey.public_key())
+        .serial_number(1)
+        .not_valid_before(now - timedelta(days=1))
+        .not_valid_after(now + timedelta(days=30))
+        .sign(ikey, hashes.SHA256())
+    )
+    lkey = ec.generate_private_key(ec.SECP256R1())
+    leaf = (
+        x509.CertificateBuilder()
+        .subject_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "leaf.example")]))
+        .issuer_name(iname)
+        .public_key(lkey.public_key())
+        .serial_number(4242)
+        .not_valid_before(now - timedelta(days=1))
+        .not_valid_after(now + timedelta(days=30))
+        .sign(ikey, hashes.SHA256())
+    )
+    return ikey, iname, issuer, leaf
+
+
+def test_crl_revoked_good_forged_and_stale() -> None:
+    ikey, iname, issuer, leaf = _issuer_and_leaf()
+    assert (
+        certificates.interpret_crl(_crl(ikey, iname, revoked_serial=4242), leaf, issuer)["status"]
+        == "revoked"
+    )
+    assert certificates.interpret_crl(_crl(ikey, iname), leaf, issuer)["status"] == "good"
+    forged = _crl(ec.generate_private_key(ec.SECP256R1()), iname, revoked_serial=None)
+    assert certificates.interpret_crl(forged, leaf, issuer)["reason"] == "crl_signature_invalid"
+    stale = _crl(ikey, iname, next_update_days=-1)
+    assert certificates.interpret_crl(stale, leaf, issuer)["reason"] == "crl_stale"
+    assert certificates.interpret_crl(b"junk", leaf, issuer)["status"] == "unavailable"

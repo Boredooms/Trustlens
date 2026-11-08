@@ -53,6 +53,16 @@ BAND_DECISIONS: dict[RiskLevel, dict[Intent, Decision]] = {
     RiskLevel.MEDIUM: {i: Decision.WARN for i in Intent},
     RiskLevel.LOW: {i: Decision.ALLOW for i in Intent},
 }
+UNREACHABILITY_CODES = frozenset({"DOMAIN_NXDOMAIN", "ALL_CHECKS_UNAVAILABLE"})
+TLS_TRUST_CODES = frozenset(
+    {
+        "CERT_SELF_SIGNED",
+        "CERT_CHAIN_UNVERIFIED",
+        "CERT_HOSTNAME_MISMATCH",
+        "CERT_REVOKED",
+        "TLS_HANDSHAKE_FAILED",
+    }
+)
 _DECISION_RANK = {
     Decision.UNKNOWN: 0,
     Decision.ALLOW: 1,
@@ -186,7 +196,13 @@ def overrides_for(
     if "KNOWN_MALICIOUS_REPUTATION" in by_code or "LISTED_BY_EXTERNAL_FEED" in by_code:
         # O-6: confirmed internally, or listed by an attributed external feed (R-REP-06).
         fired.append(("O-6", Decision.BLOCK))
-    scored = [f for f in by_code.values() if f.severity != Severity.INFO]
+    # O-7: the unreachability facts themselves (NXDOMAIN, nothing collected) are not "other
+    # findings" — counting them made O-7 impossible to reach for a domain that does not resolve.
+    scored = [
+        f
+        for f in by_code.values()
+        if f.severity != Severity.INFO and f.code not in UNREACHABILITY_CODES
+    ]
     if target_unreachable and not scored:
         fired.append(("O-7", Decision.UNKNOWN))
     return fired
@@ -218,6 +234,19 @@ def decide(
     # §8.5 critical floor: ALLOW is unreachable while any critical finding exists.
     if decision == Decision.ALLOW and any(f.severity == Severity.CRITICAL for f in findings):
         decision = Decision.WARN
+
+    # §8.5a trust floor: an untrusted, self-signed, mismatched or failed TLS identity is an
+    # indicator that needs investigation; "no known threat" cannot be claimed over it.
+    if decision == Decision.ALLOW and any(
+        f.code in TLS_TRUST_CODES and f.severity != Severity.INFO for f in findings
+    ):
+        decision = Decision.REVIEW
+
+    # §8.5b unreached target: we cannot say "no known threat" about a site we never observed.
+    if decision == Decision.ALLOW and target_unreachable:
+        decision = Decision.UNKNOWN
+        if not any(oid == "O-7" for oid, _ in fired):
+            fired.append(("O-7", Decision.UNKNOWN))
 
     # §8.3 coverage gate, after banding and overrides.
     if coverage.percent < 25:

@@ -1,0 +1,730 @@
+{
+  "generated_at": "2026-11-08T22:44:49+00:00",
+  "commit": "f00f9f2",
+  "api": "http://localhost:8000",
+  "urls": [
+    {
+      "id": "U1",
+      "kind": "benign",
+      "label": "Genuine fee payment page, registered payee",
+      "url": "https://pay.northstar-demo.example/fees",
+      "intent": "payment",
+      "payee": "fees@northstar-demo",
+      "expect": [
+        "ALLOW"
+      ],
+      "http_status": 200,
+      "duration_ms": 334,
+      "decision": "ALLOW",
+      "risk_level": "LOW",
+      "risk_score": 0,
+      "risk_class": "low",
+      "coverage": 100,
+      "overrides": [],
+      "reasons": [],
+      "codes": [
+        "IDENTITY_MATCH_CONFIRMED",
+        "PAYEE_MATCH_CONFIRMED"
+      ],
+      "scan_id": "01M6YNBZE1XVK7P5PQ3BZ47QH1",
+      "engine_version": "1.1.0",
+      "simulated": true,
+      "certificate": "valid",
+      "revocation": "good",
+      "intel": [
+        "URLhaus (abuse.ch): not_listed"
+      ],
+      "posture": [],
+      "passed": true
+    },
+    {
+      "id": "U2",
+      "kind": "benign",
+      "label": "Genuine login page",
+      "url": "https://login.northstar-demo.example/",
+      "intent": "login",
+      "expect": [
+        "ALLOW"
+      ],
+      "http_status": 200,
+      "duration_ms": 563,
+      "decision": "ALLOW",
+      "risk_level": "LOW",
+      "risk_score": 0,
+      "risk_class": "low",
+      "coverage": 85,
+      "overrides": [],
+      "reasons": [],
+      "codes": [
+        "CERT_ISSUER_AFFECTED_BY_INCIDENT",
+        "IDENTITY_MATCH_CONFIRMED",
+        "LOGIN_ON_VERIFIED_ENDPOINT"
+      ],
+      "scan_id": "01M6YNBZVP4J0BE1RH08Z8ZDVW",
+      "engine_version": "1.1.0",
+      "simulated": true,
+      "certificate": "valid",
+      "revocation": "good",
+      "intel": [
+        "URLhaus (abuse.ch): not_listed"
+      ],
+      "posture": [],
+      "passed": true
+    },
+    {
+      "id": "U3",
+      "kind": "benign (misconfigured)",
+      "label": "Genuine site, certificate expires in 5 days",
+      "url": "https://old.northstar-demo.example/",
+      "intent": "browse",
+      "expect": [
+        "ALLOW"
+      ],
+      "http_status": 200,
+      "duration_ms": 303,
+      "decision": "ALLOW",
+      "risk_level": "LOW",
+      "risk_score": 2,
+      "risk_class": "low",
+      "coverage": 65,
+      "overrides": [],
+      "reasons": [
+        "The certificate for old.northstar-demo.example expires in 5 days."
+      ],
+      "codes": [
+        "CERT_EXPIRING_SOON",
+        "CERT_ISSUER_AFFECTED_BY_INCIDENT",
+        "IDENTITY_MATCH_CONFIRMED"
+      ],
+      "scan_id": "01M6YNC0H7D1J41DRJ7SP6ZWMZ",
+      "engine_version": "1.1.0",
+      "simulated": true,
+      "certificate": "misconfigured",
+      "revocation": "good",
+      "intel": [
+        "URLhaus (abuse.ch): not_listed"
+      ],
+      "posture": [],
+      "passed": true
+    },
+    {
+      "id": "U4",
+      "kind": "suspicious",
+      "label": "Lookalike admissions page asking for a fee",
+      "url": "https://apply.northstar-admissions.example/register",
+      "intent": "payment",
+      "expect": [
+        "BLOCK"
+      ],
+      "http_status": 200,
+      "duration_ms": 317,
+      "decision": "BLOCK",
+      "risk_level": "CRITICAL",
+      "risk_score": 81,
+      "risk_class": "confirmed_malicious",
+      "coverage": 100,
+      "overrides": [
+        "O-2"
+      ],
+      "reasons": [
+        "This page is directly connected to a confirmed threat (fees@okaxis).",
+        "The login form sends credentials to collect.badhost.example, which Northstar University does not use.",
+        "The page claims to be Northstar University but apply.northstar-admissions.example is not one of its verified domains."
+      ],
+      "codes": [
+        "CREDENTIAL_DESTINATION_MISMATCH",
+        "DOMAIN_NOT_REGISTERED_BY_BRAND",
+        "DOMAIN_RECENTLY_REGISTERED",
+        "LOGO_NEAR_DUPLICATE",
+        "PAYEE_NOT_IN_VERIFIED_PROFILE",
+        "RELATED_THREAT_FOUND",
+        "SHARES_INFRA_WITH_REPORTED_THREAT"
+      ],
+      "scan_id": "01M6YNC0Y4D7TE9Z6FCPA0HY0Y",
+      "engine_version": "1.1.0",
+      "simulated": true,
+      "certificate": "valid",
+      "revocation": "good",
+      "intel": [
+        "URLhaus (abuse.ch): not_listed"
+      ],
+      "posture": [
+        "HSTS_MISSING",
+        "CSP_MISSING_OR_WEAK",
+        "NOSNIFF_MISSING",
+        "REFERRER_POLICY_MISSING",
+        "PERMISSIONS_POLICY_MISSING",
+        "COOKIE_WITHOUT_SECURE_OR_HTTPONLY",
+        "SERVER_VERSION_DISCLOSED"
+      ],
+      "passed": true
+    },
+    {
+      "id": "U5",
+      "kind": "suspicious",
+      "label": "Lookalike placement portal posting credentials elsewhere",
+      "url": "https://portal.northstar-placement.example/login",
+      "intent": "login",
+      "expect": [
+        "BLOCK"
+      ],
+      "http_status": 200,
+      "duration_ms": 323,
+      "decision": "BLOCK",
+      "risk_level": "HIGH",
+      "risk_score": 57,
+      "risk_class": "confirmed_malicious",
+      "coverage": 85,
+      "overrides": [
+        "O-4"
+      ],
+      "reasons": [
+        "The login form sends credentials to collect.badhost.example, which Northstar University does not use.",
+        "This page is directly connected to a confirmed threat (https://collect.badhost.example/login).",
+        "The page claims to be Northstar University but portal.northstar-placement.example is not one of its verified domains."
+      ],
+      "codes": [
+        "CREDENTIAL_DESTINATION_MISMATCH",
+        "DOMAIN_NOT_REGISTERED_BY_BRAND",
+        "DOMAIN_RECENTLY_REGISTERED",
+        "RELATED_THREAT_FOUND",
+        "SHARES_INFRA_WITH_REPORTED_THREAT"
+      ],
+      "scan_id": "01M6YNC1BN3A1HM7DVPYM0PT2C",
+      "engine_version": "1.1.0",
+      "simulated": true,
+      "certificate": "valid",
+      "revocation": "good",
+      "intel": [
+        "URLhaus (abuse.ch): not_listed"
+      ],
+      "posture": [
+        "HSTS_MISSING",
+        "CSP_MISSING_OR_WEAK",
+        "NOSNIFF_MISSING",
+        "REFERRER_POLICY_MISSING",
+        "PERMISSIONS_POLICY_MISSING",
+        "COOKIE_WITHOUT_SECURE_OR_HTTPONLY",
+        "SERVER_VERSION_DISCLOSED"
+      ],
+      "passed": true
+    },
+    {
+      "id": "U6",
+      "kind": "suspicious",
+      "label": "Host listed by URLhaus (fixture listing)",
+      "url": "https://secure-pay.badhost.example/",
+      "intent": "browse",
+      "expect": [
+        "BLOCK"
+      ],
+      "http_status": 200,
+      "duration_ms": 289,
+      "decision": "BLOCK",
+      "risk_level": "MEDIUM",
+      "risk_score": 34,
+      "risk_class": "confirmed_malicious",
+      "coverage": 65,
+      "overrides": [
+        "O-6"
+      ],
+      "reasons": [
+        "URLhaus (abuse.ch) lists secure-pay.badhost.example as malicious (payment_fraud); listing SIM-URLHAUS-000102.",
+        "secure-pay.badhost.example shares nameservers ns1.badhost.example, ns2.badhost.example, hosting range 203.0.113.0/24 with a reported threat.",
+        "secure-pay.badhost.example was registered 6 days ago."
+      ],
+      "codes": [
+        "DOMAIN_RECENTLY_REGISTERED",
+        "LISTED_BY_EXTERNAL_FEED",
+        "SHARES_INFRA_WITH_REPORTED_THREAT"
+      ],
+      "scan_id": "01M6YNC1S3N7ZZA6CQ745C7WXR",
+      "engine_version": "1.1.0",
+      "simulated": true,
+      "certificate": "valid",
+      "revocation": "good",
+      "intel": [
+        "URLhaus (abuse.ch): listed"
+      ],
+      "posture": [
+        "HSTS_MISSING",
+        "CSP_MISSING_OR_WEAK",
+        "NOSNIFF_MISSING",
+        "REFERRER_POLICY_MISSING",
+        "PERMISSIONS_POLICY_MISSING",
+        "COOKIE_WITHOUT_SECURE_OR_HTTPONLY",
+        "SERVER_VERSION_DISCLOSED"
+      ],
+      "passed": true
+    },
+    {
+      "id": "U7",
+      "kind": "suspicious",
+      "label": "Revoked certificate",
+      "url": "https://revoked.badhost.example/",
+      "intent": "browse",
+      "expect": [
+        "WARN",
+        "BLOCK"
+      ],
+      "http_status": 200,
+      "duration_ms": 306,
+      "decision": "WARN",
+      "risk_level": "LOW",
+      "risk_score": 10,
+      "risk_class": "high",
+      "coverage": 65,
+      "overrides": [],
+      "reasons": [
+        "The issuer has revoked the certificate for revoked.badhost.example.",
+        "revoked.badhost.example shares nameservers ns1.badhost.example, ns2.badhost.example, hosting range 203.0.113.0/24 with a reported threat."
+      ],
+      "codes": [
+        "CERT_REVOKED",
+        "SHARES_INFRA_WITH_REPORTED_THREAT"
+      ],
+      "scan_id": "01M6YNC265KMYV37SDEMTWEMDY",
+      "engine_version": "1.1.0",
+      "simulated": true,
+      "certificate": "trust_compromised",
+      "revocation": "revoked",
+      "intel": [
+        "URLhaus (abuse.ch): not_listed"
+      ],
+      "posture": [
+        "HSTS_MISSING",
+        "CSP_MISSING_OR_WEAK",
+        "NOSNIFF_MISSING",
+        "REFERRER_POLICY_MISSING",
+        "PERMISSIONS_POLICY_MISSING",
+        "COOKIE_WITHOUT_SECURE_OR_HTTPONLY",
+        "SERVER_VERSION_DISCLOSED"
+      ],
+      "passed": true
+    },
+    {
+      "id": "U8",
+      "kind": "suspicious",
+      "label": "Self-signed certificate",
+      "url": "https://selfsigned.badhost.example/",
+      "intent": "browse",
+      "expect": [
+        "WARN",
+        "BLOCK",
+        "REVIEW"
+      ],
+      "http_status": 200,
+      "duration_ms": 284,
+      "decision": "REVIEW",
+      "risk_level": "LOW",
+      "risk_score": 10,
+      "risk_class": "suspicious",
+      "coverage": 65,
+      "overrides": [],
+      "reasons": [
+        "The certificate for selfsigned.badhost.example is self-signed; no authority vouches for it.",
+        "selfsigned.badhost.example shares nameservers ns1.badhost.example, ns2.badhost.example, hosting range 203.0.113.0/24 with a reported threat.",
+        "selfsigned.badhost.example was registered 4 days ago."
+      ],
+      "codes": [
+        "CERT_SELF_SIGNED",
+        "DOMAIN_RECENTLY_REGISTERED",
+        "SHARES_INFRA_WITH_REPORTED_THREAT"
+      ],
+      "scan_id": "01M6YNC2K66J8BJ4W08H185JXB",
+      "engine_version": "1.1.0",
+      "simulated": true,
+      "certificate": "trust_compromised",
+      "revocation": "skipped",
+      "intel": [
+        "URLhaus (abuse.ch): not_listed"
+      ],
+      "posture": [
+        "HSTS_MISSING",
+        "CSP_MISSING_OR_WEAK",
+        "NOSNIFF_MISSING",
+        "REFERRER_POLICY_MISSING",
+        "PERMISSIONS_POLICY_MISSING",
+        "COOKIE_WITHOUT_SECURE_OR_HTTPONLY",
+        "SERVER_VERSION_DISCLOSED"
+      ],
+      "passed": true
+    },
+    {
+      "id": "U9",
+      "kind": "inconclusive",
+      "label": "Lookalike host that does not resolve",
+      "url": "https://ghost.northstar-admissions.example/",
+      "intent": "browse",
+      "expect": [
+        "UNKNOWN"
+      ],
+      "http_status": 200,
+      "duration_ms": 268,
+      "decision": "UNKNOWN",
+      "risk_level": "LOW",
+      "risk_score": 24,
+      "risk_class": "inconclusive",
+      "coverage": 55,
+      "overrides": [
+        "O-7"
+      ],
+      "reasons": [
+        "The page claims to be Northstar University but ghost.northstar-admissions.example is not one of its verified domains.",
+        "ghost.northstar-admissions.example does not resolve."
+      ],
+      "codes": [
+        "DOMAIN_NOT_REGISTERED_BY_BRAND",
+        "DOMAIN_NXDOMAIN"
+      ],
+      "scan_id": "01M6YNC2ZPP61FSNFZEPW8YYAJ",
+      "engine_version": "1.1.0",
+      "simulated": true,
+      "certificate": "unavailable",
+      "revocation": "skipped",
+      "intel": [],
+      "posture": [],
+      "passed": true
+    }
+  ],
+  "network": [
+    {
+      "id": "N1",
+      "kind": "real site",
+      "label": "example.com",
+      "url": "https://example.com/",
+      "intent": "browse",
+      "expect": [
+        "ALLOW",
+        "REVIEW",
+        "UNKNOWN"
+      ],
+      "http_status": 200,
+      "duration_ms": 2558,
+      "decision": "ALLOW",
+      "risk_level": "LOW",
+      "risk_score": 0,
+      "risk_class": "low",
+      "coverage": 65,
+      "overrides": [],
+      "reasons": [],
+      "codes": [],
+      "scan_id": "01M6YNC3JCG9YBSYEM30RAW92R",
+      "engine_version": "1.1.0",
+      "simulated": false,
+      "certificate": "valid",
+      "revocation": "good",
+      "intel": [],
+      "posture": [
+        "HSTS_MISSING",
+        "CSP_MISSING_OR_WEAK",
+        "NOSNIFF_MISSING",
+        "REFERRER_POLICY_MISSING",
+        "PERMISSIONS_POLICY_MISSING"
+      ],
+      "passed": true
+    },
+    {
+      "id": "N2",
+      "kind": "real site",
+      "label": "wikipedia.org",
+      "url": "https://www.wikipedia.org/",
+      "intent": "browse",
+      "expect": [
+        "ALLOW",
+        "REVIEW",
+        "UNKNOWN"
+      ],
+      "http_status": 200,
+      "duration_ms": 2270,
+      "decision": "ALLOW",
+      "risk_level": "LOW",
+      "risk_score": 0,
+      "risk_class": "low",
+      "coverage": 65,
+      "overrides": [],
+      "reasons": [],
+      "codes": [],
+      "scan_id": "01M6YNC61DYMCKP9WJ2EED1MF3",
+      "engine_version": "1.1.0",
+      "simulated": false,
+      "certificate": "valid",
+      "revocation": "good",
+      "intel": [],
+      "posture": [
+        "CSP_MISSING_OR_WEAK",
+        "NOSNIFF_MISSING",
+        "REFERRER_POLICY_MISSING",
+        "PERMISSIONS_POLICY_MISSING",
+        "COOKIE_WITHOUT_SECURE_OR_HTTPONLY",
+        "SERVER_VERSION_DISCLOSED"
+      ],
+      "passed": true
+    },
+    {
+      "id": "N3",
+      "kind": "real site",
+      "label": "GitHub sign-in page",
+      "url": "https://github.com/login",
+      "intent": "login",
+      "expect": [
+        "ALLOW",
+        "REVIEW",
+        "WARN",
+        "UNKNOWN"
+      ],
+      "http_status": 200,
+      "duration_ms": 1935,
+      "decision": "ALLOW",
+      "risk_level": "LOW",
+      "risk_score": 0,
+      "risk_class": "low",
+      "coverage": 85,
+      "overrides": [],
+      "reasons": [],
+      "codes": [],
+      "scan_id": "01M6YNC8BPT422YHC55A27B43Q",
+      "engine_version": "1.1.0",
+      "simulated": false,
+      "certificate": "valid",
+      "revocation": "good",
+      "intel": [],
+      "posture": [
+        "PERMISSIONS_POLICY_MISSING",
+        "COOKIE_WITHOUT_SECURE_OR_HTTPONLY"
+      ],
+      "passed": true
+    },
+    {
+      "id": "N4",
+      "kind": "real site",
+      "label": "paypal.com",
+      "url": "https://www.paypal.com/",
+      "intent": "browse",
+      "expect": [
+        "ALLOW",
+        "REVIEW",
+        "WARN",
+        "UNKNOWN"
+      ],
+      "http_status": 200,
+      "duration_ms": 2084,
+      "decision": "ALLOW",
+      "risk_level": "LOW",
+      "risk_score": 0,
+      "risk_class": "low",
+      "coverage": 65,
+      "overrides": [],
+      "reasons": [],
+      "codes": [],
+      "scan_id": "01M6YNCACKGFBDFTG6ZRTGZ7K9",
+      "engine_version": "1.1.0",
+      "simulated": false,
+      "certificate": "valid",
+      "revocation": "good",
+      "intel": [],
+      "posture": [
+        "CSP_MISSING_OR_WEAK",
+        "REFERRER_POLICY_MISSING",
+        "COOKIE_WITHOUT_SECURE_OR_HTTPONLY"
+      ],
+      "passed": true
+    }
+  ],
+  "messages": [
+    {
+      "id": "M1",
+      "kind": "scam",
+      "fixture": "scam_portal_otp.txt",
+      "http_status": 200,
+      "decision": "BLOCK",
+      "risk_class": "confirmed_malicious",
+      "risk_score": 64,
+      "overrides": [],
+      "codes": [
+        "MESSAGE_CREDENTIAL_REQUEST",
+        "MESSAGE_IMPERSONATES_ORGANISATION",
+        "MESSAGE_LINK_BLOCKED",
+        "MESSAGE_LINK_TO_UNVERIFIED_CLAIM",
+        "MESSAGE_URGENCY_PRESSURE"
+      ],
+      "links": [
+        "northstar-placement.example \u2192 BLOCK"
+      ],
+      "narrative_source": "template",
+      "first_reason": "A link in the message (northstar-placement.example) was assessed BLOCK.",
+      "passed": true,
+      "expect": [
+        "BLOCK"
+      ]
+    },
+    {
+      "id": "M2",
+      "kind": "scam",
+      "fixture": "scam_fee_upi.txt",
+      "http_status": 200,
+      "decision": "BLOCK",
+      "risk_class": "confirmed_malicious",
+      "risk_score": 58,
+      "overrides": [
+        "O-2"
+      ],
+      "codes": [
+        "MESSAGE_LINK_BLOCKED",
+        "MESSAGE_LINK_TO_UNVERIFIED_CLAIM",
+        "MESSAGE_PAYMENT_DEMAND",
+        "MESSAGE_URGENCY_PRESSURE",
+        "PAYEE_NOT_IN_VERIFIED_PROFILE"
+      ],
+      "links": [
+        "northstar-admissions.example \u2192 BLOCK"
+      ],
+      "narrative_source": "template",
+      "first_reason": "A link in the message (northstar-admissions.example) was assessed BLOCK.",
+      "passed": true,
+      "expect": [
+        "BLOCK"
+      ]
+    },
+    {
+      "id": "M3",
+      "kind": "scam",
+      "fixture": "scam_job_kyc.txt",
+      "http_status": 200,
+      "decision": "BLOCK",
+      "risk_class": "confirmed_malicious",
+      "risk_score": 34,
+      "overrides": [
+        "O-2"
+      ],
+      "codes": [
+        "MESSAGE_CONTACT_CHANNEL_MISMATCH",
+        "MESSAGE_CREDENTIAL_REQUEST",
+        "MESSAGE_PAYMENT_DEMAND",
+        "MESSAGE_URGENCY_PRESSURE",
+        "PAYEE_NOT_IN_VERIFIED_PROFILE"
+      ],
+      "links": [],
+      "narrative_source": "template",
+      "first_reason": "The payment address hr.northstar@ybl is not one registered by Northstar University (registered: fees@northstar-demo).",
+      "passed": true,
+      "expect": [
+        "BLOCK"
+      ]
+    },
+    {
+      "id": "M4",
+      "kind": "legitimate (pushy) \u2014 false-positive case",
+      "fixture": "legit_fee_reminder.txt",
+      "http_status": 200,
+      "decision": "ALLOW",
+      "risk_class": "low",
+      "risk_score": 12,
+      "overrides": [],
+      "codes": [
+        "IDENTITY_MATCH_CONFIRMED",
+        "MESSAGE_PAYMENT_DEMAND",
+        "MESSAGE_URGENCY_PRESSURE",
+        "PAYEE_MATCH_CONFIRMED"
+      ],
+      "links": [
+        "northstar-demo.example \u2192 ALLOW"
+      ],
+      "narrative_source": "template",
+      "first_reason": "The message asks you to make a payment.",
+      "passed": true,
+      "expect": [
+        "ALLOW"
+      ]
+    },
+    {
+      "id": "M5",
+      "kind": "legitimate",
+      "fixture": "legit_receipt.txt",
+      "http_status": 200,
+      "decision": "ALLOW",
+      "risk_class": "low",
+      "risk_score": 0,
+      "overrides": [],
+      "codes": [
+        "IDENTITY_MATCH_CONFIRMED",
+        "MESSAGE_NO_MALICIOUS_INDICATOR"
+      ],
+      "links": [
+        "northstar-demo.example \u2192 ALLOW"
+      ],
+      "narrative_source": "template",
+      "first_reason": null,
+      "passed": true,
+      "expect": [
+        "ALLOW"
+      ]
+    },
+    {
+      "id": "M6",
+      "kind": "legitimate",
+      "fixture": "legit_newsletter.txt",
+      "http_status": 200,
+      "decision": "ALLOW",
+      "risk_class": "low",
+      "risk_score": 0,
+      "overrides": [],
+      "codes": [
+        "IDENTITY_MATCH_CONFIRMED",
+        "MESSAGE_NO_MALICIOUS_INDICATOR"
+      ],
+      "links": [
+        "northstar-demo.example \u2192 ALLOW"
+      ],
+      "narrative_source": "template",
+      "first_reason": null,
+      "passed": true,
+      "expect": [
+        "ALLOW"
+      ]
+    },
+    {
+      "id": "M7",
+      "kind": "language only",
+      "fixture": "pushy_no_evidence.txt",
+      "http_status": 200,
+      "decision": "REVIEW",
+      "risk_class": "suspicious",
+      "risk_score": 3,
+      "overrides": [
+        "O-8"
+      ],
+      "codes": [
+        "MESSAGE_URGENCY_PRESSURE"
+      ],
+      "links": [],
+      "narrative_source": "template",
+      "first_reason": "The message uses pressure (deadline, threat); language alone is not proof.",
+      "passed": true,
+      "expect": [
+        "REVIEW"
+      ]
+    }
+  ],
+  "web3": {
+    "report_id": "01M6YNCG1BADE0WASZKAKWZX4J",
+    "contract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+    "chain_id": 31337,
+    "tx_hash": "0x7345aeca741561a89d57866461f59852c6cd41b783e586ec28d1a5a5db0374b5",
+    "block_number": 4,
+    "commitment": "0xbd80dfdce89b4a8ef86fc32e379a2ea62a02a7453cb1ba180f6936b57299d288",
+    "valid": true,
+    "checks": {
+      "payload_hash_matches": true,
+      "chain_commitment_matches": true,
+      "report_unchanged": true
+    },
+    "tampered_valid": false,
+    "tampered_checks": {
+      "payload_hash_matches": false,
+      "chain_commitment_matches": false,
+      "report_unchanged": true
+    },
+    "passed": true
+  }
+}
