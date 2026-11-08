@@ -1,0 +1,41 @@
+{
+  "simulated": true,
+  "network": "local hardhat node",
+  "chain_id": 31337,
+  "contract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "deploy_tx": "0xa914d7161c36d2bc4861834542a9343b43e479ef8637dcb3f35b59de7c892d69",
+  "deploy_block": 1,
+  "solc": "0.8.24",
+  "seeded_reports": [
+    {
+      "report_id": "01M6YETXP1J9G7ABQ8MTBVXRYZ",
+      "report_id_bytes32": "0x0000000000000000000000000000000001a1bced76c19260752ee8a697bee3df",
+      "tx": "0x4bc8104cbef010b7676919b2bf2f3d565c7c811c0f1df3d25f07bb8b182b078e",
+      "block": 2,
+      "revision": 1,
+      "commitment": "0x9ddae038198c75d8ca63a7895c2a0f5f0cd156accedee7fcc07988dca563cf50",
+      "payload_hash": "0x5350a44bd11a3e2a0c3f3d785927153aaab8fa6ba3e29fdc11b1ee15c042f032",
+      "verify_original": {
+        "valid": true,
+        "checks": {
+          "payload_hash_matches": true,
+          "chain_commitment_matches": true,
+          "report_unchanged": true
+        }
+      },
+      "verify_tampered": {
+        "valid": false,
+        "checks": {
+          "payload_hash_matches": false,
+          "chain_commitment_matches": false,
+          "report_unchanged": true
+        }
+      },
+      "simulated": true
+    }
+  ],
+  "generated_at": "2026-11-08T21:23:02.989Z",
+  "commit": "3dd968e",
+  "evidence_generated_at": "2026-11-08T21:24:18Z"
+}

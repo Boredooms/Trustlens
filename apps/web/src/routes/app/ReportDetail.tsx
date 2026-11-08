@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatusPill, VerdictBadge } from "@/components/domain/Badges";
+import { OnChainProofPanel } from "@/components/domain/OnChainProof";
 import { CoverageMeter, ScoreDial } from "@/components/domain/Meters";
 import { TimeText, UrlText } from "@/components/domain/Text";
 import { Button } from "@/components/ui/Button";
@@ -160,6 +161,7 @@ export default function ReportDetail() {
               <p className="text-sm text-muted">No scan is linked to this report.</p>
             )}
           </Card>
+          <OnChainProofPanel reportId={r.id} />
           <Card title="Evidence">
             {(r.evidence ?? []).length === 0 ? (
               <p className="text-sm text-muted">No evidence attached.</p>

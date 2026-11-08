@@ -7,7 +7,7 @@
 
 ---
 
-## 1. Index of endpoints (64 active)
+## 1. Index of endpoints (68 active)
 
 Health 3 · Auth 3 (+4 delegated to Clerk) · Devices 2 · Scans 3 · Assess 4 ·
 Organisations 5 · Domains 4 · Recipients 4 · Members 4 · Reports 4 · Appeals 1 ·
@@ -88,6 +88,10 @@ to it, stays stable.
 | 65 | DELETE | `/api/v1/auth/me` |
 | 66 | GET | `/api/v1/admin/demo` |
 | 67 | POST | `/api/v1/admin/demo/reset` |
+| 68 | POST | `/api/v1/reports/{reportId}/anchor` |
+| 69 | GET | `/api/v1/reports/{reportId}/anchor` |
+| 70 | GET | `/api/v1/public/verify/{reportId}` |
+| 71 | POST | `/api/v1/public/verify/{reportId}` |
 
 ---
 
@@ -585,6 +589,15 @@ Further appeal routes (J10):
 | `GET /appeals` | analyst | `{data:[Appeal], page}`; filters `status`, `domain` |
 | `GET /appeals/{id}` | analyst | `Appeal` (`current_reputation`, `open_reports`, `review`) |
 | `POST /appeals/{id}/review` | analyst | `{action:"approve"\|"reject", reason}`. Approve needs `challenge_verified` (`409 APPEAL_NOT_VERIFIED`), resets the domain and its page URLs +30 toward 0 (THREAT_INTELLIGENCE_ENGINE §4.1; `confirmed_threat` cleared only at 0) and dismisses the domain's open reports. `409 APPEAL_ALREADY_REVIEWED` |
+
+On-chain integrity anchors (#68–#71). Owner: [`WEB3_REGISTRY.md`](../02-architecture/WEB3_REGISTRY.md) §5.
+
+| Endpoint | Auth | Result |
+| --- | --- | --- |
+| `POST /reports/{id}/anchor` | report owner or analyst | `201 AnchorOut` (`created: true`) after `register` (revision 1) or `revise` (payload changed); `200` with `created: false` when the payload is unchanged. `503 CHAIN_UNAVAILABLE`, `502 ANCHOR_TX_FAILED`, `409 ANCHOR_ALREADY_EXISTS` |
+| `GET /reports/{id}/anchor` | report owner or analyst | `200 AnchorOut`; `{anchored:false}` when never anchored |
+| `GET /public/verify/{id}` | none (rate group `public_verify`) | `200 AnchorVerification {valid, checks{payload_hash_matches, chain_commitment_matches, report_unchanged}, payload, salt, …}`; `404 ANCHOR_NOT_FOUND`; `503 CHAIN_UNAVAILABLE` |
+| `POST /public/verify/{id}` | none (rate group `public_verify`) | Body `{payload}`. Same response, hashing the supplied payload; a tampered copy returns `valid:false` |
 
 ---
 

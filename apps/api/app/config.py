@@ -118,6 +118,14 @@ class Settings(BaseSettings):
     qstash_token: SecretStr | None = None
     qstash_url: str = "https://qstash.upstash.io"
 
+    # ── 2.7 Web3 report registry (docs/02-architecture/WEB3_REGISTRY.md §7) ──────
+    # Unset CHAIN_RPC_URL disables anchoring; scans and reports never depend on the chain.
+    chain_rpc_url: str | None = None
+    chain_id: int = 31337
+    chain_registry_address: str | None = None
+    chain_sender_address: str | None = None
+    chain_timeout_seconds: float = Field(default=5, gt=0, le=30)
+
     # ── Parsing ─────────────────────────────────────────────────────────────────
     @field_validator("allowed_origins", "blocked_ports", mode="before")
     @classmethod
@@ -171,12 +179,25 @@ class Settings(BaseSettings):
                 raise ValueError("missing required production variable(s): " + ", ".join(missing))
             if self.jwt_secret is not None and len(self.jwt_secret.get_secret_value()) < 32:
                 raise ValueError("JWT_SECRET must be at least 32 characters in production")
+            if self.chain_rpc_url and self.chain_id == 31337:
+                raise ValueError(
+                    "CHAIN_ID=31337 is the local development chain and is refused in production"
+                )
+        if self.chain_rpc_url and not (self.chain_registry_address and self.chain_sender_address):
+            raise ValueError(
+                "CHAIN_REGISTRY_ADDRESS and CHAIN_SENDER_ADDRESS are required when CHAIN_RPC_URL "
+                "is set"
+            )
         return self
 
     # ── Derived values ──────────────────────────────────────────────────────────
     @property
     def llm_configured(self) -> bool:
         return self.llm_api_key is not None and bool(self.llm_api_key.get_secret_value())
+
+    @property
+    def chain_configured(self) -> bool:
+        return bool(self.chain_rpc_url and self.chain_registry_address)
 
     @property
     def is_production(self) -> bool:

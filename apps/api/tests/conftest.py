@@ -34,7 +34,9 @@ def make_settings(**overrides: Any) -> Settings:
 def _isolate_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """Tests never read the developer's real environment or .env file."""
     for key in list(os.environ):
-        if key.startswith(("CLERK_", "DATABASE_", "DIRECT_DATABASE", "SUPABASE_", "UPSTASH_")):
+        if key.startswith(
+            ("CLERK_", "DATABASE_", "DIRECT_DATABASE", "SUPABASE_", "UPSTASH_", "CHAIN_", "INTEL_")
+        ):
             monkeypatch.delenv(key, raising=False)
 
 

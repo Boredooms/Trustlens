@@ -484,6 +484,14 @@ Retention: 1 year; never mutated.
 `id`, `actor_id`, `actor_kind`, `day DATE`, `endpoint_group TEXT`, `count INTEGER`.
 `UNIQUE(actor_id, actor_kind, day, endpoint_group)`. 90-day retention.
 
+### 7.4 `report_anchors` (Web3 registry, migration `c3a0web30001`)
+
+One row per threat report holding its latest on-chain commitment: `report_id` (unique, FK
+`threat_reports` CASCADE), `chain_id`, `contract`, `report_id_bytes32`, `payload JSONB` (privacy-safe
+snapshot), `payload_hash`, `salt_ciphertext` (Fernet, never logged), `commitment`, `revision ≥ 1`,
+`tx_hash`, `block_number`, `anchored_at`, `created_by`. CHECKs enforce `0x`+64-hex hashes. RLS on, no
+policy. Owner and full column list: [`WEB3_REGISTRY.md`](WEB3_REGISTRY.md) §6.
+
 ---
 
 ## 8. Representative DDL

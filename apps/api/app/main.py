@@ -20,6 +20,7 @@ from app.api.middleware import (
 )
 from app.api.routes import (  # platform
     admin,
+    anchors,  # web3 registry
     appeals,
     auth,
     certificates,
@@ -189,6 +190,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(internal_jobs.router)  # platform (not in the public OpenAPI)
     app.include_router(webhooks.router)  # Clerk user sync (not in the public OpenAPI)
     app.include_router(admin.router)  # operator demo controls
+    app.include_router(anchors.router)  # web3 report registry (WEB3_REGISTRY.md)
     return app
 
 

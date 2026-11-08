@@ -299,6 +299,15 @@ Stable strings. Adding a code is additive; never reuse a code for a different me
 
 Challenge failures reuse §7.3: `VERIFICATION_TOKEN_MISMATCH`, `VERIFICATION_NOT_FOUND`, `VERIFICATION_FETCH_FAILED`, `VERIFICATION_EXPIRED`.
 
+### 7.6 Web3 report registry (owner: `WEB3_REGISTRY.md` §8)
+
+| Code | Status | Meaning |
+| --- | --- | --- |
+| `CHAIN_UNAVAILABLE` | 503 | Chain not configured, unreachable, wrong chain id, or no contract at the address. Only anchor/verify routes can return it |
+| `ANCHOR_NOT_FOUND` | 404 | Public verify for a report that has no anchor |
+| `ANCHOR_TX_FAILED` | 502 | The node rejected or reverted the anchoring transaction |
+| `ANCHOR_ALREADY_EXISTS` | 409 | The chain holds this report id but the database has no anchor row; never overwritten |
+
 ---
 
 ## 8. Pagination, filtering, sorting, search

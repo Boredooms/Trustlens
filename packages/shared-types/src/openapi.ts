@@ -797,6 +797,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/verify/{report_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Publicly verify an anchored report (no sign-in) */
+        get: operations["public_verify_api_v1_public_verify__report_id__get"];
+        put?: never;
+        /** Verify a caller-supplied payload against the anchored commitment (no sign-in) */
+        post: operations["public_verify_payload_api_v1_public_verify__report_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports": {
         parameters: {
             query?: never;
@@ -826,6 +844,24 @@ export interface paths {
         get: operations["get_report_api_v1_reports__report_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/{report_id}/anchor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Anchor of a report */
+        get: operations["get_anchor_api_v1_reports__report_id__anchor_get"];
+        put?: never;
+        /** Anchor a report's commitment on chain */
+        post: operations["anchor_report_api_v1_reports__report_id__anchor_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1029,6 +1065,93 @@ export interface components {
             tokens_in?: number | null;
             /** Tokens Out */
             tokens_out?: number | null;
+        };
+        /** AnchorOut */
+        AnchorOut: {
+            /** Anchored */
+            anchored: boolean;
+            /** Anchored At */
+            anchored_at?: string | null;
+            /** Block Number */
+            block_number?: number | null;
+            /** Chain Id */
+            chain_id?: number | null;
+            /** Commitment */
+            commitment?: string | null;
+            /** Contract */
+            contract?: string | null;
+            /**
+             * Created
+             * @description True when this call sent a transaction (register or revise).
+             */
+            created?: boolean | null;
+            /** Payload Hash */
+            payload_hash?: string | null;
+            /** Report Id */
+            report_id: string;
+            /** Report Id Bytes32 */
+            report_id_bytes32?: string | null;
+            /** Revision */
+            revision?: number | null;
+            /** Simulated */
+            simulated?: boolean | null;
+            /** Tx Hash */
+            tx_hash?: string | null;
+        };
+        /** AnchorVerification */
+        AnchorVerification: {
+            /** Anchored */
+            anchored: boolean;
+            /** Anchored At */
+            anchored_at?: string | null;
+            /** Block Number */
+            block_number?: number | null;
+            /** Chain Id */
+            chain_id?: number | null;
+            /** Checked At */
+            checked_at: string;
+            checks: components["schemas"]["VerifyChecks"];
+            /** Commitment */
+            commitment?: string | null;
+            /** Computed Payload Hash */
+            computed_payload_hash: string;
+            /** Contract */
+            contract?: string | null;
+            /**
+             * Created
+             * @description True when this call sent a transaction (register or revise).
+             */
+            created?: boolean | null;
+            /** On Chain Revision */
+            on_chain_revision: number;
+            /**
+             * On Chain Status
+             * @enum {string}
+             */
+            on_chain_status: "unknown" | "active" | "disputed" | "withdrawn";
+            /** Payload */
+            payload: {
+                [key: string]: unknown;
+            };
+            /** Payload Hash */
+            payload_hash?: string | null;
+            /** Report Id */
+            report_id: string;
+            /** Report Id Bytes32 */
+            report_id_bytes32?: string | null;
+            /** Revision */
+            revision?: number | null;
+            /** Salt */
+            salt: string;
+            /** Simulated */
+            simulated?: boolean | null;
+            /** Tx Hash */
+            tx_hash?: string | null;
+            /**
+             * Valid
+             * @description All three checks passed. Integrity, never truth.
+             */
+            valid: boolean;
         };
         /** ApiKeyCreate */
         ApiKeyCreate: {
@@ -2728,6 +2851,24 @@ export interface components {
             /** Endpoint Group */
             endpoint_group: string | null;
         };
+        /** VerifyChecks */
+        VerifyChecks: {
+            /**
+             * Chain Commitment Matches
+             * @description the contract's verify() returned ok
+             */
+            chain_commitment_matches: boolean;
+            /**
+             * Payload Hash Matches
+             * @description sha256 of the payload equals the anchored hash
+             */
+            payload_hash_matches: boolean;
+            /**
+             * Report Unchanged
+             * @description today's report rebuilds to the anchored snapshot (false: changed since)
+             */
+            report_unchanged: boolean;
+        };
         /** VerifyIdentityRequest */
         VerifyIdentityRequest: {
             /** Domain */
@@ -2753,6 +2894,16 @@ export interface components {
             reason_code: "DOMAIN_VERIFIED" | "DOMAIN_NOT_REGISTERED_BY_BRAND" | "NO_PROFILE" | "CLAIM_AMBIGUOUS";
             /** Verified Domains */
             verified_domains: string[];
+        };
+        /** VerifyPayloadRequest */
+        VerifyPayloadRequest: {
+            /**
+             * Payload
+             * @description A candidate canonical payload; hashing it shows whether it is the anchored one.
+             */
+            payload: {
+                [key: string]: unknown;
+            };
         };
         /** VerifyPaymentRequest */
         VerifyPaymentRequest: {
@@ -7545,6 +7696,180 @@ export interface operations {
             };
         };
     };
+    public_verify_api_v1_public_verify__report_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnchorVerification"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Missing or invalid credentials */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not permitted */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not found or not visible */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation failure or policy rejection */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    public_verify_payload_api_v1_public_verify__report_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyPayloadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnchorVerification"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Missing or invalid credentials */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not permitted */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not found or not visible */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation failure or policy rejection */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
     list_reports_api_v1_reports_get: {
         parameters: {
             query?: {
@@ -7737,6 +8062,176 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReportOut"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Missing or invalid credentials */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not permitted */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not found or not visible */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation failure or policy rejection */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    get_anchor_api_v1_reports__report_id__anchor_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnchorOut"];
+                };
+            };
+            /** @description Malformed request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Missing or invalid credentials */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not permitted */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not found or not visible */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation failure or policy rejection */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Rate limited */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    anchor_report_api_v1_reports__report_id__anchor_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnchorOut"];
                 };
             };
             /** @description Malformed request */

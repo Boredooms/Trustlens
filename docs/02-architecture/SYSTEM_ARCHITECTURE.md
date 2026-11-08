@@ -419,6 +419,21 @@ human path in production.
 **Consequences.** Rehearsals and the automated demo check (`app.scripts.demo_check`) run without
 third-party accounts; the flag is a documented, startup-enforced development affordance.
 
+### ADR-018 — On-chain integrity commitments for threat reports
+
+**Context.** The problem statement (Module 6) requires tamper-evident, independently verifiable threat
+reporting with no sensitive data on chain. `PROJECT_OVERVIEW.md` had rejected "blockchain-based
+reporting" as cost without benefit, which held for a chain as the *source of truth*.
+**Decision.** A minimal, ownerless `ThreatReportRegistry` contract (`packages/contracts`) stores a
+salted keccak commitment to a privacy-safe projection of each report, with revisions and public
+disputes. Postgres stays authoritative. The API anchors post-hoc through JSON-RPC with
+`eth_sendTransaction` from a node-unlocked account (no key in the API); the reproducible target is a
+local Hardhat chain (`chainId 31337`). Full design: `WEB3_REGISTRY.md`.
+**Consequences.** Four endpoints (#68–#71), one table (`report_anchors`), four error codes (§7.6),
+`CHAIN_*` settings. No dependency added to the API (selectors pinned, commitment computed by the
+contract's `commitmentOf`). Verdicts, scans and reports never depend on chain availability. Public
+testnet anchoring through the API is not implemented (needs a signing node or proxy).
+
 ---
 
 ## 12. Module interaction matrix

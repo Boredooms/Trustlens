@@ -1,0 +1,377 @@
+{
+  "_generated": "by scripts/export-artifact.js from hardhat compile — do not edit by hand",
+  "contractName": "ThreatReportRegistry",
+  "solc": "0.8.24",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "reportId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "AlreadyRegistered",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "EmptyCommitment",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "reportId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "NotRegistered",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "reportId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "NotReporter",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint32",
+          "name": "current",
+          "type": "uint32"
+        },
+        {
+          "internalType": "uint32",
+          "name": "proposed",
+          "type": "uint32"
+        }
+      ],
+      "name": "StaleRevision",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "reportId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "by",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "reasonHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "ReportDisputed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "reportId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "reporter",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "commitment",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint32",
+          "name": "revision",
+          "type": "uint32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "payloadHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "ReportRegistered",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "reportId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "by",
+          "type": "address"
+        }
+      ],
+      "name": "ReportWithdrawn",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "reportId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "payloadHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "salt",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint32",
+          "name": "revision",
+          "type": "uint32"
+        }
+      ],
+      "name": "commitmentOf",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "reportId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "reasonHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "dispute",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "reportId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "get",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "bytes32",
+              "name": "commitment",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "payloadHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "address",
+              "name": "reporter",
+              "type": "address"
+            },
+            {
+              "internalType": "uint64",
+              "name": "registeredAt",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint32",
+              "name": "revision",
+              "type": "uint32"
+            },
+            {
+              "internalType": "enum ThreatReportRegistry.Status",
+              "name": "status",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct ThreatReportRegistry.Record",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "reportId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "commitment",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "payloadHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint32",
+          "name": "revision",
+          "type": "uint32"
+        }
+      ],
+      "name": "register",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "reportId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "commitment",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "payloadHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint32",
+          "name": "revision",
+          "type": "uint32"
+        }
+      ],
+      "name": "revise",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "total",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "reportId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "payloadHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "salt",
+          "type": "bytes32"
+        }
+      ],
+      "name": "verify",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "ok",
+          "type": "bool"
+        },
+        {
+          "internalType": "uint32",
+          "name": "revision",
+          "type": "uint32"
+        },
+        {
+          "internalType": "enum ThreatReportRegistry.Status",
+          "name": "status",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "reportId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "withdraw",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x608060405234801561001057600080fd5b50610876806100206000396000f3fe608060405234801561001057600080fd5b50600436106100885760003560e01c80638e19899e1161005b5780638e19899e146100f35780638eaa6ac014610106578063dd5be1f014610126578063f63e2cd41461013957600080fd5b806327a86ff31461008d5780632ddbd13a146100a25780633fb82028146100be57806382cbf88b146100e0575b600080fd5b6100a061009b3660046106d2565b61014c565b005b6100ab60015481565b6040519081526020015b60405180910390f35b6100d16100cc36600461071c565b61029c565b6040516100b593929190610780565b6100a06100ee3660046107a2565b610316565b6100a06101013660046107c4565b610391565b6101196101143660046107c4565b610432565b6040516100b591906107dd565b6100a06101343660046106d2565b61050c565b6100ab6101473660046106d2565b610687565b6000848152602081905260409020805461018157604051634660068b60e11b8152600481018690526024015b60405180910390fd5b60028101546001600160a01b031633146101b157604051634200ce4360e01b815260048101869052602401610178565b836101cf57604051635560fe6360e11b815260040160405180910390fd5b600281015463ffffffff600160e01b90910481169083161161022157600281015460405163296b628560e01b8152600160e01b90910463ffffffff908116600483015283166024820152604401610178565b838155600181018390556002810180546001600160e01b0316600160e01b63ffffffff8516908102919091179091556040805186815260208101929092528101849052339086907fb0f6398d3018432ab03a34ce3d35d1260585ec96ee948551770e2705baaa081a9060600160405180910390a35050505050565b60008381526020819052604081208054829182916102c55760008060009350935093505061030d565b805460028201546102e890899089908990600160e01b900463ffffffff16610687565b600283015460039093015491149450600160e01b90910463ffffffff16925060ff1690505b93509350939050565b6000828152602081905260409020805461034657604051634660068b60e11b815260048101849052602401610178565b60038101805460ff19166002179055604051828152339084907ff1983216d85491e2e7854756d526b5f2e0ecfc016211c2a83c3e564a4d566e849060200160405180910390a3505050565b600081815260208190526040902080546103c157604051634660068b60e11b815260048101839052602401610178565b60028101546001600160a01b031633146103f157604051634200ce4360e01b815260048101839052602401610178565b6003818101805460ff19169091179055604051339083907f82ed75365d24ee74fbff668aed64ba7f494126efafc96accc3b7e0770015de8e90600090a35050565b6104686040805160c08101825260008082526020820181905291810182905260608101829052608081018290529060a082015290565b60008281526020818152604091829020825160c0810184528154815260018201549281019290925260028101546001600160a01b03811693830193909352600160a01b830467ffffffffffffffff166060830152600160e01b90920463ffffffff16608082015260038083015491929160a084019160ff909116908111156104f2576104f2610748565b600381111561050357610503610748565b90525092915050565b8261052a57604051635560fe6360e11b815260040160405180910390fd5b6000848152602081905260409020541561055a57604051633be57b3960e11b815260048101859052602401610178565b6040805160c08101825284815260208082018581523383850190815267ffffffffffffffff4281166060860190815263ffffffff88811660808801908152600160a0890181815260008f8152988990529990972088518155955186880155935160028601805493519551909216600160e01b026001600160e01b0395909416600160a01b026001600160e01b03199093166001600160a01b039091161791909117929092161790559251600380850180549495949293909260ff191691849081111561062857610628610748565b0217905550506001805481019055506040805184815263ffffffff83166020820152908101839052339085907fb0f6398d3018432ab03a34ce3d35d1260585ec96ee948551770e2705baaa081a9060600160405180910390a350505050565b60408051602081018690529081018490526060810183905263ffffffff8216608082015260009060a0016040516020818303038152906040528051906020012090505b949350505050565b600080600080608085870312156106e857600080fd5b843593506020850135925060408501359150606085013563ffffffff8116811461071157600080fd5b939692955090935050565b60008060006060848603121561073157600080fd5b505081359360208301359350604090920135919050565b634e487b7160e01b600052602160045260246000fd5b6004811061077c57634e487b7160e01b600052602160045260246000fd5b9052565b831515815263ffffffff83166020820152606081016106ca604083018461075e565b600080604083850312156107b557600080fd5b50508035926020909101359150565b6000602082840312156107d657600080fd5b5035919050565b81518152602080830151908201526040808301516001600160a01b03169082015260608083015167ffffffffffffffff169082015260808083015163ffffffff169082015260a08083015160c08301916108399084018261075e565b509291505056fea26469706673582212203a43983374e1829c281dcbf8ee6686292ef4bc428fd8b3751eec30c9edc052cf64736f6c63430008180033",
+  "selectors": {
+    "commitmentOf(bytes32,bytes32,bytes32,uint32)": "0xf63e2cd4",
+    "dispute(bytes32,bytes32)": "0x82cbf88b",
+    "get(bytes32)": "0x8eaa6ac0",
+    "register(bytes32,bytes32,bytes32,uint32)": "0xdd5be1f0",
+    "revise(bytes32,bytes32,bytes32,uint32)": "0x27a86ff3",
+    "total()": "0x2ddbd13a",
+    "verify(bytes32,bytes32,bytes32)": "0x3fb82028",
+    "withdraw(bytes32)": "0x8e19899e"
+  }
+}

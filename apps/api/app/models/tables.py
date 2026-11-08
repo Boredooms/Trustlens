@@ -660,3 +660,33 @@ class Appeal(Base):
     ip_hash: Mapped[str | None] = mapped_column(CHAR(64))
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
+
+
+# ── Web3 report registry (WEB3_REGISTRY.md §6) ──────────────────────────────────
+class ReportAnchor(Base):
+    """Off-chain record of a report's on-chain commitment. One row per report (latest revision);
+    revision history lives in the contract's events. ``payload`` holds no personal data (§4)."""
+
+    __tablename__ = "report_anchors"
+    __table_args__ = (
+        UniqueConstraint("report_id"),
+        CheckConstraint("revision >= 1", name="revision_positive"),
+        CheckConstraint("commitment ~ '^0x[0-9a-f]{64}$'", name="commitment_hex"),
+        CheckConstraint("payload_hash ~ '^0x[0-9a-f]{64}$'", name="payload_hash_hex"),
+    )
+    id: Mapped[str] = ulid_pk()
+    report_id: Mapped[str] = fk("threat_reports.id", "CASCADE", nullable=False)
+    chain_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    contract: Mapped[str] = mapped_column(Text, nullable=False)
+    report_id_bytes32: Mapped[str] = mapped_column(Text, nullable=False)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    payload_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    salt_ciphertext: Mapped[str] = mapped_column(Text, nullable=False)
+    commitment: Mapped[str] = mapped_column(Text, nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False)
+    tx_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    block_number: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    anchored_at: Mapped[datetime] = ts(False)
+    created_by: Mapped[str | None] = fk("users.id", "SET NULL")
+    created_at: Mapped[datetime] = created_at()
+    updated_at: Mapped[datetime] = updated_at()

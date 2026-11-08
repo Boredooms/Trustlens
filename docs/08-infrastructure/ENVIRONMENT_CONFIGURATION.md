@@ -121,6 +121,16 @@ Rules:
   design (the anon key is constrained by RLS).
 - Redis and QStash tokens are never given to the frontend or the extension.
 
+### 2.7 Web3 report registry (owner: `02-architecture/WEB3_REGISTRY.md` §7)
+
+| Variable | Required | Secret | Meaning / default |
+| --- | --- | --- | --- |
+| `CHAIN_RPC_URL` | no | no | JSON-RPC node. Unset ⇒ anchoring disabled, anchor routes answer `503 CHAIN_UNAVAILABLE` |
+| `CHAIN_ID` | no | no | `31337` (local Hardhat). **Refused in production** |
+| `CHAIN_REGISTRY_ADDRESS` | with RPC | no | Deployed `ThreatReportRegistry` |
+| `CHAIN_SENDER_ADDRESS` | with RPC | no | Node-unlocked account that sends `register`/`revise`. The API never holds a private key |
+| `CHAIN_TIMEOUT_SECONDS` | no | no | `5` per RPC call |
+
 ## 3. Frontend variables (public)
 
 | Name | Required | Default | Purpose |

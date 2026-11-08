@@ -1,0 +1,26 @@
+{
+  "simulated": true,
+  "network": "hardhat in-process",
+  "chain_id": 31337,
+  "contract": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+  "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "deploy_tx": "0xe192be5f5d0486a15037e15f994800a4a8ae897aacaec7bb21495a29ae07d686",
+  "deploy_block": 1,
+  "report": {
+    "report_id": "01M6YDPBBZ40KTYGZEWPHQGKG9",
+    "report_id_bytes32": "0x0000000000000000000000000000000001a1bcdb2d7f2027af43eee5a3784e09",
+    "payload_hash": "0x51fb6f947d6ddacd83f5a21f8994cfef5d8b4f9f93c51643a787bd9ce2cfbcf2",
+    "commitment": "0x5154ca0d32f12716c18cd421b3cc915991fc292a781a42663cbcfdde423bd1e9",
+    "revision": 1,
+    "register_tx": "0x073e966055576f4c5324a26c30ebf7ec3bb876a63875c43846cd801af2d49413",
+    "register_block": 2
+  },
+  "verify_original": {
+    "valid": true,
+    "status": "active"
+  },
+  "verify_tampered": {
+    "valid": false,
+    "changed_field": "indicator"
+  }
+}

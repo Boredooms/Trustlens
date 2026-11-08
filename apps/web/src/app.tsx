@@ -28,6 +28,7 @@ const Appeals = lazy(() => import("@/routes/app/Appeals"));
 const AppealDetail = lazy(() => import("@/routes/app/AppealDetail"));
 const AcceptInvite = lazy(() => import("@/routes/app/AcceptInvite"));
 const Appeal = lazy(() => import("@/routes/public/Appeal").then((m) => ({ default: m.Appeal })));
+const Verify = lazy(() => import("@/routes/public/Verify").then((m) => ({ default: m.Verify })));
 const HowItWorks = lazy(() => import("@/routes/public/InfoPages").then((m) => ({ default: m.HowItWorks })));
 const PublicDevelopers = lazy(() => import("@/routes/public/InfoPages").then((m) => ({ default: m.PublicDevelopers })));
 const SecurityPage = lazy(() => import("@/routes/public/InfoPages").then((m) => ({ default: m.SecurityPage })));
@@ -51,6 +52,7 @@ export const routes: RouteObject[] = [
       { path: "developers", element: <PublicDevelopers /> },
       { path: "security", element: <SecurityPage /> },
       { path: "appeal", element: <Appeal /> },
+      { path: "verify/:reportId", element: <Verify /> },
       { path: "invites/:token", element: <InviteRedirect /> },
       { path: "invite/:token", element: <InviteRedirect /> },
       { path: "*", element: <NotFound /> },

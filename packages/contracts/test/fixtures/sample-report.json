@@ -1,0 +1,31 @@
+{
+  "_note": "Shared cross-language fixture (JS lib/commitment.js and apps/api/app/services/anchors.py). simulated: true. No personal data. Expected hashes were computed once by lib/commitment.js and are asserted by both languages.",
+  "report_id": "01M6YDPBBZ40KTYGZEWPHQGKG9",
+  "report_id_bytes32": "0x0000000000000000000000000000000001a1bcdb2d7f2027af43eee5a3784e09",
+  "salt": "0x7472757374656e732d73616d706c652d73616c742d6e6f742d7365637265742e",
+  "revision": 1,
+  "payload": {
+    "schema": "trustlens.report-commitment.v1",
+    "report_id": "01M6YDPBBZ40KTYGZEWPHQGKG9",
+    "indicator_type": "domain",
+    "indicator": "northstar-admissions.example",
+    "intent": "payment",
+    "status": "confirmed",
+    "justification_sha256": "9f2b9c4b8a6f0e1d2c3b4a5968778695a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d9",
+    "linked_scan": {
+      "decision": "BLOCK",
+      "engine_version": "1.0.0",
+      "finding_codes": ["DOMAIN_NOT_REGISTERED_BY_BRAND", "PAYEE_NOT_IN_VERIFIED_PROFILE", "TYPOSQUATTING_PATTERN"]
+    },
+    "created_at": "2026-11-08T12:00:00Z",
+    "reporter_pseudonym": "a1b2c3d4e5f60718",
+    "simulated": true
+  },
+  "expected_payload_hash": "0x51fb6f947d6ddacd83f5a21f8994cfef5d8b4f9f93c51643a787bd9ce2cfbcf2",
+  "expected_commitment": "0x5154ca0d32f12716c18cd421b3cc915991fc292a781a42663cbcfdde423bd1e9",
+  "canonical_cases": [
+    { "value": { "b": 1, "a": [true, false], "c": { "z": "x", "y": "₹ fee — ok \"quoted\" \\ back" } }, "sha256": "0x62da9c27d55e36183ef7a4414ce0e51983b8f5f17eab7305abb0563a8ac9bbb2" },
+    { "value": { "nested": [{ "k": 2, "j": 1 }], "empty": {}, "list": [] }, "sha256": "0x7ae7e2d56354b70c4dbd38da684893fab8c4b9014e307004848419097013b6b4" },
+    { "value": { "unicode": "Northstar Ünïversity ✓", "ctrl": "line\nbreak\ttab" }, "sha256": "0xafc5fe9ca3e20cac87d8b40575bff45d4e4f36d097881dd8c15ad0698742c29b" }
+  ]
+}

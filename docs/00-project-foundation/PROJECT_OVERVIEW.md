@@ -183,7 +183,7 @@ Personas with goals, frustrations and permissions: `../01-product/USER_PERSONAS.
 | Active vulnerability scanning of third-party sites | Unsafe without authorisation; legally fraught |
 | Guaranteeing a site is safe | Impossible; we report coverage, not certainty |
 | A trained phishing classifier as the core product | Weak moat, needs data we do not have |
-| Blockchain-based reporting | Adds cost, no benefit |
+| Blockchain as the source of truth, tokens, or on-chain verdicts | Superseded in part by ADR-018: the chain stores **integrity commitments** of reports only (`WEB3_REGISTRY.md`); Postgres stays authoritative and verdicts never depend on the chain |
 | Neo4j / Kafka / Celery / Kubernetes | Operational cost with no MVP payoff |
 | Mobile app, WhatsApp bot | Split focus; extension + SDK first |
 | Payments processing | We verify recipients; we never move money |

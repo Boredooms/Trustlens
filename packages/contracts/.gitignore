@@ -1,0 +1,3 @@
+# Hardhat build output (deployments/ThreatReportRegistry.json is the committed artefact)
+artifacts/
+cache/
