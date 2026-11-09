@@ -1,7 +1,9 @@
 /*
- * TrustLens design tokens — DESIGN_SYSTEM.md §2.2, copied verbatim.
- * This is the ONLY file in apps/web/src allowed to contain raw colour values
- * (enforced by scripts/check-tokens.mjs). Mapped once in tailwind.config.ts.
+ * TrustLens design tokens — DESIGN_SYSTEM.md §2.2 (v1.1). The single source of truth for colour,
+ * radius, depth, motion timing and chart palette. This is the ONLY file in apps/web/src allowed to
+ * contain raw colour values (enforced by scripts/check-tokens.mjs). Consumed by:
+ *   tailwind.config.ts (utility classes) · lib/motion (durations/easing) · components/charts
+ *   (vendored Bklit UI reads --chart-*) · the Clerk appearance in AuthProvider (via getComputedStyle).
  */
 :root {
   /* surfaces */
@@ -49,9 +51,116 @@
   --radius-md: 6px;
   --radius-lg: 10px;
 
+  --radius-xl: 14px;
+
   /* overlays — DESIGN_SYSTEM.md §4.3 and §7.6 (modal/drawer only) */
   --shadow-overlay: 0 24px 48px -24px rgb(0 0 0 / 0.25);
   --backdrop: rgb(0 0 0 / 0.4);
+
+  /* depth (DESIGN_SYSTEM.md §4.4, v1.1): a hairline lift for panels, a stronger one for raised tiles */
+  --surface-raised: #fbfaf7;
+  --hairline-highlight: rgb(255 255 255 / 0.7);
+  --shadow-card: 0 1px 0 rgb(17 17 17 / 0.03), 0 1px 2px rgb(17 17 17 / 0.04);
+  --shadow-raised: 0 1px 0 rgb(17 17 17 / 0.04), 0 8px 24px -12px rgb(17 17 17 / 0.12);
+
+  /* motion grammar (ANIMATION_GUIDELINES.md §2) — read by CSS and by lib/motion */
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasis: cubic-bezier(0.3, 0, 0, 1);
+
+  /*
+   * shadcn / Bklit aliases. Not new colours: each points at a token above, so vendored registry
+   * components inherit the TrustLens palette instead of their own.
+   */
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --muted-foreground: var(--muted-strong);
+  --accent: var(--surface-secondary);
+  --accent-foreground: var(--foreground);
+  --secondary: var(--surface-secondary);
+  --secondary-foreground: var(--foreground);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--primary-foreground);
+  --input: var(--border);
+  --ring: var(--focus-ring);
+
+  /* sidebar (shadcn Sidebar / app-1 shell) */
+  --sidebar: #efede7;
+  --sidebar-foreground: var(--muted-strong);
+  --sidebar-accent: var(--surface);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+
+  /*
+   * Mesh (DESIGN_SYSTEM.md §2.6, v1.2): atmosphere only — page canvas, hero panels, the active nav
+   * glow. Never on a verdict, a badge or a chart series; security meaning stays with the semantic
+   * colours above.
+   */
+  --mesh-a: #6d6ae8;
+  --mesh-b: #2fa59a;
+  --mesh-c: #e0a15a;
+  --mesh-strength: 7%;
+
+  /* charts (DESIGN_SYSTEM.md §7.8): foreground leads, greys compare, semantic colour for verdicts only */
+  --chart-1: var(--foreground);
+  --chart-2: var(--muted);
+  --chart-3: var(--border-strong);
+  --chart-4: var(--muted-strong);
+  --chart-5: var(--node-cert);
+  --chart-positive: var(--success);
+  --chart-negative: var(--danger);
+  --chart-background: var(--surface);
+  --chart-foreground: var(--foreground);
+  --chart-foreground-muted: var(--muted);
+  --chart-line-primary: var(--foreground);
+  --chart-line-secondary: var(--muted);
+  --chart-crosshair: var(--muted-strong);
+  --chart-grid: var(--border);
+  --chart-brush-border: var(--border);
+  --chart-tooltip-background: var(--surface);
+  --chart-tooltip-foreground: var(--foreground);
+  --chart-tooltip-muted: var(--muted-strong);
+  --chart-marker-background: var(--surface-secondary);
+  --chart-marker-border: var(--border-strong);
+  --chart-marker-foreground: var(--foreground);
+  --chart-marker-badge-background: var(--surface-inverse);
+  --chart-marker-badge-foreground: var(--background);
+  --chart-label: var(--muted);
+  --chart-indicator-color: var(--foreground);
+  --chart-indicator-secondary-color: var(--surface-secondary);
+  --chart-segment-background: var(--surface-secondary);
+  --chart-segment-line: var(--border-strong);
+  --chart-scale-mix: var(--surface);
+  --chart-scale-01: var(--surface-secondary);
+  --chart-scale-02: color-mix(in oklab, var(--chart-1) 35%, var(--chart-scale-mix));
+  --chart-scale-03: color-mix(in oklab, var(--chart-1) 55%, var(--chart-scale-mix));
+  --chart-scale-04: color-mix(in oklab, var(--chart-1) 78%, var(--chart-scale-mix));
+  --chart-scale-05: var(--chart-1);
+  --chart-scale-pattern-color: var(--surface);
+  --chart-block: var(--danger);
+  --chart-warn: var(--warning);
+  --chart-allow: var(--success);
+  --chart-review: var(--muted-strong);
+  --chart-unknown: var(--border-strong);
+}
+
+/* Light values scoped to a subtree (theme preview tiles in Settings while the page is dark). */
+.theme-light {
+  --background: #f6f5f1;
+  --foreground: #111111;
+  --surface: #ffffff;
+  --surface-secondary: #ebe9e3;
+  --border: #dad9d3;
+  --muted: #777777;
+  --primary: #171717;
+  --mesh-a: #6d6ae8;
+  --mesh-b: #2fa59a;
+  --mesh-c: #e0a15a;
+  --mesh-strength: 7%;
 }
 
 .dark {
@@ -89,4 +198,17 @@
   --node-org: #7fb894;
   --edge-strong: #b4b4b4;
   --edge-weak: #3d3d3d;
+
+  --surface-raised: #1a1a1a;
+  --sidebar: #0d0d0e;
+  --sidebar-accent: #1a1a1c;
+  --mesh-a: #7c79ff;
+  --mesh-b: #3cc2b4;
+  --mesh-c: #f0b16b;
+  --mesh-strength: 11%;
+  --hairline-highlight: rgb(255 255 255 / 0.04);
+  --shadow-card: inset 0 1px 0 rgb(255 255 255 / 0.03);
+  --shadow-raised: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 12px 32px -16px rgb(0 0 0 / 0.6);
+  --shadow-overlay: 0 24px 64px -24px rgb(0 0 0 / 0.7);
+  --backdrop: rgb(0 0 0 / 0.6);
 }

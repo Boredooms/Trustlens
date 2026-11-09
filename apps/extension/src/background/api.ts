@@ -5,8 +5,15 @@ import { API_BASE_URL, EXT_VERSION } from "../shared/config";
 import { assessIdempotencyKey } from "../shared/hash";
 import type { CheckFailure, CheckResult, FailureCode } from "../shared/types";
 
-export const BROWSE_TIMEOUT_MS = 8_000;
-export const ACTION_TIMEOUT_MS = 10_000;
+/**
+ * A first visit to a real site runs a full server-side scan (DNS, TLS, page fetch, reputation): 10–30 s
+ * from a distant client, measured 2026-11-09 against google.com, github.com, paypal.com. The page is
+ * never blocked while this runs; the popup shows "Checking live…" and repeat visits are served from
+ * the server's 10-minute reuse in about a second when co-located. Action checks gate a submit, so
+ * they keep a tighter budget and fall back to "could not verify — decide for yourself".
+ */
+export const BROWSE_TIMEOUT_MS = 45_000;
+export const ACTION_TIMEOUT_MS = 30_000;
 const SERVER_RETRY_DELAY_MS = 2_000;
 
 export interface ApiResponse {

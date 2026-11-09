@@ -56,6 +56,7 @@ const common = { bundle: true, target: "chrome110", define, legalComments: "none
 await Promise.all([
   build({ ...common, entryPoints: [join(root, "src/background/service-worker.ts")], outfile: join(dist, "background.js"), format: "esm" }),
   build({ ...common, entryPoints: [join(root, "src/content/content.ts")], outfile: join(dist, "content.js"), format: "iife" }),
+  build({ ...common, entryPoints: [join(root, "src/content/bridge.ts")], outfile: join(dist, "bridge.js"), format: "iife" }),
   build({ ...common, entryPoints: [join(root, "src/popup/popup.ts")], outfile: join(dist, "popup.js"), format: "iife" }),
   build({ ...common, entryPoints: [join(root, "src/options/options.ts")], outfile: join(dist, "options.js"), format: "iife" }),
 ]);
@@ -130,23 +131,20 @@ for (const s of [16, 32, 48, 128]) {
 }
 
 // ---- manifest --------------------------------------------------------------------------------
-// Demo hosts (DEMO_RUNBOOK.md §3). Patterns without a port match any port (host mode on :8081).
-const DEMO_HOST_PATTERNS = [
-  "*://northstar-demo.example/*",
-  "*://*.northstar-demo.example/*",
-  "*://*.northstar-admissions.example/*",
-  "*://*.northstar-scholarships.example/*",
-  "*://*.northstar-placement.example/*",
-];
-const contentMatches = [...DEMO_HOST_PATTERNS];
-if (DEMO_SITES_ORIGIN) contentMatches.push(`${DEMO_SITES_ORIGIN}/*`);
-const hostPermissions = [...new Set([`${API_BASE_URL}/*`, ...contentMatches])];
+// Real-time protection runs on every http(s) page the user opens (EXTENSION_ARCHITECTURE.md §4:
+// "observation must work on any page the user visits"). The content script reads metadata only;
+// the decision is always the server's. TrustLens's own dashboard and API are excluded from page
+// checks, and get the pairing bridge instead (one-click "Connect this browser").
+const ALL_PAGES = ["http://*/*", "https://*/*"];
+const ownPages = [...new Set([`${WEB_BASE_URL}/*`, `${API_BASE_URL}/*`])];
+// The API is the only origin the worker calls; content scripts get their own grant via `matches`.
+const hostPermissions = [`${API_BASE_URL}/*`];
 
 const manifest = {
   manifest_version: 3,
   name: "TrustLens",
   version: pkg.version,
-  description: "Checks whether a page is authorised to ask for your login or payment. The TrustLens server decides.",
+  description: "Real-time check of every page you open: is it authorised to ask for your login or payment? The TrustLens server decides.",
   minimum_chrome_version: "110",
   icons,
   permissions: ["storage", "activeTab", "scripting"],
@@ -154,7 +152,10 @@ const manifest = {
   background: { service_worker: "background.js", type: "module" },
   action: { default_popup: "popup.html", default_title: "TrustLens", default_icon: icons },
   options_page: "options.html",
-  content_scripts: [{ matches: contentMatches, js: ["content.js"], run_at: "document_idle", all_frames: false }],
+  content_scripts: [
+    { matches: ALL_PAGES, exclude_matches: ownPages, js: ["content.js"], run_at: "document_idle", all_frames: false },
+    { matches: [`${WEB_BASE_URL}/*`], js: ["bridge.js"], run_at: "document_start", all_frames: false },
+  ],
   content_security_policy: { extension_pages: "script-src 'self'; object-src 'self'" },
 };
 writeFileSync(join(dist, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`);
@@ -167,3 +168,4 @@ if (problems.length) {
 console.log(`Built TrustLens ${pkg.version} → ${dist}`);
 console.log(`  API ${API_BASE_URL} · web ${WEB_BASE_URL} · demo-sites ${DEMO_SITES_ORIGIN ?? "(not set)"}`);
 console.log(`  host_permissions: ${hostPermissions.join(", ")}`);
+console.log(`  page checks on: ${ALL_PAGES.join(", ")} (excluding ${ownPages.join(", ")}) · pairing bridge on ${WEB_BASE_URL}`);

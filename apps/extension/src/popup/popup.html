@@ -9,36 +9,73 @@
   </head>
   <body>
     <main class="wrap">
-      <div class="top">
-        <h1>TrustLens</h1>
-        <span class="muted" id="version"></span>
-      </div>
-      <section class="card" aria-labelledby="page-heading">
-        <h2 id="page-heading">This page</h2>
-        <div id="page-status" aria-live="polite"><p class="muted">Checking…</p></div>
+      <header class="bar">
+        <div class="brand">
+          <span class="mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="M11 7v8M7 11h8" stroke-linecap="round"></path>
+              <path d="M16.5 16.5L21 21" stroke-linecap="round"></path>
+            </svg>
+          </span>
+          <h1>TrustLens</h1>
+        </div>
+        <div class="bar-right">
+          <span class="chip" id="conn-chip"></span>
+          <label class="switch" title="Real-time protection">
+            <input type="checkbox" id="protect" role="switch" />
+            <span class="track" aria-hidden="true"><span class="thumb"></span></span>
+            <span class="sr" id="protect-label">Real-time protection</span>
+          </label>
+        </div>
+      </header>
+
+      <section class="card page" aria-labelledby="page-heading">
+        <div class="page-top">
+          <h2 id="page-heading">This page</h2>
+          <button type="button" class="icon" id="recheck" aria-label="Re-check this page" hidden>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+          </button>
+        </div>
+        <p class="host" id="page-host"></p>
+        <div id="page-status" aria-live="polite"></div>
       </section>
+
       <section class="card" id="pair-card" hidden aria-labelledby="pair-heading">
         <h2 id="pair-heading">Connect TrustLens</h2>
-        <p class="muted" id="pair-body"></p>
-        <form id="pair-form" class="row" novalidate>
-          <label for="pair-code" class="sr">Pairing code</label>
-          <input id="pair-code" class="code" name="code" autocomplete="off" spellcheck="false" maxlength="9" placeholder="7K4Q-2M9X" />
-          <button type="submit" class="primary" id="pair-submit">Connect</button>
-        </form>
-        <p class="error" id="pair-error" role="alert"></p>
+        <p class="lead" id="pair-body"></p>
+        <button type="button" class="primary wide" id="connect-one-click" title="Connect in one click" aria-label="Connect in one click"></button>
+        <p class="muted" id="connect-hint"></p>
+        <details class="manual">
+          <summary id="manual-toggle"></summary>
+          <p class="muted" id="manual-body"></p>
+          <form id="pair-form" class="row" novalidate>
+            <label for="pair-code" class="sr">Pairing code</label>
+            <input id="pair-code" class="code" name="code" autocomplete="off" spellcheck="false" maxlength="9" placeholder="7K4Q-2M9X" />
+            <button type="submit" id="pair-submit">Connect</button>
+          </form>
+          <p class="error" id="pair-error" role="alert"></p>
+        </details>
       </section>
-      <section class="card" id="report-card" hidden aria-labelledby="report-heading">
-        <h2 id="report-heading">Report this site</h2>
+
+      <details class="card fold" id="report-card" hidden>
+        <summary><span>Report this site</span></summary>
         <label for="report-text" id="report-hint"></label>
         <textarea id="report-text" maxlength="500"></textarea>
-        <div class="row"><button type="button" id="report-send">Report this site</button></div>
+        <div class="row"><button type="button" id="report-send">Send report</button></div>
         <p class="status" id="report-status" role="status"></p>
-      </section>
-      <div class="row">
-        <button type="button" id="watch">Watch this tab for logins and payments</button>
-        <button type="button" id="open-options">Settings</button>
-      </div>
-      <p class="status" id="watch-status" role="status"></p>
+      </details>
+
+      <footer class="foot">
+        <div class="row">
+          <button type="button" class="ghost" id="watch" title="Watch this tab for logins and payments" aria-label="Watch this tab for logins and payments"></button>
+          <button type="button" class="ghost" id="open-options">Settings</button>
+        </div>
+        <p class="status" id="watch-status" role="status"></p>
+        <p class="muted tiny"><span class="dot" id="api-dot" aria-hidden="true"></span><span id="api-line"></span> · <span id="version"></span></p>
+      </footer>
     </main>
     <script src="popup.js"></script>
   </body>

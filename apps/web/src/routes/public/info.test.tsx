@@ -20,7 +20,7 @@ describe("public information pages", () => {
     renderAt("/developers");
     expect(await screen.findByRole("heading", { level: 1, name: "Developers" }, LONG)).toBeInTheDocument();
     expect(DECISIONS.map(([d]) => d)).toEqual(["BLOCK", "WARN", "REVIEW", "UNKNOWN", "ALLOW"]);
-    const table = screen.getByRole("table");
+    const table = screen.getByRole("table", { name: "Decisions" });
     for (const [d] of DECISIONS) expect(within(table).getByText(d)).toBeInTheDocument();
     // The page content itself (the shared footer deliberately says "we never say a site is safe").
     expect(document.querySelector("article")?.textContent ?? "").not.toMatch(/\bsafe\b/i);

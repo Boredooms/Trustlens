@@ -30,4 +30,11 @@ export default tseslint.config(
     files: ["src/routes/**/*.tsx", "*.config.ts", "eslint.config.js"],
     rules: { "no-restricted-exports": "off" },
   },
+  {
+    // Vendored Bklit UI chart sources (shadcn registry @bklit, see components.json). Kept close to
+    // upstream so `shadcn add` updates diff cleanly: upstream uses default exports and a few
+    // intentionally partial effect dependency lists. Colour/token rules still apply (check-tokens).
+    files: ["src/components/charts/**/*.{ts,tsx}", "src/components/shimmering-text.tsx"],
+    rules: { "no-restricted-exports": "off", "react-hooks/exhaustive-deps": "off" },
+  },
 );

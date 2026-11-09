@@ -141,3 +141,27 @@ Verification record: API **403 passed** against the isolated test DB · ruff/for
 files) · web **80** · extension **54** · SDK **21** · all builds pass · OpenAPI unchanged · hosted:
 `demo_check` 26/26, `platform_check` 42/42, `evidence_run --network` 17/17, QStash signature checks
 pass, Clerk sign-in → `/app` seen in Chrome. Details: [`../evidence/online/README.md`](../evidence/online/README.md).
+
+## 7. Dashboard redesign, extension on real sites, AI/SDK verified (2026-11-09, late)
+
+- Git history: all commits re-authored to `Boredooms <devarghochakraborty7@gmail.com>` (dates kept,
+  trees identical; backup tag `backup/pre-author-rewrite-2026-11-09`).
+- Dashboard: app-1 shell (fixed banner/header, collapsible sidebar, sign-out in the sidebar), shadcn
+  parts, Instrument Serif display pairing, mesh tokens, Bklit charts on real scan data, Motion grammar,
+  rebuilt Overview and Settings (Clerk card themed from tokens — dark-mode white card fixed), scan list
+  filters (`?decision=`, `?q=`), agent layer (`lib/agents`: linked-context orbits, citation-checked
+  explanations, action proposals, request-id trace).
+- Extension: content script on every http(s) page; one-click connect via the dashboard bridge;
+  popup rebuilt (live checking state, score ring, findings, Full report, Explain with AI); local /
+  private / own-site pages are neutral. Verified in real Chromium: 16/16 (google.com, github.com,
+  paypal.com, example.com checked by the server; token never exposed to the page).
+- API: `/assess` reuses the caller's own browse decision for 10 min (`cached: true`); DB pool
+  pre-ping removed (per-request overhead ~4.2 s → ~1.9 s from this machine).
+- AI: NVIDIA key rotated in `apps/api/.env`; investigation on a real scan: model-generated
+  (nemotron-3-ultra-550b-a55b), 9 claims, 0 dangling references, decision unchanged.
+- SDK + API keys against the live API: 8/8 (assess real sites, verifyIdentity, scan wait, usage
+  12 → 16, revoke → `AuthenticationError`).
+
+Verification: API 406 passed (test DB) · ruff/format/mypy clean · web 19 files · extension 5 files ·
+SDK pass · all typechecks/lints pass · OpenAPI unchanged. Not done: deployment (needs the owner's
+Render/Vercel/GitHub access), production Clerk instance, Chrome Web Store packaging.

@@ -214,6 +214,12 @@ async def assess(
     async def run() -> dict[str, Any]:
         target = await _validated_target(request, body.url)
         await _check_org(db, body.organisation_id)
+        if _reusable(body):
+            reused = await _recent_browse_scan(
+                db, principal, target.normalised_url, body.organisation_id
+            )
+            if reused is not None:
+                return _assessment(reused[0], reused[1], cached=True)
         scan = Scan(
             id=new_ulid(),
             user_id=principal.user.id,
@@ -241,34 +247,86 @@ async def assess(
             from app.errors import NotReady
 
             raise NotReady("We could not complete the assessment. Try again.")
-        s = outcome.scan
-        action = s.result.get("action", {})
-        identity_verified = any(
-            f.code == "IDENTITY_MATCH_CONFIRMED" for f in outcome.findings
-        ) and not any(
-            f.code in ("CREDENTIAL_DESTINATION_MISMATCH", "PAYEE_NOT_IN_VERIFIED_PROFILE")
-            for f in outcome.findings
-        )
-        return {
-            "assessment_id": new_ulid(),
-            "decision": s.decision,
-            "risk_level": s.risk_level,
-            "risk_score": s.risk_score,
-            "risk_class": risk_class(s.decision) if s.decision else None,
-            "coverage": s.coverage,
-            "reasons": s.reasons,
-            "identity_verified": identity_verified,
-            "action": action,
-            "findings": [finding_to_wire(f) for f in outcome.findings],
-            "scan_id": s.id,
-            "cached": False,
-            "simulated": s.simulated,
-            "decided_at": ts(s.completed_at),
-        }
+        return _assessment(outcome.scan, list(outcome.findings), cached=False)
 
     return await idempotent(
         request, response, db, principal, body.model_dump(mode="json"), 200, run
     )
+
+
+#: A browse decision is reused for this long (EXTENSION_API_INTEGRATION.md §5 uses the same 10 min).
+ASSESS_REUSE_SECONDS = 600
+
+
+def _reusable(body: AssessRequest) -> bool:
+    """Only a plain browse check may reuse a stored decision. Login/payment checks, and any check
+    carrying a client observation (form action, payee, destination), always run fresh: the
+    observation and the intent change the decision (EXTENSION_API_INTEGRATION.md §5)."""
+    return (
+        body.intent == Intent.BROWSE
+        and not body.form_action
+        and not body.payee
+        and not body.destination_host
+    )
+
+
+async def _recent_browse_scan(
+    db: AsyncSession, principal: Principal, normalised_url: str, organisation_id: str | None
+) -> tuple[Scan, list[ScanFinding]] | None:
+    """The caller's own finished browse scan of this exact normalised URL from the last 10 minutes.
+    Per-user on purpose: a URL may carry personal tokens in its path or query."""
+    from datetime import timedelta
+
+    since = utcnow() - timedelta(seconds=ASSESS_REUSE_SECONDS)
+    stmt = (
+        select(Scan)
+        .where(
+            Scan.user_id == principal.user.id,
+            Scan.normalised_url == normalised_url,
+            Scan.intent == Intent.BROWSE.value,
+            Scan.status.in_(("completed", "partial")),
+            Scan.decision.is_not(None),
+            Scan.completed_at >= since,
+        )
+        .order_by(Scan.completed_at.desc())
+        .limit(1)
+    )
+    if organisation_id:
+        stmt = stmt.where(Scan.organisation_id == organisation_id)
+    scan = (await db.execute(stmt)).scalars().first()
+    # A row without a complete action block (older engine versions) cannot be served as an
+    # assessment; fall through to a fresh scan rather than return a malformed answer.
+    action = (scan.result or {}).get("action") if scan is not None else None
+    if scan is None or not isinstance(action, dict) or "match" not in action:
+        return None
+    findings = list(
+        (await db.execute(select(ScanFinding).where(ScanFinding.scan_id == scan.id))).scalars()
+    )
+    return scan, findings
+
+
+def _assessment(s: Scan, findings: list[ScanFinding], *, cached: bool) -> dict[str, Any]:
+    action = (s.result or {}).get("action", {})
+    identity_verified = any(f.code == "IDENTITY_MATCH_CONFIRMED" for f in findings) and not any(
+        f.code in ("CREDENTIAL_DESTINATION_MISMATCH", "PAYEE_NOT_IN_VERIFIED_PROFILE")
+        for f in findings
+    )
+    return {
+        "assessment_id": new_ulid(),
+        "decision": s.decision,
+        "risk_level": s.risk_level,
+        "risk_score": s.risk_score,
+        "risk_class": risk_class(s.decision) if s.decision else None,
+        "coverage": s.coverage,
+        "reasons": s.reasons,
+        "identity_verified": identity_verified,
+        "action": action,
+        "findings": [finding_to_wire(f) for f in findings],
+        "scan_id": s.id,
+        "cached": cached,
+        "simulated": s.simulated,
+        "decided_at": ts(s.completed_at),
+    }
 
 
 @router.post(

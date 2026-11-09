@@ -60,9 +60,21 @@ export function hostOf(url: string | null | undefined): string | null {
   }
 }
 
-/** True for loopback/private-looking hosts the API will refuse (TARGET_NOT_ALLOWED). */
+/**
+ * True for loopback, private-network and local-only hosts the API refuses (TARGET_NOT_ALLOWED).
+ * Skipping them client-side avoids a pointless round trip and shows a clear neutral state instead
+ * of "unavailable". The server's guard remains the authority for everything else.
+ */
 export function isLocalHost(url: string): boolean {
   const h = hostOf(url);
   if (!h) return true;
-  return h === "localhost" || h.endsWith(".localhost") || h === "127.0.0.1" || h === "[::1]" || h === "::1";
+  const host = h.replace(/^\[|\]$/g, "").toLowerCase();
+  if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") || host.endsWith(".internal") || host.endsWith(".lan")) {
+    return true;
+  }
+  if (host === "::1" || host.startsWith("fe80:") || host.startsWith("fc") || host.startsWith("fd")) return host.includes(":");
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
+  if (!m) return false;
+  const [a, b] = [Number(m[1]), Number(m[2])];
+  return a === 127 || a === 10 || a === 0 || (a === 192 && b === 168) || (a === 172 && b >= 16 && b <= 31) || (a === 169 && b === 254) || (a === 100 && b >= 64 && b <= 127);
 }

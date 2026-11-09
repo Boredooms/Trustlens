@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { FileSearch, Link2, RotateCw, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -326,6 +326,35 @@ export default function ScanReport() {
     setEvidenceOpen(true);
   }, []);
 
+  // "Explain with AI" from the extension popup links here with ?investigate=1: once the scan is
+  // finished, start the server-side investigation (LLM narrative over this scan's evidence) once.
+  const [, setParams] = useSearchParams();
+  const autoInvestigate = params.get("investigate") === "1";
+  const autoStarted = useRef(false);
+  const loadedStatus = scanQ.data ? toScanStatus(scanQ.data.status) : null;
+  useEffect(() => {
+    if (!autoInvestigate || autoStarted.current || !scanQ.data) return;
+    if (loadedStatus !== "completed" && loadedStatus !== "partial") return;
+    autoStarted.current = true;
+    setParams(
+      (p) => {
+        const next = new URLSearchParams(p);
+        next.delete("investigate");
+        return next;
+      },
+      { replace: true },
+    );
+    investigate.mutate(scanQ.data.id, {
+      onSuccess: (res) => navigate(`/app/investigations/${res.id}`),
+      onError: (e) => {
+        if (isApiError(e) && e.status === 409 && e.details && !Array.isArray(e.details)) {
+          const existing = e.details.investigation_id ?? e.details.id;
+          if (typeof existing === "string") navigate(`/app/investigations/${existing}`);
+        }
+      },
+    });
+  }, [autoInvestigate, loadedStatus, scanQ.data, investigate, navigate, setParams]);
+
   if (scanQ.isPending) {
     return (
       <div role="status" aria-label="Loading scan report" className="flex flex-col gap-6">
@@ -367,7 +396,8 @@ export default function ScanReport() {
   const terminal = status === "completed" || status === "partial" || status === "failed";
   const pct = scan.coverage?.percent ?? 0;
 
-  const startInvestigation = () =>
+  const startInvestigation = () => {
+    if (investigate.isPending) return;
     investigate.mutate(scan.id, {
       onSuccess: (res) => navigate(`/app/investigations/${res.id}`),
       onError: (e) => {
@@ -378,6 +408,7 @@ export default function ScanReport() {
         }
       },
     });
+  };
 
   const actions = (
     <>

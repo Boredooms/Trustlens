@@ -367,6 +367,14 @@ Auth: any principal. Rate per `API_CONTRACTS.md` §10. Body:
 }
 ```
 
+Reuse (implemented 2026-11-09): a plain **browse** check (`intent: browse`, no `form_action`,
+`payee` or `destination_host`) returns the caller's own finished browse scan of the same normalised
+URL from the last **10 minutes** with `cached: true` and that `scan_id`, instead of scanning again.
+Per caller on purpose (a URL can carry personal tokens). Login/payment checks and any check with a
+client observation always run fresh. A stored row without a complete `action` block is not reused.
+Measured from a distant client: first visit to a real site 15–30 s, reuse 6–8 s (dominated by
+database round trips; co-located with the database it is well under a second).
+
 Notes: `scan_id` is present when a full scan was performed or reused. `decision` is authoritative;
 `identity_verified` is a convenience boolean (true only when the domain is verified **and** the
 action matches).

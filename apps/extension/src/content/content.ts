@@ -43,7 +43,8 @@ function init(): void {
       ? reply.data
       : { kind: "failure", failure: { code: "UNAVAILABLE" }, checkedAt: Date.now() };
 
-    if (result.kind === "failure" && result.failure.code === "PAUSED") {
+    // Paused, local/private address, or TrustLens itself: not a check the user needs to decide on.
+    if (result.kind === "failure" && (result.failure.code === "PAUSED" || result.failure.code === "LOCAL_PAGE" || result.failure.code === "OWN_SITE")) {
       busy = false;
       proceed();
       return;

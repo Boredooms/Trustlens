@@ -96,7 +96,11 @@ export const COPY = {
   pausedBanner: "Protection paused",
   pair: {
     heading: "Connect TrustLens",
-    body: "In the dashboard open Developers → Browser extension, choose “Generate pairing code”, and enter the 8-character code here.",
+    body: "Connect once and every page you open is checked in real time.",
+    oneClick: "Connect in one click",
+    oneClickHint: "Opens your TrustLens dashboard and connects this browser. Sign in first if asked.",
+    manualToggle: "Have a code? Enter it instead",
+    manualBody: "In the dashboard open Developers → Browser extension, choose “Generate pairing code”, and enter the 8-character code here.",
     codeLabel: "Pairing code",
     submit: "Connect",
     working: "Working…",
@@ -107,11 +111,25 @@ export const COPY = {
   },
   popup: {
     currentPage: "This page",
-    noPage: "This tab cannot be checked.",
+    noPage: "Browser pages (new tab, settings, the web store) cannot be checked.",
     watchPage: "Watch this tab for logins and payments",
     watching: "Watching this tab.",
     options: "Settings",
     version: "Version {v}",
+    checkingLive: "Checking {host} live…",
+    checkingHint: "First visits run a full server-side scan; repeat visits are instant.",
+    recheck: "Re-check",
+    explainAi: "Explain with AI",
+    explainHint: "Opens the report and starts an AI investigation that cites the evidence. The AI never changes the decision.",
+    protectionOn: "Real-time protection on",
+    protectionOff: "Protection paused",
+    connected: "Connected",
+    notConnected: "Not connected",
+    apiDown: "TrustLens server unreachable",
+    scoreLabel: "Risk score",
+    findings: "What the checks found",
+    noFindings: "No finding from the checks that ran.",
+    fromCache: "Saved result · {ago}",
   },
   options: {
     apiStatus: "API status",
@@ -143,7 +161,12 @@ export const FAILURE_COPY: Record<FailureCode, string> = {
   CANNOT_CHECK_PAGE: "This page can't be checked.",
   PAUSED: "Protection paused — this page was not checked.",
   STALE: "Re-checking… the last result is more than 10 minutes old.",
+  LOCAL_PAGE: "Local and private-network addresses are not checked.",
+  OWN_SITE: "This is TrustLens itself, so it is not scanned.",
 };
+
+/** Failures that are expected states, not problems: shown neutrally, with no "unavailable" alarm. */
+export const NEUTRAL_FAILURES: ReadonlySet<FailureCode> = new Set(["LOCAL_PAGE", "OWN_SITE", "PAUSED", "NOT_PAIRED"]);
 
 export function fill(template: string, values: Record<string, string | number>): string {
   return template.replace(/\{(\w+)\}/g, (m, k: string) => (k in values ? String(values[k]) : m));

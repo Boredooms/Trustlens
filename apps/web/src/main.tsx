@@ -5,6 +5,7 @@ import "@/styles/globals.css";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
 import { TooltipProvider } from "@/components/ui/Overlay";
 import { ThemeController } from "@/components/layout/ThemeController";
+import { MotionProvider } from "@/components/motion/Motion";
 import { isApiError } from "@/lib/api/errors";
 import { App } from "./app";
 
@@ -34,8 +35,10 @@ createRoot(root).render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider delayDuration={150}>
-          <ThemeController />
-          <App />
+          <MotionProvider>
+            <ThemeController />
+            <App />
+          </MotionProvider>
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>

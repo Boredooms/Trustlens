@@ -1,4 +1,8 @@
+import { useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils/cn";
+import { DECISION_COPY } from "@/lib/copy";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ScanInput } from "@/components/domain/ScanInput";
 import { VerdictBadge, StatusPill } from "@/components/domain/Badges";
@@ -9,14 +13,65 @@ import { SkeletonRows } from "@/components/ui/Skeleton";
 import { Table, Td, Th, Tr } from "@/components/ui/Table";
 import { useCreateScan, useScans } from "@/lib/query/hooks";
 import { isApiError } from "@/lib/api/errors";
-import { SIGNAL_GROUPS } from "@/lib/api/enums";
+import { DECISIONS, SIGNAL_GROUPS } from "@/lib/api/enums";
 import { INTENT_LABEL, SIGNAL_GROUP_EXPLAINER, SIGNAL_GROUP_LABEL } from "@/lib/copy";
 import { useRecentStore } from "@/stores/recent";
 
 const URL_FIELD_CODES = new Set(["INVALID_URL", "UNSUPPORTED_SCHEME", "URL_HAS_CREDENTIALS", "TARGET_NOT_ALLOWED", "UNSUPPORTED_PORT"]);
 
+const DECISION_FILTERS = ["", ...DECISIONS] as const;
+
+/** Decision + text filters, stored in the URL (?decision=BLOCK&q=northstar) so links and Back work. */
+function ScanFilters() {
+  const [params, setParams] = useSearchParams();
+  const decision = params.get("decision") ?? "";
+  const [q, setQ] = useState(params.get("q") ?? "");
+  const update = (key: "decision" | "q", value: string) => {
+    const next = new URLSearchParams(params);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    setParams(next, { replace: true });
+  };
+  return (
+    <div className="flex flex-col gap-3 border-b border-border px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div role="group" aria-label="Filter by decision" className="flex flex-wrap gap-1">
+        {DECISION_FILTERS.map((d) => (
+          <button
+            key={d || "all"}
+            type="button"
+            aria-pressed={decision === d}
+            onClick={() => update("decision", d)}
+            className={cn(
+              "rounded-full border px-2.5 py-0.5 text-xs transition-colors duration-fast",
+              decision === d ? "border-border-strong bg-surface-secondary text-foreground" : "border-border text-muted-strong hover:text-foreground",
+            )}
+          >
+            {d ? DECISION_COPY[d].label : "All"}
+          </button>
+        ))}
+      </div>
+      <form
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          update("q", q.trim());
+        }}
+        className="flex items-center gap-2"
+      >
+        <label htmlFor="scan-q" className="sr-only">
+          Search scanned addresses
+        </label>
+        <Input id="scan-q" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search addresses" className="h-8 w-56" />
+      </form>
+    </div>
+  );
+}
+
 function RecentScans() {
-  const query = useScans({ limit: 20 });
+  const [params] = useSearchParams();
+  const decision = params.get("decision") ?? undefined;
+  const q = params.get("q") ?? undefined;
+  const query = useScans({ limit: 20, decision: decision || undefined, q: q || undefined });
   if (query.isPending)
     return (
       <div className="p-5">
@@ -36,8 +91,11 @@ function RecentScans() {
     );
   const rows = query.data.data ?? [];
   if (rows.length === 0)
-    return (
+    return decision || q ? (
+      <EmptyState className="px-5" title="No scans match these filters" description="Clear the decision or search to see every scan." />
+    ) : (
       <EmptyState
+        kind="no-data"
         className="px-5"
         title="No scans yet"
         description="Run your first scan above. Try the seeded lookalike apply.northstar-admissions.example with intent Payment."
@@ -122,12 +180,13 @@ export default function ScanIndex() {
             />
             {err && !urlError ? <ErrorState error={err} title="The scan did not start" className="mt-4" compact /> : null}
           </Card>
-          <Card title="Recent scans" bodyClassName="p-0">
+          <Card title="Scan history" description="Your scans, newest first. Filters stay in the address bar." bodyClassName="p-0">
+            <ScanFilters />
             <RecentScans />
           </Card>
         </div>
         <aside className="lg:col-span-4" aria-labelledby="checked-title">
-          <section className="rounded-md border border-border bg-surface p-5">
+          <section className="sheen rounded-lg border border-border bg-surface p-5 shadow-card">
             <h2 id="checked-title" className="text-sm font-medium">
               What will be checked
             </h2>

@@ -118,7 +118,63 @@ async function send(method: Method, p: string, opts: RequestOptions, token: stri
   }
 }
 
+/**
+ * Observability hook for the agent layer's trace panel (lib/agents/trace.ts). Listeners receive the
+ * method, the path WITHOUT its query string, status, duration and the server's request id. Never the
+ * token, headers, query values or bodies, so nothing user-entered (URLs, messages) leaves this module.
+ */
+export interface ApiEvent {
+  method: Method;
+  path: string;
+  status: number;
+  durationMs: number;
+  requestId: string | null;
+}
+
+const apiListeners = new Set<(e: ApiEvent) => void>();
+
+export function onApiEvent(listener: (e: ApiEvent) => void): () => void {
+  apiListeners.add(listener);
+  return () => apiListeners.delete(listener);
+}
+
+function emit(e: ApiEvent) {
+  for (const l of apiListeners) {
+    try {
+      l(e);
+    } catch {
+      /* an observer must never break a request */
+    }
+  }
+}
+
+interface ResponseMeta {
+  status: number;
+  requestId: string | null;
+}
+
 export async function request<T>(method: Method, p: string, opts: RequestOptions = {}): Promise<T> {
+  const started = typeof performance !== "undefined" ? performance.now() : Date.now();
+  const meta: ResponseMeta = { status: 0, requestId: null };
+  try {
+    const out = await requestInner<T>(method, p, opts, meta);
+    if (apiListeners.size) emit({ method, path: p, status: meta.status, durationMs: elapsed(started), requestId: meta.requestId });
+    return out;
+  } catch (e) {
+    if (apiListeners.size) {
+      const err = e as Partial<ApiError>;
+      emit({ method, path: p, status: typeof err.status === "number" ? err.status : 0, durationMs: elapsed(started), requestId: err.requestId ?? null });
+    }
+    throw e;
+  }
+}
+
+function elapsed(started: number): number {
+  const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+  return Math.round(now - started);
+}
+
+async function requestInner<T>(method: Method, p: string, opts: RequestOptions, meta: ResponseMeta): Promise<T> {
   const useAuth = opts.auth !== false;
   let token = useAuth ? await getAuthToken() : null;
   let res = await send(method, p, opts, token);
@@ -136,6 +192,8 @@ export async function request<T>(method: Method, p: string, opts: RequestOptions
   }
 
   if (!res.ok) throw await parseError(res);
+  meta.status = res.status;
+  meta.requestId = res.headers.get("X-Request-Id");
   if (opts.raw) return res as unknown as T;
   if (res.status === 204) return undefined as T;
   const text = await res.text();

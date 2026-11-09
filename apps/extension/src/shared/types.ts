@@ -60,7 +60,11 @@ export type FailureCode =
   | "CANNOT_CHECK_ADDRESS"
   | "CANNOT_CHECK_PAGE"
   | "PAUSED"
-  | "STALE";
+  | "STALE"
+  /** localhost, private-network and .local/.internal addresses: the server refuses them (SSRF guard). */
+  | "LOCAL_PAGE"
+  /** The TrustLens dashboard or API itself. */
+  | "OWN_SITE";
 
 export interface CheckFailure {
   code: FailureCode;

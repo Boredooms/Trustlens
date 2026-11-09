@@ -4,6 +4,7 @@ import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { vi } from "vitest";
 import { AuthProvider } from "@/lib/auth/AuthProvider";
 import { TooltipProvider } from "@/components/ui/Overlay";
+import { MotionProvider } from "@/components/motion/Motion";
 import { DEV_TOKEN_KEY } from "@/lib/auth/token";
 import { useToastStore } from "@/stores/toast";
 import { routes } from "@/app";
@@ -104,7 +105,9 @@ export function renderAt(path: string) {
     <QueryClientProvider client={qc}>
       <AuthProvider>
         <TooltipProvider>
-          <RouterProvider router={router} />
+          <MotionProvider>
+            <RouterProvider router={router} />
+          </MotionProvider>
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>,

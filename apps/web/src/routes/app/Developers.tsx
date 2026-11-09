@@ -1,5 +1,10 @@
-import { useEffect, useState } from "react";
-import { KeyRound, Plug } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { CheckCircle2, KeyRound, Plug } from "lucide-react";
+import { browserDeviceName, connectExtension, detectExtension, type ExtensionPresence } from "@/lib/extension";
+import { qk } from "@/lib/query/keys";
+import { cn } from "@/lib/utils/cn";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatusPill } from "@/components/domain/Badges";
 import { PairedDevices } from "@/components/domain/PairedDevices";
@@ -257,7 +262,7 @@ function PairingCodeView({ code }: { code: PairingCode }) {
   const ss = String(left % 60).padStart(2, "0");
   return (
     <div className="flex flex-col gap-3 rounded-md border border-border bg-surface-secondary p-5">
-      <p className="text-xs text-muted">Enter this code in the extension’s options page</p>
+      <p className="text-xs text-muted">Enter this code in the extension popup (“Have a code? Enter it instead”)</p>
       <p className="font-mono tabular text-4xl font-medium tracking-widest" aria-live="polite">
         {left > 0 ? code.code : "Expired"}
       </p>
@@ -269,33 +274,126 @@ function PairingCodeView({ code }: { code: PairingCode }) {
   );
 }
 
+const CONNECT_ERRORS: Record<string, string> = {
+  INVALID_CODE: "The extension rejected the code (it may have expired). Try again.",
+  PAIR_FAILED: "The extension could not reach the TrustLens server. Check that the API is running and try again.",
+  EXTENSION_TIMEOUT: "The extension did not answer. Reload this page after installing or updating the extension.",
+  FORBIDDEN: "This build of the extension is configured for a different dashboard address.",
+};
+
+type ConnectState = "idle" | "connecting" | "connected" | "error";
+
+/**
+ * One-click connect: generate a code over the signed-in session and hand it straight to the
+ * extension through its dashboard bridge. Arriving from the extension popup (?connect=extension)
+ * starts it automatically. Manual codes remain available for browsers where the bridge cannot run.
+ */
 function ExtensionPairing() {
   const pair = usePairExtension();
-  const [deviceName, setDeviceName] = useState("Chrome on this computer");
+  const qc = useQueryClient();
+  const [params, setParams] = useSearchParams();
+  const [deviceName, setDeviceName] = useState(browserDeviceName);
+  const [presence, setPresence] = useState<ExtensionPresence | null>(null);
+  const [state, setState] = useState<ConnectState>("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [showManual, setShowManual] = useState(false);
+  const autoStarted = useRef(false);
+
+  useEffect(() => {
+    let alive = true;
+    void detectExtension().then((p) => alive && setPresence(p));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const connect = useCallback(async () => {
+    setState("connecting");
+    setError(null);
+    try {
+      const code = await pair.mutateAsync(deviceName.trim() || browserDeviceName());
+      const outcome = await connectExtension(code.code, deviceName.trim() || browserDeviceName());
+      if (outcome.ok) {
+        setState("connected");
+        setPresence((p) => (p ? { ...p, paired: true } : p));
+        void qc.invalidateQueries({ queryKey: qk.devices });
+      } else {
+        setState("error");
+        setError(CONNECT_ERRORS[outcome.code] ?? `The extension could not connect (${outcome.code}).`);
+      }
+    } catch {
+      setState("error"); // the pairing request itself failed; ErrorState below shows why
+    }
+  }, [deviceName, pair, qc]);
+
+  useEffect(() => {
+    if (autoStarted.current || params.get("connect") !== "extension" || !presence?.installed) return;
+    autoStarted.current = true;
+    const next = new URLSearchParams(params);
+    next.delete("connect");
+    setParams(next, { replace: true });
+    void connect();
+  }, [params, presence, connect, setParams]);
+
   return (
     <Card
-      title={
-        <span className="flex items-center gap-2">
-          <Plug aria-hidden className="h-4 w-4" strokeWidth={1.5} />
-          Browser extension
-        </span>
-      }
+      title="Browser extension"
+      description="Real-time protection on every site you open. The server decides; the extension shows it."
+      icon={Plug}
     >
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-muted-strong">
-            Pair the TrustLens extension with your account. The code is valid for 10 minutes and works once.
-          </p>
+          <div className="flex items-center gap-2 text-sm" role="status">
+            <span
+              aria-hidden
+              className={cn(
+                "h-2 w-2 rounded-full",
+                presence === null ? "bg-border-strong" : presence.installed ? (presence.paired || state === "connected" ? "bg-success" : "bg-warning") : "bg-border-strong",
+              )}
+            />
+            {presence === null
+              ? "Looking for the extension in this browser…"
+              : !presence.installed
+                ? "The TrustLens extension is not installed in this browser."
+                : presence.paired || state === "connected"
+                  ? `Extension ${presence.version ?? ""} is connected in this browser.`
+                  : `Extension ${presence.version ?? ""} found — not connected yet.`}
+          </div>
           <Field label="Device name">
             <Input value={deviceName} onChange={(e) => setDeviceName(e.target.value)} maxLength={80} />
           </Field>
-          <div>
-            <Button loading={pair.isPending} onClick={() => pair.mutate(deviceName.trim() || "Browser")}>
-              Generate pairing code
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="primary" loading={state === "connecting"} disabled={!presence?.installed} onClick={() => void connect()}>
+              {presence?.paired || state === "connected" ? "Reconnect this browser" : "Connect this browser"}
+            </Button>
+            <Button variant="ghost" onClick={() => setShowManual((v) => !v)} aria-expanded={showManual}>
+              {showManual ? "Hide manual code" : "Use a code instead"}
             </Button>
           </div>
+          {state === "connected" ? (
+            <p className="flex items-center gap-2 text-sm text-success" role="status">
+              <CheckCircle2 aria-hidden className="h-4 w-4" strokeWidth={1.5} />
+              Connected. Every page you open is now checked in real time — open the extension to see it.
+            </p>
+          ) : null}
+          {error ? <p className="text-sm text-danger" role="alert">{error}</p> : null}
+          {!presence?.installed && presence !== null ? (
+            <p className="text-xs text-muted">
+              Load it from <span className="font-mono">apps/extension/dist</span> (chrome://extensions → Developer mode → Load unpacked), then reload this page.
+            </p>
+          ) : null}
           {pair.isError ? <ErrorState error={pair.error} title="No pairing code was generated" compact /> : null}
-          {pair.data ? <PairingCodeView key={pair.data.code} code={pair.data} /> : null}
+          {showManual ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-muted-strong">Generate a code and enter it in the extension popup. It is valid for 10 minutes and works once.</p>
+              <div>
+                <Button loading={pair.isPending && state !== "connecting"} onClick={() => pair.mutate(deviceName.trim() || "Browser")}>
+                  Generate pairing code
+                </Button>
+              </div>
+              {pair.data && state !== "connected" && state !== "connecting" ? <PairingCodeView key={pair.data.code} code={pair.data} /> : null}
+            </div>
+          ) : null}
         </div>
         <div>
           <PairedDevices />

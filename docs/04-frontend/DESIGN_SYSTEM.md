@@ -165,8 +165,32 @@ check inside a shield outline, not a filled green badge.
 | Numeric display | Geist Mono | 28–40 / 1.1, `tabular-nums` | 500 |
 
 - Loading: `@fontsource` self-hosted, `font-display: swap`, Latin subset only.
-- Instrument Sans is reserved for one editorial use (landing section headings) and must not appear
-  in the app.
+- **v1.2 (2026-11-09, owner request): display pairing.** App page titles (H1), hero KPI numbers,
+  the risk-score ring and the word mark use **Instrument Serif 400** (`.font-display`); interface text
+  stays Geist Sans and data (URLs, ids, table numbers) stays Geist Mono. The serif never carries data
+  that must align in columns.
+
+### 3.1 Mesh and depth (v1.2)
+
+- `--mesh-a/b/c` + `--mesh-strength` (tokens.css) feed `.app-canvas` (page background), `.mesh-panel`
+  (hero panels: settings profile, logo tile) and `.nav-glow` (active sidebar item). Atmosphere only:
+  a verdict, badge or chart series never sits on mesh colour.
+- `--shadow-card` / `--shadow-raised` and `--surface-raised` give panels hairline depth; overlays keep
+  `--shadow-overlay`.
+
+### 3.2 Components and charts (v1.2)
+
+- Shell: the app-1 layout (`components/ui/app-1.tsx`): fixed demo banner and header, collapsible grouped
+  sidebar with identity, theme and **sign-out at its foot**, one scrolling inset.
+- shadcn/ui parts live in `components/ui` (`avatar`, `badge`, `progress`, `separator`, `label`, `input`,
+  `sheet`, `app-1-utils/sidebar`). Button and Card parts are exported from `Button.tsx` / `Card.tsx`
+  because lowercase `button.tsx`/`card.tsx` would collide on case-insensitive file systems.
+- Charts: **Bklit UI** (`@bklit` shadcn registry, visx-style primitives on Motion + d3), vendored in
+  `components/charts` and themed through `--chart-*` tokens; wrappers in `components/data`. This
+  replaces the earlier Recharts plan (owner request, "blkitui"); Recharts is not installed, so the
+  app-1 block's Recharts area chart is rendered with Bklit instead.
+- Motion: Framer Motion (`motion` package) for app UI, grammar in `lib/motion.ts` mirrored from
+  `--dur-*`/`--ease-*` tokens (asserted by `motion.test.ts`).
 - Numerals in tables, scores and timers always use `tabular-nums` so columns align.
 - Maximum body line length 72 characters; the app content column is 1200 px with 720 px text blocks.
 

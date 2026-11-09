@@ -54,6 +54,18 @@ apps/extension/
 
 ## 3. Permissions
 
+**As built (2026-11-09, `scripts/build.mjs`).** `permissions: storage, activeTab, scripting`;
+`host_permissions`: the API origin only. Content scripts: `content.js` on `http://*/*` and `https://*/*`
+(real-time checks on every page), excluding the dashboard and API origins; `bridge.js` on the dashboard
+origin only. No `tabs`, `webRequest`, `cookies` or `history`. Earlier development builds limited
+`content.js` to the demo hosts, which is why real sites showed "This page can't be checked".
+Local, private-network, `.local`/`.internal` addresses and TrustLens itself are neutral states decided
+in the worker (`LOCAL_PAGE`, `OWN_SITE`) with no request and no badge. Browse checks have a 45 s budget
+(a first visit runs a full server-side scan); the popup shows "Checking … live" with elapsed time,
+shares the in-flight request with the page, and renders saved results instantly.
+
+The specification-level manifest follows.
+
 ```json
 {
   "manifest_version": 3,
@@ -175,8 +187,16 @@ sequenceDiagram
 
 ## 7. Pairing and auth
 
-- The user opens the dashboard → "Connect extension" → gets an 8-char code (10 min, single use).
-- The extension options page accepts the code and calls `/auth/extension/exchange`.
+**One-click connect (implemented 2026-11-09).** The popup's "Connect in one click" opens
+`/app/developers?connect=extension`. Signed in (or after sign-in, which keeps the query), the dashboard
+detects the extension, calls `POST /auth/extension/pair` over the user's session and hands the code to
+the extension through `content/bridge.ts`. That script is injected **only** on `WEB_BASE_URL`, accepts
+`window.postMessage` only from the same window and origin, and the worker accepts `BRIDGE_HELLO` /
+`PAIR_FROM_DASHBOARD` only from the top frame of that origin. The extension exchanges the code itself;
+the device token never passes through the page (verified in a real Chromium run). Manual entry remains:
+
+- The user opens the dashboard → "Use a code instead" → gets an 8-char code (10 min, single use).
+- The popup ("Have a code? Enter it instead") or options page accepts it and calls `/auth/extension/exchange`.
 - The returned `tl_ext_` token is stored in `chrome.storage.local` only.
 - Token expiry (180 days) is checked on wake: `/auth/me` returns 401 → the extension clears the token
   and shows "Reconnect" in the popup.

@@ -2,6 +2,8 @@
 @import "@fontsource/geist-sans/latin-500.css";
 @import "@fontsource/geist-mono/latin-400.css";
 @import "@fontsource/geist-mono/latin-500.css";
+@import "@fontsource/instrument-serif/latin-400.css";
+@import "@fontsource/instrument-serif/latin-400-italic.css";
 @import "./tokens.css";
 
 @tailwind base;
@@ -56,6 +58,180 @@
   }
   .row-density {
     @apply py-3;
+  }
+
+  /* Loading sweep (ANIMATION_GUIDELINES §3): slow, low contrast, stopped by reduced motion below. */
+  .skeleton-sweep {
+    background-image: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in oklab, var(--surface) 55%, transparent) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    animation: skeleton-sweep 1.6s var(--ease-standard) infinite;
+  }
+
+  /*
+   * Mesh gradients (DESIGN_SYSTEM.md §2.6). Three token hues at --mesh-strength, layered radials that
+   * read as light, not colour. Atmosphere only: no verdict, badge or chart ever sits on mesh colour.
+   */
+  .app-canvas {
+    background:
+      radial-gradient(900px 520px at 8% -8%, color-mix(in oklab, var(--mesh-a) var(--mesh-strength), transparent), transparent 70%),
+      radial-gradient(760px 480px at 96% 4%, color-mix(in oklab, var(--mesh-b) calc(var(--mesh-strength) * 0.8), transparent), transparent 70%),
+      radial-gradient(900px 600px at 60% 120%, color-mix(in oklab, var(--mesh-c) calc(var(--mesh-strength) * 0.6), transparent), transparent 70%),
+      var(--background);
+  }
+
+  /* Hero panels (overview greeting, settings profile): a stronger, contained mesh with a grain-free sheen. */
+  .mesh-panel {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background:
+      radial-gradient(120% 140% at 0% 0%, color-mix(in oklab, var(--mesh-a) calc(var(--mesh-strength) * 2.2), transparent), transparent 55%),
+      radial-gradient(100% 120% at 100% 0%, color-mix(in oklab, var(--mesh-b) calc(var(--mesh-strength) * 1.8), transparent), transparent 55%),
+      radial-gradient(120% 120% at 70% 120%, color-mix(in oklab, var(--mesh-c) calc(var(--mesh-strength) * 1.6), transparent), transparent 60%),
+      var(--surface);
+  }
+  .mesh-panel::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: linear-gradient(180deg, var(--hairline-highlight), transparent 40%);
+  }
+
+  /* Subtle vertical sheen for KPI tiles and cards that should read as raised. */
+  .sheen {
+    background-image: linear-gradient(180deg, color-mix(in oklab, var(--foreground) 3%, transparent), transparent 60%);
+  }
+
+  /* Active sidebar item glow (layoutId indicator in app-1 sidebar). */
+  .nav-glow {
+    box-shadow:
+      inset 0 1px 0 var(--hairline-highlight),
+      0 0 0 1px var(--border),
+      0 6px 18px -10px color-mix(in oklab, var(--mesh-a) 70%, transparent);
+  }
+
+  /*
+   * Serif display (page titles, hero numbers). Defined here in full — a component class named like the
+   * `font-display` utility suppresses the utility, so the family must live in this rule.
+   */
+  .font-display {
+    font-family: "Instrument Serif", ui-serif, Georgia, Cambria, serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    font-feature-settings: "liga", "dlig";
+  }
+
+  /* Hairline divider that fades at both ends (section breaks inside panels). */
+  .hairline {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border) 12%, var(--border) 88%, transparent);
+  }
+
+  /* Translucent chrome (sidebar, top bar). Tailwind 3 cannot apply /opacity to var() colours. */
+  .bar-glass {
+    background: color-mix(in oklab, var(--background) 86%, transparent);
+    -webkit-backdrop-filter: saturate(140%) blur(8px);
+    backdrop-filter: saturate(140%) blur(8px);
+  }
+
+  /* Thin scrollbars: the standard properties where supported, WebKit pseudo-elements elsewhere. */
+  @supports (scrollbar-width: thin) {
+    .scroll-thin {
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-strong) transparent;
+    }
+  }
+  .scroll-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scroll-thin::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  .scroll-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* Highlighted indicator inside pasted message text (MessageInput / IndicatorHighlights). */
+  .indicator-mark {
+    @apply rounded-sm px-0.5 font-mono text-foreground;
+    background: color-mix(in oklab, var(--warning) 18%, transparent);
+    box-shadow: inset 0 -1px 0 var(--warning);
+  }
+  .indicator-mark[data-kind="url"],
+  .indicator-mark[data-kind="domain"] {
+    background: color-mix(in oklab, var(--danger) 14%, transparent);
+    box-shadow: inset 0 -1px 0 var(--danger);
+  }
+}
+
+/* Sheet / overlay keyframes (shadcn sheet without tailwindcss-animate). Durations from tokens. */
+[data-sheet-overlay][data-state="open"] {
+  animation: fade-in var(--dur-slow) var(--ease-standard);
+}
+[data-sheet-overlay][data-state="closed"] {
+  animation: fade-out var(--dur-base) var(--ease-standard);
+}
+[data-sheet-side="left"][data-state="open"] {
+  animation: slide-in-left var(--dur-slow) var(--ease-emphasis);
+}
+[data-sheet-side="left"][data-state="closed"] {
+  animation: slide-out-left var(--dur-base) var(--ease-standard);
+}
+[data-sheet-side="right"][data-state="open"] {
+  animation: slide-in-right var(--dur-slow) var(--ease-emphasis);
+}
+[data-sheet-side="right"][data-state="closed"] {
+  animation: slide-out-right var(--dur-base) var(--ease-standard);
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes slide-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+}
+@keyframes slide-out-left {
+  to {
+    transform: translateX(-100%);
+  }
+}
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes slide-out-right {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes skeleton-sweep {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
   }
 }
 

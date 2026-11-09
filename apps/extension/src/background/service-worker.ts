@@ -1,7 +1,7 @@
 // Service worker: message router, API calls, cache, badge. Observes and enforces nothing itself —
 // it fetches the server's decision and hands it to the content script / popup unchanged.
-import { DECISION_COPY } from "../shared/copy";
-import { DEMO_SITES_ORIGIN } from "../shared/config";
+import { DECISION_COPY, NEUTRAL_FAILURES, failureText } from "../shared/copy";
+import { DEMO_SITES_ORIGIN, EXT_VERSION, WEB_BASE_URL, isOwnPage } from "../shared/config";
 import { hostOf, isLocalHost, toReportedUrl } from "../shared/demo-url";
 import type { Msg, PairingState, Reply, ResponseMap } from "../shared/messages";
 import { badgeColour } from "../shared/tokens";
@@ -27,6 +27,11 @@ async function setBadge(tabId: number | undefined, r: CheckResult): Promise<void
   if (tabId === undefined) return;
   const d = decisionOf(r);
   try {
+    if (r.kind === "failure" && NEUTRAL_FAILURES.has(r.failure.code)) {
+      await chrome.action.setBadgeText({ tabId, text: "" });
+      await chrome.action.setTitle({ tabId, title: `TrustLens — ${failureText(r.failure.code)}` });
+      return;
+    }
     await chrome.action.setBadgeText({ tabId, text: DECISION_COPY[d].badge });
     if (DECISION_COPY[d].badge) await chrome.action.setBadgeBackgroundColor({ tabId, color: badgeColour(d) });
     await chrome.action.setTitle({ tabId, title: `TrustLens — ${DECISION_COPY[d].label}` });
@@ -44,32 +49,97 @@ async function afterResult(r: CheckResult): Promise<CheckResult> {
   return r;
 }
 
-async function browseCheck(rawUrl: string, forceRefresh = false): Promise<CheckResult> {
+/** Neutral states decided locally (no request): TrustLens itself, and addresses the server refuses. */
+function localState(rawUrl: string): { url: string | null; result: CheckResult | null } {
+  const url = toReportedUrl(rawUrl, DEMO_SITES_ORIGIN);
+  if (!url) return { url: null, result: fail("CANNOT_CHECK_PAGE") };
+  if (isOwnPage(rawUrl)) return { url, result: fail("OWN_SITE") };
+  if (isLocalHost(url)) return { url, result: fail("LOCAL_PAGE") };
+  return { url, result: null };
+}
+
+/**
+ * In-flight browse checks, keyed by reported URL. The content script (page load) and the popup share
+ * one request instead of racing two scans. Memory only: if the worker restarts, the next check simply
+ * starts again — nothing here is a decision.
+ */
+const inflight = new Map<string, { promise: Promise<CheckResult>; startedAt: number }>();
+
+async function setPendingBadge(tabId: number | undefined): Promise<void> {
+  if (tabId === undefined) return;
+  try {
+    await chrome.action.setBadgeText({ tabId, text: "…" });
+    await chrome.action.setBadgeBackgroundColor({ tabId, color: badgeColour("UNKNOWN") });
+    await chrome.action.setTitle({ tabId, title: "TrustLens — checking this page" });
+  } catch {
+    /* tab closed */
+  }
+}
+
+async function browseCheck(rawUrl: string, forceRefresh = false, tabId?: number): Promise<CheckResult> {
   const settings = await store.getSettings();
   if (!settings.enabled) return fail("PAUSED");
-  const url = toReportedUrl(rawUrl, DEMO_SITES_ORIGIN);
-  if (!url || isLocalHost(url)) return fail("CANNOT_CHECK_PAGE");
+  const local = localState(rawUrl);
+  if (local.result || !local.url) return local.result ?? fail("CANNOT_CHECK_PAGE");
+  const url = local.url;
   const token = await store.getToken();
   if (!token) return fail((await store.getPairing()).needsReconnect ? "RECONNECT" : "NOT_PAIRED");
 
   if (!forceRefresh) {
     const cached = await store.readVerdict(url);
     if (cached.state === "fresh") return cached.result;
+    const running = inflight.get(url);
+    if (running) return running.promise;
   }
   const until = await store.getRateLimitedUntil();
   if (until > Date.now()) return fail("RATE_LIMITED", { retryAfter: Math.ceil((until - Date.now()) / 1000) });
 
-  const result = await afterResult(await assess({ url, intent: "browse" }, token));
-  await store.writeVerdict(url, result);
-  return result;
+  await setPendingBadge(tabId);
+  const promise = (async () => {
+    const result = await afterResult(await assess({ url, intent: "browse" }, token));
+    await store.writeVerdict(url, result);
+    return result;
+  })();
+  inflight.set(url, { promise, startedAt: Date.now() });
+  try {
+    return await promise;
+  } finally {
+    inflight.delete(url);
+  }
+}
+
+async function peekStatus(rawUrl: string): Promise<ResponseMap["PEEK_STATUS"]> {
+  const settings = await store.getSettings();
+  if (!settings.enabled) return { result: fail("PAUSED"), pendingSince: null };
+  const local = localState(rawUrl);
+  if (local.result || !local.url) return { result: local.result, pendingSince: null };
+  const cached = await store.readVerdict(local.url);
+  return {
+    result: cached.state === "fresh" ? cached.result : null,
+    pendingSince: inflight.get(local.url)?.startedAt ?? null,
+  };
+}
+
+/** Origin of a sender's page, or null. Used to scope the dashboard bridge to the dashboard origin. */
+function senderOrigin(sender: chrome.runtime.MessageSender): string | null {
+  try {
+    return sender.url ? new URL(sender.url).origin : null;
+  } catch {
+    return null;
+  }
+}
+
+function fromDashboard(sender: chrome.runtime.MessageSender): boolean {
+  return typeof sender.tab?.id === "number" && sender.frameId === 0 && senderOrigin(sender) === new URL(WEB_BASE_URL).origin;
 }
 
 /** Action checks never use the browse cache: intent changes the decision (§5). */
 async function actionCheck(msg: Extract<Msg, { type: "ACTION_INTENT" }>): Promise<CheckResult> {
   const settings = await store.getSettings();
   if (!settings.enabled) return fail("PAUSED");
-  const url = toReportedUrl(msg.url, DEMO_SITES_ORIGIN);
-  if (!url) return fail("CANNOT_CHECK_PAGE");
+  const local = localState(msg.url);
+  if (local.result || !local.url) return local.result ?? fail("CANNOT_CHECK_PAGE");
+  const url = local.url;
   const token = await store.getToken();
   if (!token) return fail((await store.getPairing()).needsReconnect ? "RECONNECT" : "NOT_PAIRED");
 
@@ -197,6 +267,8 @@ async function apiStatus(): Promise<ResponseMap["API_STATUS"]> {
 
 const EXTENSION_PAGE_ONLY = new Set<Msg["type"]>([
   "GET_STATUS",
+  "PEEK_STATUS",
+  "TAB_URL",
   "PAIR",
   "GET_PAIRING",
   "UNPAIR",
@@ -204,6 +276,8 @@ const EXTENSION_PAGE_ONLY = new Set<Msg["type"]>([
   "API_STATUS",
   "SET_SETTINGS",
 ]);
+/** Only the TrustLens dashboard tab (bridge.ts, top frame, WEB_BASE_URL origin) may send these. */
+const DASHBOARD_ONLY = new Set<Msg["type"]>(["BRIDGE_HELLO", "PAIR_FROM_DASHBOARD"]);
 const CONTENT_ALLOWED = new Set<Msg["type"]>([
   "PAGE_READY",
   "ACTION_INTENT",
@@ -233,6 +307,14 @@ async function handle(msg: Msg, sender: chrome.runtime.MessageSender): Promise<R
   if (EXTENSION_PAGE_ONLY.has(msg.type) && !fromPage) {
     return { ok: false, error: { code: "FORBIDDEN", message: "Not allowed from a web page" } };
   }
+  if (DASHBOARD_ONLY.has(msg.type)) {
+    if (!fromDashboard(sender)) return { ok: false, error: { code: "FORBIDDEN", message: "Only the TrustLens dashboard may do this" } };
+    if (msg.type === "BRIDGE_HELLO") return { ok: true, data: { version: EXT_VERSION, paired: (await store.getPairing()).paired } };
+    if (msg.type === "PAIR_FROM_DASHBOARD" && typeof msg.code === "string") {
+      return pair(msg.code, typeof msg.deviceName === "string" ? msg.deviceName : "Chrome");
+    }
+    return { ok: false, error: { code: "BAD_MESSAGE", message: "Malformed message" } };
+  }
   if (!EXTENSION_PAGE_ONLY.has(msg.type) && !CONTENT_ALLOWED.has(msg.type)) {
     return { ok: false, error: { code: "UNKNOWN_MESSAGE", message: msg.type } };
   }
@@ -245,13 +327,28 @@ async function handle(msg: Msg, sender: chrome.runtime.MessageSender): Promise<R
     case "PAGE_READY": {
       if (!str(msg.url)) break;
       void maybeCheckMe();
-      const r = await browseCheck(msg.url);
+      // Session-only map tab → page URL (already sent to the server for the check), so the popup can
+      // describe the tab even where Chrome hides its URL. Cleared when the browser closes.
+      if (typeof sender.tab?.id === "number") void chrome.storage.session.set({ [`tab_url:${sender.tab.id}`]: msg.url });
+      const r = await browseCheck(msg.url, false, sender.tab?.id);
       await setBadge(sender.tab?.id, r);
       return { ok: true, data: r };
     }
     case "GET_STATUS": {
       if (!str(msg.url)) break;
-      return { ok: true, data: await browseCheck(msg.url, msg.refresh === true) };
+      const tabId = typeof msg.tabId === "number" ? msg.tabId : undefined;
+      const r = await browseCheck(msg.url, msg.refresh === true, tabId);
+      await setBadge(tabId, r);
+      return { ok: true, data: r };
+    }
+    case "PEEK_STATUS":
+      if (!str(msg.url)) break;
+      return { ok: true, data: await peekStatus(msg.url) };
+    case "TAB_URL": {
+      if (typeof msg.tabId !== "number") break;
+      const key = `tab_url:${msg.tabId}`;
+      const got = await chrome.storage.session.get(key);
+      return { ok: true, data: typeof got[key] === "string" ? (got[key] as string) : null };
     }
     case "ACTION_INTENT": {
       if (!str(msg.url) || (msg.intent !== "login" && msg.intent !== "payment")) break;
@@ -323,4 +420,8 @@ chrome.runtime.onInstalled.addListener(() => {
 // Clear the per-tab badge when a tab starts loading a new page (no `tabs` permission needed for this).
 chrome.tabs.onUpdated.addListener((tabId, info) => {
   if (info.status === "loading") void chrome.action.setBadgeText({ tabId, text: "" }).catch(() => undefined);
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+  void chrome.storage.session.remove(`tab_url:${tabId}`).catch(() => undefined);
 });

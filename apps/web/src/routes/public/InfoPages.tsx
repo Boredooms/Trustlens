@@ -107,13 +107,111 @@ export function HowItWorks() {
   );
 }
 
+const SCOPES: Array<[string, string]> = [
+  ["assess:read", "POST /assess, GET /scans, GET /scans/{id}, POST /messages/analyse, POST /inspect-redirect"],
+  ["scan:write", "POST /scans (full asynchronous scan)"],
+  ["identity:read", "POST /verify-identity"],
+  ["payments:read", "POST /verify-payment"],
+  ["reports:write", "POST /reports (report a site to analysts)"],
+  ["investigations:write", "POST /investigations (start the AI explanation of a scan)"],
+  ["investigations:read", "GET /investigations/{id}, GET /investigations/{id}/export"],
+];
+
+const METHODS: Array<[string, string]> = [
+  ["tl.assess({ url, intent, form_action?, payee? })", "Synchronous decision for one action. Browse checks of the same URL are reused for 10 minutes (cached: true)."],
+  ["tl.scan({ url, intent, wait? })", "Full asynchronous scan; wait: true polls until completed, partial or failed."],
+  ["tl.getScan(id)", "A scan with findings, evidence and coverage."],
+  ["tl.verifyIdentity({ domain })", "Is this domain registered by the organisation it appears to be?"],
+  ["tl.verifyPayment({ organisation_id, recipient_type, value })", "Is this payee one the organisation verified?"],
+  ["tl.reportThreat({ url, justification? })", "Send a site to the analyst review queue."],
+];
+
 export function PublicDevelopers() {
   return (
-    <Page title="Developers" lead="Ask TrustLens before your product sends a password or a payment.">
-      <Section title="Install">
+    <Page
+      title="Developers"
+      lead="Ask TrustLens before your product sends a password or a payment — for any real website, from your server, the SDK or the browser extension."
+    >
+      <Section title="1. Create an API key">
+        <p className="text-muted-strong">
+          Sign in, open <span className="font-medium text-foreground">Developers</span>, and choose{" "}
+          <span className="font-medium text-foreground">Create API key</span>. The secret (
+          <code className="font-mono">tl_live_…</code>) is shown once; store it as a server-side environment variable. Keys
+          are scoped, revocable, and every call is metered in your usage panel.
+        </p>
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-border">
+              <th className="py-2 pr-4 font-medium">Scope</th>
+              <th className="py-2 font-medium">Grants</th>
+            </tr>
+          </thead>
+          <tbody>
+            {SCOPES.map(([s, g]) => (
+              <tr key={s} className="border-b border-border">
+                <td className="py-2 pr-4 font-mono text-xs">{s}</td>
+                <td className="py-2 text-muted-strong">{g}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Section>
+      <Section title="2. Install">
         <Code>{"npm install @trustlens/sdk"}</Code>
       </Section>
-      <Section title="Assess an action">
+      <Section title="3. Check any real site">
+        <Code>{`import { TrustLens } from "@trustlens/sdk";
+
+const tl = new TrustLens({ apiKey: process.env.TRUSTLENS_API_KEY, baseUrl: "https://<your-api-host>" });
+
+const a = await tl.assess({ url: "https://github.com/login", intent: "login" });
+a.decision;           // "ALLOW" | "WARN" | "BLOCK" | "REVIEW" | "UNKNOWN" — the server decides
+a.risk_score;         // 0–100
+a.coverage.percent;   // how much was actually checked; never read ALLOW as "harmless"
+a.reasons;            // plain-language reasons from the rules engine
+a.findings;           // [{ code, severity, title, evidence_refs }]`}</Code>
+        <p className="text-muted-strong">
+          A first check of a new site runs a full server-side scan (DNS, TLS, the page, reputation feeds) and takes seconds;
+          repeat browse checks of the same URL within 10 minutes return the stored decision with{" "}
+          <code className="font-mono">cached: true</code>.
+        </p>
+      </Section>
+      <Section title="SDK methods">
+        <table className="w-full text-left text-sm">
+          <tbody>
+            {METHODS.map(([m, d]) => (
+              <tr key={m} className="border-b border-border align-top">
+                <td className="py-2 pr-4 font-mono text-xs">{m}</td>
+                <td className="py-2 text-muted-strong">{d}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="text-muted-strong">
+          Fields are snake_case exactly as the API returns them. Errors are typed (
+          <code className="font-mono">AuthenticationError</code>, <code className="font-mono">RateLimitError</code>,{" "}
+          <code className="font-mono">ValidationError</code>, …) and carry <code className="font-mono">code</code> and{" "}
+          <code className="font-mono">requestId</code>.
+        </p>
+      </Section>
+      <Section title="AI explanations">
+        <p className="text-muted-strong">
+          Start an investigation for any finished scan with <code className="font-mono">POST /api/v1/investigations</code>{" "}
+          (scope <code className="font-mono">investigations:write</code>). A language model writes a narrative over that
+          scan&apos;s evidence; every claim cites a finding or evidence id, uncited claims are dropped, and the model can
+          never change the decision. The response says whether a model was used (<code className="font-mono">ai.generated</code>,{" "}
+          <code className="font-mono">ai.model</code>).
+        </p>
+      </Section>
+      <Section title="Browser extension">
+        <p className="text-muted-strong">
+          The TrustLens extension checks every http(s) page you open in real time and stops a login or payment the server
+          blocks. Install it, open the popup and choose <span className="font-medium text-foreground">Connect in one click</span>{" "}
+          — the dashboard connects it to your account without copying a code. It sends the page address, the form&apos;s
+          destination and the payee text the page itself shows; it never reads what you type.
+        </p>
+      </Section>
+      <Section title="Assess a payment">
         <Code>{`import { TrustLens } from "@trustlens/sdk";
 
 const tl = new TrustLens({ apiKey: process.env.TRUSTLENS_API_KEY });
@@ -125,7 +223,7 @@ const result = await tl.assess({
 // result.decision === "BLOCK", result.risk_score === 62, result.reasons[...]`}</Code>
       </Section>
       <Section title="Decisions">
-        <table className="w-full text-left text-sm">
+        <table aria-label="Decisions" className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-border">
               <th className="py-2 pr-4 font-medium">Decision</th>
@@ -162,9 +260,12 @@ const result = await tl.assess({
           you can build against BLOCK, WARN and ALLOW without scanning real sites.
         </p>
       </Section>
-      <div>
+      <div className="flex flex-wrap gap-3">
         <Link to="/app/developers" className={buttonClasses("primary")}>
           Create an API key
+        </Link>
+        <Link to="/app/developers?connect=extension" className={buttonClasses("secondary")}>
+          Connect the extension
         </Link>
       </div>
     </Page>

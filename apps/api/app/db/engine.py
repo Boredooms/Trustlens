@@ -64,8 +64,12 @@ def create_engine(database_url: str, connect_timeout: float = 10) -> AsyncEngine
         to_asyncpg_url(database_url),
         pool_size=5,
         max_overflow=5,
-        pool_pre_ping=True,
-        pool_recycle=1800,
+        # No pre-ping: it costs a full round trip on every checkout (~300 ms from a distant client,
+        # measured 2026-11-09). Dead connections surface as OperationalError/connection_invalidated,
+        # which get_db turns into 503 NOT_READY and the pool discards; pool_recycle retires idle
+        # connections before Supavisor's idle timeout.
+        pool_pre_ping=False,
+        pool_recycle=300,
         connect_args={
             "statement_cache_size": 0,
             "prepared_statement_cache_size": 0,
