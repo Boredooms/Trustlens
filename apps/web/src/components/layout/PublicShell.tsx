@@ -1,13 +1,45 @@
 import { Suspense } from "react";
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Toaster } from "@/components/ui/Toaster";
 import { FloatingNav } from "@/components/marketing/FloatingNav";
+import { HalftoneWordmarkFooter, type FooterColumn } from "@/components/ui/halftone-wordmark-footer";
+
+/** Every public page is reachable from here (info.test.tsx "footer links reach every public page"). */
+const FOOTER_COLUMNS: FooterColumn[] = [
+  {
+    title: "Product",
+    links: [
+      { label: "Features", href: "/features" },
+      { label: "Method", href: "/method" },
+      { label: "Demo", href: "/demo" },
+      { label: "Docs", href: "/docs" },
+    ],
+  },
+  {
+    title: "Trust",
+    links: [
+      { label: "How it works", href: "/how-it-works" },
+      { label: "Security", href: "/security" },
+      { label: "Developers", href: "/developers" },
+      { label: "Appeal a decision about your site", href: "/appeal" },
+    ],
+  },
+  {
+    title: "Project",
+    links: [
+      { label: "GitHub", href: "https://github.com/Boredooms/Trustlens" },
+      { label: "Browser extension", href: "https://github.com/Boredooms/Trustlens/releases/latest" },
+      { label: "API status", href: "https://trustlens-api-m65a.onrender.com/ready" },
+      { label: "About", href: "/about" },
+    ],
+  },
+];
 
 /**
  * Public frame. The landing page is a full-bleed marketing surface (floating nav, no footer); every
- * other public page keeps the shared footer, which also carries the reachability guarantee its test
- * asserts.
+ * other public page ends on the halftone wordmark footer, whose "Footer" landmark carries the
+ * reachability guarantee its test asserts.
  */
 export function PublicShell() {
   const { pathname } = useLocation();
@@ -30,26 +62,18 @@ export function PublicShell() {
         </Suspense>
       </main>
       {!isLanding && (
-        <footer className="border-t border-border">
-          <div className="mx-auto flex max-w-content flex-col gap-2 px-4 py-8 text-xs text-muted md:flex-row md:justify-between md:px-6">
-            <p>TrustLens — website trust intelligence. Rules decide; the model only explains.</p>
-            <p>We never say a site is safe. We say what we checked.</p>
-            <nav aria-label="Footer" className="flex flex-wrap gap-x-4 gap-y-1">
-              <Link to="/how-it-works" className="underline underline-offset-4 hover:text-foreground">
-                How it works
-              </Link>
-              <Link to="/developers" className="underline underline-offset-4 hover:text-foreground">
-                Developers
-              </Link>
-              <Link to="/security" className="underline underline-offset-4 hover:text-foreground">
-                Security
-              </Link>
-              <Link to="/appeal" className="underline underline-offset-4 hover:text-foreground">
-                Appeal a decision about your site
-              </Link>
-            </nav>
-          </div>
-        </footer>
+        <HalftoneWordmarkFooter
+          wordmark="trustlens"
+          label="TrustLens"
+          meta="Website trust intelligence. Rules decide; the model only explains. We never say a site is safe — we say what we checked."
+          columns={FOOTER_COLUMNS}
+          fontFamily='"Geist Sans", "Inter Tight", "Helvetica Neue", Arial, system-ui, sans-serif'
+          fontWeight={500}
+          height="clamp(420px, 46vw, 560px)"
+          crop={0.18}
+        >
+          © {new Date().getFullYear()} TrustLens · MIT licensed
+        </HalftoneWordmarkFooter>
       )}
       <Toaster />
     </div>

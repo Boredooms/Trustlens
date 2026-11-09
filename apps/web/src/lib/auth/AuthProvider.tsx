@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 import { ClerkProvider, useAuth as useClerkAuth } from "@clerk/clerk-react";
+import { resolveClerkDarkAppearance } from "@/lib/auth/clerk-appearance";
 import { useQueryClient } from "@tanstack/react-query";
 import { env, clerkEnabled } from "@/lib/env";
 import { api } from "@/lib/api/endpoints";
@@ -132,6 +133,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // hosted Account Portal with the dev-browser token in the URL and return to "/" (verified
         // 2026-11-09, docs/03-backend/AUTHENTICATION_AUTHORIZATION.md §Clerk redirects).
         {...CLERK_ROUTES}
+        // Dark auth surfaces everywhere (sign-in, sign-up, modals); Settings → Account overrides this
+        // with the theme-following appearance.
+        appearance={resolveClerkDarkAppearance()}
       >
         <ClerkBridge>{children}</ClerkBridge>
       </ClerkProvider>

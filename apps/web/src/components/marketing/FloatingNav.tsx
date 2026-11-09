@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { buttonClasses } from "@/components/ui/Button";
@@ -40,6 +40,17 @@ export function FloatingNav() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
+  // Close the mobile menu on navigation and when the viewport grows past the breakpoint.
+  const { pathname } = useLocation();
+  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const mq = window.matchMedia("(min-width: 768px)");
+    const onChange = () => mq.matches && setOpen(false);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
   const links = ROUTE_LINKS;
 
 
@@ -47,8 +58,11 @@ export function FloatingNav() {
     <div className="pointer-events-none fixed inset-x-0 top-3 z-40 flex justify-center px-3 sm:top-4">
       <header
         className={cn(
-          "pointer-events-auto w-full max-w-content rounded-full border border-border bar-glass transition-shadow duration-base",
-          scrolled ? "shadow-raised" : "shadow-card",
+          "pointer-events-auto w-full max-w-content border border-border transition-[border-radius,box-shadow] duration-base",
+          // Open on mobile: a solid, rounded sheet. A full pill grown tall becomes a circle, and the
+          // glass fill lets the page show through the links.
+          open ? "rounded-xl bg-surface shadow-raised md:rounded-full md:bar-glass" : "rounded-full bar-glass",
+          !open && (scrolled ? "shadow-raised" : "shadow-card"),
         )}
       >
         <div className="flex h-12 items-center gap-3 pl-3 pr-2 sm:h-14 sm:pl-4">
@@ -96,14 +110,14 @@ export function FloatingNav() {
         </div>
 
         {open && (
-          <div id="nav-menu" className="border-t border-border px-3 py-2 md:hidden">
+          <div id="nav-menu" className="max-h-[calc(100dvh-6rem)] overflow-y-auto border-t border-border px-2 py-2 md:hidden">
             <nav aria-label="Sections" className="flex flex-col">
               {links.map((link) => (
                 <Link
                   key={link.label}
                   to={link.to}
                   onClick={() => setOpen(false)}
-                  className="rounded-md px-2 py-2 text-sm text-muted-strong hover:text-foreground"
+                  className="flex min-h-11 items-center rounded-lg px-3 text-[15px] text-foreground/80 hover:bg-surface-secondary hover:text-foreground"
                 >
                   {link.label}
                 </Link>
@@ -111,7 +125,7 @@ export function FloatingNav() {
               <Link
                 to="/login"
                 onClick={() => setOpen(false)}
-                className="rounded-md px-2 py-2 text-sm text-muted-strong hover:text-foreground sm:hidden"
+                className="flex min-h-11 items-center rounded-lg px-3 text-[15px] text-foreground/80 hover:bg-surface-secondary hover:text-foreground sm:hidden"
               >
                 Sign in
               </Link>
