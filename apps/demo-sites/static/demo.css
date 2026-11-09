@@ -99,3 +99,6 @@ button.pay { background: var(--ns-gold); color: var(--ns-navy-dark); }
   .hero { padding: 32px 0 28px; }
   .index-table { display: block; overflow-x: auto; }
 }
+
+/* Public-hosting stamp (added by scripts/build-vercel.mjs): the site is a labelled test fixture. */
+.sim-banner { position: sticky; top: 0; z-index: 50; padding: 8px 16px; background: #7a1d1d; color: #fff; font: 600 13px/1.4 system-ui, sans-serif; text-align: center; letter-spacing: .01em; }

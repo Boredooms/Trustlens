@@ -10,6 +10,7 @@ $patterns = [ordered]@{
   'jwt_or_qstash_tok' = 'eyJ[A-Za-z0-9_=-]{40,}'
   'upstash_token'     = 'gQAAAAAAA[A-Za-z0-9]{20,}'
   'svix_secret'       = 'whsec_[A-Za-z0-9+/=]{20,}'
+  'npm_token'         = 'npm_[A-Za-z0-9]{30,}'
   'private_key'       = 'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY'
   'db_url_password'   = 'postgres(ql)?(\+\w+)?://[^:@/\s]+:[^@\s]{4,}@'
 }

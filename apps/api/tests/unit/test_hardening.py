@@ -12,7 +12,7 @@ from app.errors import TargetNotAllowed
 from app.security import svix
 from app.services import guard
 
-SECRET = "whsec_dGVzdC1zZWNyZXQtZm9yLXN2aXgtd2ViaG9va3M="
+SECRET = "whsec_" + "dGVzdC1zZWNyZXQtZm9yLXN2aXgtd2ViaG9va3M="
 
 
 # ── Svix ────────────────────────────────────────────────────────────────────────

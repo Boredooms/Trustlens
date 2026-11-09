@@ -179,3 +179,9 @@ Verification: API 410 passed · ruff, format, mypy clean · web 20 files / 106 t
 lints pass · extension E2E 16/16 · popup first status 220–500 ms. Not verified: CI workflows have not run on
 GitHub; new pages not visually screenshot-reviewed. Not done: live deployment (needs the owner's GitHub,
 Render and Vercel access), production Clerk instance, Chrome Web Store packaging.
+## 9. Public demo fixtures, live block E2E, hosting prep (2026-11-09)
+- `apps/demo-sites/scripts/build-vercel.mjs` builds four static, labelled (SIMULATED banner, noindex, CSP `form-action 'none'`) projects; deployed to Vercel as `trustlens-demo-{northstar,admissions,scholarships,placement}`.
+- Real scans of the live hosts: lookalikes WARN on browse; BLOCK with payment/login action context (`PAYEE_NOT_IN_VERIFIED_PROFILE`, `CREDENTIAL_DESTINATION_MISMATCH`). Real Chromium with the extension: Pay/Sign-in held and the block panel shown (10/10).
+- `infrastructure/render.yaml` is now a Docker web service; the API image builds (`docker build`), not booted with real env.
+- README rewritten; `docs/FINAL_HANDOFF_PROMPT.md` added; `releases/trustlens-extension-local.zip` committed; npm-token pattern added to both secret scanners.
+- Not done: API/dashboard hosting (needs Render login), npm publish (scope decision), testnet, production Clerk.

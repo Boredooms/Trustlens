@@ -10,6 +10,7 @@
   "scripts": {
     "start": "node server.mjs",
     "test": "node --test \"test/**/*.test.mjs\"",
-    "lint": "node --check server.mjs && node --check static/demo.js && node --check test/server.test.mjs"
+    "lint": "node --check server.mjs && node --check static/demo.js && node --check test/server.test.mjs && node --check scripts/build-vercel.mjs",
+    "build:vercel": "node scripts/build-vercel.mjs"
   }
 }

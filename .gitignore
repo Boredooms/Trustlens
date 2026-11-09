@@ -38,3 +38,7 @@ Thumbs.db
 
 # Local dev logs (scripts/dev-up.sh)
 .dev-logs/
+
+# Release bundles are committed on purpose (extension zip for judges)
+!releases/*.zip
+.vercel/
