@@ -1,8 +1,8 @@
 // The 20-second terminal demo (DEMO_RUNBOOK.md §2, SDK_INTEGRATION_GUIDE.md §2).
-// Run after `pnpm --filter @trustlens/sdk build`:
+// Run after `pnpm --filter trustlens-sdk build`:
 //   TRUSTLENS_API_KEY=tl_live_... node packages/sdk/examples/demo-call.mjs
 // The decision comes from the server. ALLOW means "no known threat within executed checks".
-import { TrustLens, TrustLensError } from "@trustlens/sdk";
+import { TrustLens, TrustLensError } from "trustlens-sdk";
 
 const apiKey = process.env.TRUSTLENS_API_KEY;
 if (!apiKey) {

@@ -1,0 +1,23 @@
+# Uploaded to Vercel only what the dashboard build needs. Secrets and unrelated apps never leave the machine.
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+apps/api
+apps/extension/dist
+apps/demo-sites/dist
+packages/contracts/artifacts
+packages/contracts/cache
+docs/evidence
+releases
+**/node_modules
+**/dist
+**/.venv
+**/.mypy_cache
+**/.ruff_cache
+**/.pytest_cache
+**/__pycache__
+.freebuff
+.dev-logs

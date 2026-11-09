@@ -42,3 +42,5 @@ Thumbs.db
 # Release bundles are committed on purpose (extension zip for judges)
 !releases/*.zip
 .vercel/
+.vercel
+.env*.local

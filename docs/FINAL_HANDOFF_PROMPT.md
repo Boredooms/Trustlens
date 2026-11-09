@@ -8,8 +8,8 @@ do next. Facts below were checked on 2026-11-09 unless marked **unverified**.
 - **Repo:** monorepo (`apps/api`, `apps/web`, `apps/extension`, `apps/demo-sites`, `packages/{contracts,sdk,shared-types}`, `docs/`).
 - **Runs locally** against the hosted Supabase DB (migrated to `c7a0note0001`, 34 tables, RLS audit clean), Clerk, Upstash Redis, QStash and the NVIDIA LLM.
 - **Deployed:** four Vercel projects serving labelled, inert fixtures (genuine `trustlens-demo-northstar`, lookalikes `-admissions`, `-scholarships`, `-placement`, all `*.vercel.app`).
-- **Deployable, not deployed:** API (Render Docker, image builds), dashboard (Vercel static).
-- **Not done:** public testnet contract, npm publish, Chrome Web Store, production Clerk instance.
+- **Live:** dashboard https://trustlens-web-three.vercel.app (Vercel `trustlens-web`, root `apps/web`, Git-connected); API https://trustlens-api-m65a.onrender.com (Render Docker `srv-dbotade7bikc73a7ick0`, free, Singapore, auto-deploy on `main`); QStash schedules point at it. Verified in real Chromium: Clerk sign-in → `/app`, scan of a live lookalike, notes PUT through CORS (7/7); extension paired on the live dashboard and blocked the live lookalikes (10/10).
+- **Not done:** public testnet contract (live `/verify` returns `CHAIN_UNAVAILABLE`), npm publish (`trustlens-sdk`, blocked on the account's 2FA OTP), Chrome Web Store, production Clerk instance (the dev instance works on the Vercel domain).
 
 ## 2. Stack decisions
 
@@ -57,11 +57,11 @@ No secrets in tracked files (staged scan clean; one **fake** webhook fixture str
 
 | Gap | Owner | Next action |
 | --- | --- | --- |
-| API not deployed | repo owner | `render login`, create the service from `render.yaml`, set env names from `ENVIRONMENT_CONFIGURATION.md`, set `ALLOWED_ORIGINS` |
-| Dashboard not deployed | after API | `vercel deploy --prod` in `apps/web` with `VITE_API_BASE_URL` set |
+| Testnet anchoring | repo owner | choose a testnet and signing path (API holds no key today; needs ADR + `eth_sendRawTransaction` signer or a signing node), fund a wallet, deploy `ThreatReportRegistry`, set `CHAIN_*` on Render |
+| Cold starts | repo owner | free Render sleeps when idle; the 5-minute QStash reconcile keeps it warm; upgrade the plan for a hard SLA |
 | Production Clerk instance | repo owner | create it, add its issuer/JWKS/azp to the API env |
 | `release.yml` never run | repo owner | add `DIRECT_DATABASE_URL`, `RENDER_DEPLOY_HOOK` secrets, then dispatch it |
-| SDK unpublished | repo owner | decide the npm scope (token authenticates as `boredooms`, not an org named `trustlens`); rename e.g. `@boredooms/trustlens-sdk`, remove `private`, `npm publish --access public` |
+| SDK unpublished | repo owner | in `packages/sdk`: `npm publish --access public --otp <code>` (or use an automation token) |
 | Public testnet | repo owner | provide a funded key and RPC; deploy `ThreatReportRegistry`; set `CHAIN_*` |
 | Extension store listing | repo owner | rebuild against the production API, then submit |
 | New pages not screenshot-reviewed | frontend | run `shots.mjs` and review |
@@ -69,4 +69,4 @@ No secrets in tracked files (staged scan clean; one **fake** webhook fixture str
 ## 8. Questions
 
 - Answered: chart library (Bklit), CSS stack (Tailwind v3), fixtures on Vercel only, logout in the sidebar.
-- Open: Render account/login; npm package name and scope; whether to deploy to a testnet.
+- Answered: Render deployment (done), npm name (`trustlens-sdk`, unscoped). Open: testnet and signing path; npm OTP or automation token.

@@ -106,7 +106,7 @@ Exit criteria: a new user can sign up, run a scan, open the report, and reach th
 | Content script form/payment observation | Extension |
 | Overlay + popup UI (token-driven) | Extension + Frontend |
 | Device pairing flow | Backend + Extension |
-| `@trustlens/sdk` + typed errors | SDK |
+| `trustlens-sdk` + typed errors | SDK |
 | API key management UI | Frontend |
 | Developer docs page with live examples | Frontend + SDK |
 

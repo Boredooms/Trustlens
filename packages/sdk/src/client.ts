@@ -27,7 +27,7 @@ import type {
 } from "./types.js";
 
 export const SDK_VERSION = "0.1.0";
-const DEFAULT_BASE_URL = "https://api.trustlens.example";
+const DEFAULT_BASE_URL = "https://trustlens-api-m65a.onrender.com";
 const RETRYABLE_STATUS = new Set([429, 502, 503, 504]);
 const TERMINAL_SCAN_STATUS = new Set(["completed", "partial", "failed"]);
 

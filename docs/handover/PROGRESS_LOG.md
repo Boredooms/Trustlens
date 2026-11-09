@@ -185,3 +185,11 @@ Render and Vercel access), production Clerk instance, Chrome Web Store packaging
 - `infrastructure/render.yaml` is now a Docker web service; the API image builds (`docker build`), not booted with real env.
 - README rewritten; `docs/FINAL_HANDOFF_PROMPT.md` added; `releases/trustlens-extension-local.zip` committed; npm-token pattern added to both secret scanners.
 - Not done: API/dashboard hosting (needs Render login), npm publish (scope decision), testnet, production Clerk.
+## 10. Live deployment (2026-11-09)
+- API on Render (Docker, free, Singapore): https://trustlens-api-m65a.onrender.com — `/health`, `/ready`, `/api/v1/health` 200, DB ~15 ms. Auto-deploys on `main`.
+- Dashboard on Vercel: https://trustlens-web-three.vercel.app (project `trustlens-web`, root `apps/web`, Git-connected). `.vercelignore` keeps `.env*` and `apps/api` out of CLI uploads.
+- API: CORS now allows `PUT` (notes autosave preflight failed before); `ALLOWED_ORIGIN_REGEX` (anchored, https, no `.*`, team-scoped) for Vercel deployment URLs, also accepted for Clerk `azp`; `CLERK_AUTHORIZED_PARTY` takes a list. Tests added.
+- QStash schedules re-registered to the Render URL; unsigned `/internal/jobs/*` → 401.
+- Production E2E: dashboard 7/7 (Clerk → /app, live scan, notes PUT); extension against production 10/10 (BLOCK on live lookalikes).
+- SDK renamed `trustlens-sdk` (MIT, public metadata, default base URL = Render API); publish blocked by npm 2FA (EOTP).
+- Web3: live `/verify` returns `CHAIN_UNAVAILABLE` (no chain on Render; 31337 refused in production by design). Testnet needs a decision.

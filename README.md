@@ -12,7 +12,7 @@ Action-integrity verification, TLS trust analysis and on-chain threat reporting.
 ![Web3](https://img.shields.io/badge/web3-Solidity%200.8.24%20%C2%B7%20Hardhat-363636)
 ![Tests](https://img.shields.io/badge/tests-API%20410%20%C2%B7%20web%20106%20%C2%B7%20extension%20E2E%2016%2F16-brightgreen)
 
-[Live demo sites](#live-demo-sites-deployed) · [How a threat is blocked](#how-a-threat-is-blocked-end-to-end) · [Run it](#run-it) · [Web3 proof](#web3-proof) · [Deliverables](#hackathon-deliverables) · [Docs](docs/INDEX.md)
+**[Live dashboard](https://trustlens-web-three.vercel.app)** · [API health](https://trustlens-api-m65a.onrender.com/ready) · [Live demo sites](#live-demo-sites-deployed) · [How a threat is blocked](#how-a-threat-is-blocked-end-to-end) · [Run it](#run-it) · [Web3 proof](#web3-proof) · [Deliverables](#hackathon-deliverables) · [Docs](docs/INDEX.md)
 
 </div>
 
@@ -173,14 +173,16 @@ pnpm --filter @trustlens/contracts verify-report -- --report <id>
 Contract `0x5FbDB2315678afecb367f032d93F642f64180aa3` (chain 31337, deterministic), deploy and register
 transactions are recorded in [`docs/evidence/web3/replay.json`](docs/evidence/web3/replay.json) and
 [`chain.json`](docs/evidence/web3/chain.json). Anchors are stored in the hosted database (`report_anchors`) and shown
-on each report; the public page `/verify/<report-id>` recomputes the commitment. A public testnet deployment is **not**
-done (needs a funded key); see [Limitations](#limitations-stated-not-hidden).
+on each report; the public page `/verify/<report-id>` recomputes the commitment against the chain. The hosted API has
+no chain configured (the local chain ID is refused in production by design), so live `/verify` answers
+`CHAIN_UNAVAILABLE` rather than pretending; use the commands above for the reproducible proof. A public testnet is
+**not** done (needs a funded wallet and a signing path); see [Limitations](#limitations-stated-not-hidden).
 
 ## Hackathon deliverables
 
 | # | Deliverable | Status | Where |
 | --- | --- | --- | --- |
-| 1 | Working prototype with URL/domain investigation | Runs locally against hosted Supabase/Clerk/Upstash. Public dashboard URL pending API host (see below) | `/app/scan` |
+| 1 | Working prototype with URL/domain investigation | **Live**: https://trustlens-web-three.vercel.app (Clerk sign-in → `/app`), API on Render | `/app/scan` |
 | 2 | Public GitHub repository, source and setup | This repo | [Run it](#run-it) |
 | 3 | AI demonstration, evidence-based explanation | Message analysis with cited evidence and the O-8 cap; investigation narratives cite finding ids | `/app/messages`, [`MESSAGE_ANALYSIS.md`](docs/03-backend/MESSAGE_ANALYSIS.md) |
 | 4 | Cybersecurity demonstration with TLS analysis | Phishing lookalikes blocked; certificate misconfiguration separated from trust compromise | [`TESTING_REPORT.md`](docs/evidence/TESTING_REPORT.md) |
@@ -188,7 +190,7 @@ done (needs a funded key); see [Limitations](#limitations-stated-not-hidden).
 | 6 | Verification evidence | Contract address, tx hashes, tamper test | [`docs/evidence/web3`](docs/evidence/web3/README.md) |
 | 7 | Technical documentation | Architecture, pipeline, intel sources, security methodology | [`docs/INDEX.md`](docs/INDEX.md) |
 | 8 | Testing report | 17 legitimate and suspicious cases with observed results | [`TESTING_REPORT.md`](docs/evidence/TESTING_REPORT.md) |
-| 9 | Live demonstration | Submission, investigation, risk assessment and reporting | [`docs/evidence/demo.md`](docs/evidence/demo.md), [live demo sites](#live-demo-sites-deployed) |
+| 9 | Live demonstration | Live dashboard + live lookalikes: submit, investigate, assess, report | [`docs/evidence/demo.md`](docs/evidence/demo.md), [live demo sites](#live-demo-sites-deployed) |
 
 ## Problem statement → where it is
 
@@ -215,18 +217,34 @@ Last full run: API 410 passed, `mypy app` clean (104 files), web 106 tests, all 
 E2E in real Chromium 16/16 plus 10/10 against the live lookalikes. CI is in [`.github/workflows`](.github/workflows):
 `ci.yml` runs on every pull request and push; `release.yml` is manual only (migrate, Render deploy hook, extension zip).
 
-## Deployment
+## Deployment (live)
 
-| Piece | Target | State |
+| Piece | Where | Notes |
 | --- | --- | --- |
-| Demo fixtures | Vercel (4 projects, `pnpm --filter @trustlens/demo-sites build:vercel`) | **Deployed** |
-| API | Render Docker web service, [`infrastructure/render.yaml`](infrastructure/render.yaml), health `GET /health`, readiness `GET /ready` | Image builds; **not yet deployed** |
-| Dashboard | Vercel static, [`apps/web/vercel.json`](apps/web/vercel.json) (SPA rewrites + security headers) | Config ready; deploy after the API URL exists |
-| Database | Supabase Postgres (34 tables, RLS audit clean, migrations to `c7a0note0001`) | Live |
+| Dashboard | **https://trustlens-web-three.vercel.app** | Vercel project `trustlens-web`, root `apps/web`, deploys on push to `main`. SPA rewrites + security headers in [`apps/web/vercel.json`](apps/web/vercel.json) |
+| API | **https://trustlens-api-m65a.onrender.com** | Render Docker web service (free, Singapore, next to Supabase), deploys on push to `main`. Blueprint: [`infrastructure/render.yaml`](infrastructure/render.yaml) |
+| Health | [`/health`](https://trustlens-api-m65a.onrender.com/health) · [`/ready`](https://trustlens-api-m65a.onrender.com/ready) · [`/api/v1/health`](https://trustlens-api-m65a.onrender.com/api/v1/health) | Public, no auth, no values: liveness, then DB / scanner / LLM readiness |
+| Database | Supabase Postgres | 34 tables, RLS audit clean, migrations at `c7a0note0001` |
+| Cron | Upstash QStash → `/internal/jobs/*` | Signed; unsigned calls get 401 |
+| Demo fixtures | 4 Vercel projects | See [Live demo sites](#live-demo-sites-deployed) |
 
-Environment variable names are listed in [`ENVIRONMENT_CONFIGURATION.md`](docs/08-infrastructure/ENVIRONMENT_CONFIGURATION.md).
+CORS and the Clerk `azp` check accept the production origin plus this team's Vercel deployment URLs through an
+anchored, team-scoped pattern (`ALLOWED_ORIGIN_REGEX`); other origins are refused. The free plan has 512 MB; the API
+runs one worker (about 140 MB after hours of scans) with `SCAN_CONCURRENCY=2`. The first request after idle can take
+about a minute while Render wakes the service. Variable names: [`ENVIRONMENT_CONFIGURATION.md`](docs/08-infrastructure/ENVIRONMENT_CONFIGURATION.md).
 Never put a secret in a `VITE_*` variable or commit a `.env` file.
 
+### Browser extension
+
+[`releases/trustlens-extension-production.zip`](releases/) targets the live API and dashboard (unzip, then
+**Load unpacked**). `trustlens-extension-local.zip` targets `localhost`. Verified in real Chromium against production:
+one-click pairing on the live dashboard, and Pay / Sign-in held and blocked on all three live lookalikes (10/10).
+
+### SDK
+
+```bash
+npm install trustlens-sdk      # publish pending: the npm account needs a 2FA one-time code
+```
 ## Repository layout
 
 ```text
@@ -235,7 +253,7 @@ apps/web            React + Vite dashboard and public pages (/verify/:reportId)
 apps/extension      Chrome MV3 extension
 apps/demo-sites     Inert genuine + lookalike fixtures (local server and Vercel build)
 packages/contracts  ThreatReportRegistry (Solidity 0.8.24, Hardhat)
-packages/sdk        @trustlens/sdk
+packages/sdk        trustlens-sdk
 packages/shared-types  generated from apps/api/openapi.json
 docs/               specification, evidence, handover
 releases/           packaged extension
@@ -248,7 +266,7 @@ releases/           packaged extension
 - The Northstar organisation profile is a demo profile; lookalike detection on `*.vercel.app` hosts relies on brand tokens and the registered payee.
 - Revocation is best-effort (OCSP, CRL fallback); a timeout is `unavailable`, never "good".
 - Header posture is one unauthenticated response; it is reported, never scored.
-- The SDK is not published to npm yet (`private: true`).
+- The SDK (`trustlens-sdk`) is ready to publish but not on npm yet: the publish needs the account's 2FA one-time code.
 
 ## License
 

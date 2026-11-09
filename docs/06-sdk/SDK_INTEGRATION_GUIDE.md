@@ -9,8 +9,8 @@
 ## 1. Install and configure
 
 ```bash
-npm install @trustlens/sdk
-# or pnpm add @trustlens/sdk
+npm install trustlens-sdk
+# or pnpm add trustlens-sdk
 ```
 
 ```bash
@@ -26,7 +26,7 @@ Create the key in the dashboard: **Developers → Create key**, scopes `assess:r
 ## 2. Node.js — pre-checkout guard
 
 ```ts
-import { TrustLens, shouldBlock, requiresConfirmation } from "@trustlens/sdk";
+import { TrustLens, shouldBlock, requiresConfirmation } from "trustlens-sdk";
 
 const tl = new TrustLens({ apiKey: process.env.TRUSTLENS_API_KEY!, client: "checkout/1.0" });
 
@@ -60,7 +60,7 @@ Call it **before** creating the order, not after. A check after payment is a rec
 
 ```ts
 import express from "express";
-import { TrustLens, RateLimitError, TimeoutError } from "@trustlens/sdk";
+import { TrustLens, RateLimitError, TimeoutError } from "trustlens-sdk";
 
 const tl = new TrustLens({ apiKey: process.env.TRUSTLENS_API_KEY! });
 export const app = express();
@@ -99,7 +99,7 @@ Note the fail-open-but-honest pattern: `UNKNOWN`, never `ALLOW`.
 ```ts
 // app/api/trust/route.ts
 import { NextResponse } from "next/server";
-import { TrustLens } from "@trustlens/sdk";
+import { TrustLens } from "trustlens-sdk";
 
 const tl = new TrustLens({ apiKey: process.env.TRUSTLENS_API_KEY! });
 
@@ -255,7 +255,7 @@ decision to allow with a warning. Never fabricate `ALLOW`.
 
 ```ts
 import { describe, it, expect, vi } from "vitest";
-import { TrustLens } from "@trustlens/sdk";
+import { TrustLens } from "trustlens-sdk";
 
 describe("checkout guard", () => {
   it("blocks on BLOCK", async () => {

@@ -138,7 +138,7 @@ identity finding), not `PAYEE_NOT_IN_VERIFIED_PROFILE` — the difference matter
 
 1. Signs up, verifies email, opens `/app/developers`, creates a key with scopes
    `assess:read`, `reports:write`. The full key is shown once, with a copy button and a warning.
-2. Installs: `npm install @trustlens/sdk`.
+2. Installs: `npm install trustlens-sdk`.
 3. Calls `assess({ url, intent: "payment" })` in a pre-checkout hook.
 4. Handles the decision: `BLOCK` → refuse and log `requestId`; `WARN` → confirm dialog;
    `REVIEW`/`UNKNOWN` → proceed but log; `ALLOW` → proceed.

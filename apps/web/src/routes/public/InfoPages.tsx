@@ -157,10 +157,10 @@ export function PublicDevelopers() {
         </table>
       </Section>
       <Section title="2. Install">
-        <Code>{"npm install @trustlens/sdk"}</Code>
+        <Code>{"npm install trustlens-sdk"}</Code>
       </Section>
       <Section title="3. Check any real site">
-        <Code>{`import { TrustLens } from "@trustlens/sdk";
+        <Code>{`import { TrustLens } from "trustlens-sdk";
 
 const tl = new TrustLens({ apiKey: process.env.TRUSTLENS_API_KEY, baseUrl: "https://<your-api-host>" });
 
@@ -212,7 +212,7 @@ a.findings;           // [{ code, severity, title, evidence_refs }]`}</Code>
         </p>
       </Section>
       <Section title="Assess a payment">
-        <Code>{`import { TrustLens } from "@trustlens/sdk";
+        <Code>{`import { TrustLens } from "trustlens-sdk";
 
 const tl = new TrustLens({ apiKey: process.env.TRUSTLENS_API_KEY });
 const result = await tl.assess({
