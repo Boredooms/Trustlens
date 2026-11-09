@@ -333,9 +333,10 @@ python -V    # 3.12.x
 python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r apps/api/requirements-dev.txt
 
-# Database (local)
-docker compose up -d db
-alembic -c apps/api/alembic.ini upgrade head
+# Database: hosted Supabase (no local app DB). Fill apps/api/.env first.
+python -m app.scripts.online_check               # from apps/api
+alembic -c apps/api/alembic.ini upgrade head     # uses DIRECT_DATABASE_URL (session pooler :5432)
+# Integration tests only: docker compose --profile test up -d test-db && pwsh scripts/test-api.ps1
 
 # Run
 pnpm --filter web dev          # http://localhost:5173

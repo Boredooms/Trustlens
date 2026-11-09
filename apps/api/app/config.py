@@ -8,17 +8,27 @@ with one message that names the variable, never a stack trace at first request (
 from __future__ import annotations
 
 import logging
+import os
 import sys
 from functools import lru_cache
 from typing import Annotated, Any, Literal
+from urllib.parse import urlsplit
 
-from pydantic import Field, SecretStr, ValidationError, field_validator, model_validator
+from pydantic import (
+    AliasChoices,
+    Field,
+    SecretStr,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 Environment = Literal["development", "test", "production"]
 LogLevel = Literal["debug", "info", "warning", "error"]
 
 _VALID_LOG_LEVELS: tuple[str, ...] = ("debug", "info", "warning", "error")
+_LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "db", "test-db"})
 
 log = logging.getLogger("trustlens.config")
 
@@ -35,6 +45,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
+        populate_by_name=True,
     )
 
     # ── 2.1 Core ────────────────────────────────────────────────────────────────
@@ -43,6 +54,8 @@ class Settings(BaseSettings):
     port: int = 8000
     database_url: str
     direct_database_url: str | None = None
+    # TCP + TLS + pooler auth for a new connection. Keep API and DB in one region in production.
+    db_connect_timeout_seconds: float = Field(default=10, gt=0, le=60)
     jwt_secret: SecretStr | None = None
     allowed_origins: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["http://localhost:5173"]
@@ -104,7 +117,12 @@ class Settings(BaseSettings):
     clerk_authorized_party: str
     clerk_webhook_secret: SecretStr | None = None
     supabase_url: str | None = None
-    supabase_service_role_key: SecretStr | None = None
+    # Supabase's server-side "secret key" (sb_secret_…), the successor of the service_role key.
+    # Server-only; no request path uses it. The legacy env name is still accepted.
+    supabase_secret_key: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("SUPABASE_SECRET_KEY", "SUPABASE_SERVICE_ROLE_KEY"),
+    )
     upstash_redis_rest_url: str | None = None
     upstash_redis_rest_token: SecretStr | None = None
     qstash_current_signing_key: SecretStr | None = None
@@ -172,7 +190,7 @@ class Settings(BaseSettings):
                     ("JWT_SECRET", self.jwt_secret),
                     ("CLERK_SECRET_KEY", self.clerk_secret_key),
                     ("SUPABASE_URL", self.supabase_url),
-                    ("SUPABASE_SERVICE_ROLE_KEY", self.supabase_service_role_key),
+                    ("SUPABASE_SECRET_KEY", self.supabase_secret_key),
                     ("UPSTASH_REDIS_REST_URL", self.upstash_redis_rest_url),
                     ("UPSTASH_REDIS_REST_TOKEN", self.upstash_redis_rest_token),
                     ("QSTASH_CURRENT_SIGNING_KEY", self.qstash_current_signing_key),
@@ -184,6 +202,8 @@ class Settings(BaseSettings):
                 raise ValueError("missing required production variable(s): " + ", ".join(missing))
             if self.jwt_secret is not None and len(self.jwt_secret.get_secret_value()) < 32:
                 raise ValueError("JWT_SECRET must be at least 32 characters in production")
+            if self.database_host in _LOCAL_HOSTS:
+                raise ValueError("DATABASE_URL points at a local host; production uses Supabase")
             if self.chain_rpc_url and self.chain_id == 31337:
                 raise ValueError(
                     "CHAIN_ID=31337 is the local development chain and is refused in production"
@@ -199,6 +219,15 @@ class Settings(BaseSettings):
     @property
     def llm_configured(self) -> bool:
         return self.llm_api_key is not None and bool(self.llm_api_key.get_secret_value())
+
+    @property
+    def database_host(self) -> str:
+        return (urlsplit(self.database_url).hostname or "").lower()
+
+    @property
+    def database_source(self) -> str:
+        """Where DATABASE_URL came from. A process env var silently beats .env — log it."""
+        return "process environment" if "DATABASE_URL" in os.environ else ".env file"
 
     @property
     def chain_configured(self) -> bool:

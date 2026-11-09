@@ -36,33 +36,38 @@ Web3 evidence [`docs/evidence/web3/`](docs/evidence/web3/README.md) · baseline
 
 ## Run it (about 10 minutes from a clean clone)
 
-Prerequisites: **Docker** (running), **Node ≥ 20 + pnpm 9**, **Python 3.12** (3.13 also works).
+Prerequisites: **Node ≥ 20 + pnpm 9**, **Python 3.12** (3.13 also works), and your own hosted
+services: a **Supabase** project (database only), a **Clerk** application (the only identity
+provider), **Upstash Redis + QStash**. Docker is needed only for the isolated integration-test DB.
+There is no local application database.
 
 **One command** — Windows: `pwsh scripts/dev-up.ps1` · macOS/Linux: `bash scripts/dev-up.sh`.
-It starts Postgres, a local blockchain, the API, the dashboard and the demo sites, migrates, seeds,
-deploys the registry, and runs the proof scripts.
+It runs `online_check` against your hosted services, then starts the API, the dashboard and the demo
+sites. Add `-Migrate -Seed -WithChain` (`--migrate --seed --with-chain`) to migrate the hosted DB,
+seed the demo org, and start the local chain.
 
 Or step by step:
 
 ```bash
-docker compose up -d db                                 # Postgres 16 on :5432
 pnpm install                                            # repo root
-pnpm --filter @trustlens/contracts node                 # terminal A: local chain :8545 (chainId 31337)
-pnpm --filter @trustlens/contracts run deploy:local     # deterministic address 0x5FbDB2…0aa3
+pnpm --filter @trustlens/contracts node                 # optional, terminal A: local chain :8545 (chainId 31337)
+pnpm --filter @trustlens/contracts run deploy:local     # optional: deterministic address 0x5FbDB2…0aa3
 
 cd apps/api
 python -m venv .venv && . .venv/Scripts/activate        # macOS/Linux: . .venv/bin/activate
 pip install -r requirements-dev.txt
-cp .env.example .env                                    # local DB, DEMO_MODE, dev sign-in, chain
-alembic upgrade head
-python -m app.scripts.seed_demo                         # Northstar University demo data (simulated)
+cp .env.example .env                                    # fill in the [required] hosted values
+python -m app.scripts.online_check                      # status of DB/Redis/QStash/Clerk/LLM, no secrets printed
+alembic upgrade head                                    # uses DIRECT_DATABASE_URL (session pooler :5432)
+python -m app.scripts.seed_demo                         # Northstar University demo data (simulated, idempotent)
 python -m app.serve                                     # terminal B: API :8000 (Linux: uvicorn app.main:app)
 
 pnpm --filter @trustlens/web dev                        # terminal C (repo root): dashboard :5173
 node apps/demo-sites/server.mjs                         # terminal D: inert demo sites :8081
 ```
 
-Open <http://localhost:5173>, choose **Development sign-in**, then try **Scan**, **Messages**,
+Open <http://localhost:5173>, sign in with Clerk (or **Development sign-in** when
+`DEV_AUTH_ENABLED=true` locally), then try **Scan**, **Messages**,
 **Reports** (anchor on chain) and the public page `/verify/<report-id>` in a private window.
 
 ## Prove it
@@ -80,8 +85,10 @@ pnpm --filter @trustlens/contracts verify-report -- --report <id>   # verify wit
 ## Checks
 
 ```bash
-(cd apps/api && ruff check . && ruff format --check . && mypy app && pytest -q)
-#   DB integration tests run only with TEST_DATABASE_URL pointing at a migrated database
+(cd apps/api && ruff check . && ruff format --check . && mypy app)
+docker compose --profile test up -d test-db   # once: isolated test DB on :5433 (trustlens_test)
+pwsh scripts/test-api.ps1    # migrates the test DB, runs pytest; never touches the hosted DB
+pwsh scripts/secret-scan.ps1 -Staged   # before every commit
 pnpm -r typecheck && pnpm -r lint && pnpm -r test && pnpm -r build
 ```
 

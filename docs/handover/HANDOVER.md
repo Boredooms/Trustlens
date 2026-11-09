@@ -76,23 +76,23 @@ docs/               the specification (source of truth) + this handover folder
 
 ## 4. First hour on a new machine (checklist)
 
-Prerequisites: Node ≥ 20 + pnpm 9, Python 3.12+ (3.13 works), Docker Desktop.
+Prerequisites: Node ≥ 20 + pnpm 9, Python 3.12+ (3.13 works), your own Supabase project (database
+only), Clerk application, Upstash Redis + QStash. Docker Desktop only for the isolated test DB.
+There is **no local application database**.
 
 ```bash
 # 0. Fresh git history under YOUR identity (the folder was handed over without .git)
 git init && git add -A && git commit -m "TrustLens: initial import"
 
-# 1. Local Postgres
-docker compose up -d db
-
-# 2. API
+# 1. API (hosted services)
 cd apps/api
 python -m venv .venv && . .venv/Scripts/activate     # macOS/Linux: . .venv/bin/activate
 pip install -r requirements-dev.txt
-cp .env.example .env        # then fill it in — see §6. For a purely local start:
-                            # DATABASE_URL/DIRECT_DATABASE_URL -> local docker DB,
-                            # DEMO_MODE=true, DEV_AUTH_ENABLED=true
-alembic upgrade head
+cp .env.example .env        # fill the [required] values — see §6. Locally: DEMO_MODE=true,
+                            # DEV_AUTH_ENABLED=true (refused in production)
+python -m app.scripts.online_check   # DB 6543 + 5432, Redis, QStash, Clerk, LLM: status only
+alembic upgrade head                 # hosted DB via DIRECT_DATABASE_URL (session pooler :5432)
+python -m app.scripts.rls_audit      # expect 0 problems
 python -m app.scripts.seed_demo
 python -m app.serve         # http://localhost:8000 (Windows-safe launcher; Linux: uvicorn app.main:app)
 
@@ -111,10 +111,11 @@ python -m app.scripts.demo_check        # expect 26/26
 python -m app.scripts.platform_check    # expect 42/42
 ```
 
-Full checks: `(cd apps/api && ruff check . && ruff format --check . && mypy app && pytest -q)` and
-`pnpm -r typecheck && pnpm -r lint && pnpm -r test && pnpm -r build`. DB integration tests run only
-with `TEST_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/<db>` (migrated);
-without it ~31 tests are skipped.
+Full checks: `(cd apps/api && ruff check . && ruff format --check . && mypy app)`, then
+`docker compose --profile test up -d test-db` once and `pwsh scripts/test-api.ps1` (migrates the
+isolated `localhost:5433/trustlens_test` DB and runs pytest with `TEST_DATABASE_URL` set for that
+process only; never the hosted DB), and `pnpm -r typecheck && pnpm -r lint && pnpm -r test && pnpm -r build`.
+Before every commit: `pwsh scripts/secret-scan.ps1 -Staged`.
 
 ## 5. Hosted services (accounts belong to whoever creates them)
 
@@ -137,7 +138,7 @@ them, never put API secrets in Vercel/`VITE_*`**.
 
 API (`apps/api/.env`): `ENVIRONMENT, PORT, DATABASE_URL, DIRECT_DATABASE_URL, JWT_SECRET, IP_HASH_SALT,
 ALLOWED_ORIGINS, CLERK_ISSUER, CLERK_JWKS_URL, CLERK_AUTHORIZED_PARTY, CLERK_SECRET_KEY,
-CLERK_WEBHOOK_SECRET, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, UPSTASH_REDIS_REST_URL,
+CLERK_WEBHOOK_SECRET, SUPABASE_URL, SUPABASE_SECRET_KEY, UPSTASH_REDIS_REST_URL,
 UPSTASH_REDIS_REST_TOKEN, QSTASH_TOKEN, QSTASH_URL, QSTASH_CURRENT_SIGNING_KEY,
 QSTASH_NEXT_SIGNING_KEY, RESEND_API_KEY, EMAIL_FROM, LLM_API_KEY, LLM_BASE_URL, LLM_MODEL,
 LLM_EXTRA_BODY, DEMO_MODE, DEV_AUTH_ENABLED, ALLOW_DEMO_SEED, DEEP_SCAN_ENABLED, LOG_LEVEL`.

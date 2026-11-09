@@ -1,6 +1,6 @@
 # Render Blueprint for the API (DEPLOYMENT_ARCHITECTURE.md, ADR-015).
 # Migrations are a release step, not a startup step: run `alembic upgrade head` against
-# DIRECT_DATABASE_URL (port 5432, never the pooler) before deploying a new version.
+# DIRECT_DATABASE_URL (Supabase SESSION pooler, port 5432) before deploying a new version.
 services:
   - type: web
     name: trustlens-api
@@ -23,7 +23,7 @@ services:
         value: "true"
       - key: DATABASE_URL          # Supabase pooler, transaction mode, port 6543
         sync: false
-      - key: DIRECT_DATABASE_URL   # Supabase direct, port 5432 (migrations, checkpointer)
+      - key: DIRECT_DATABASE_URL   # Supabase session pooler, port 5432 (migrations, checkpointer)
         sync: false
       - key: JWT_SECRET
         generateValue: true
@@ -41,7 +41,7 @@ services:
         sync: false
       - key: SUPABASE_URL
         sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
+      - key: SUPABASE_SECRET_KEY   # sb_secret_… (server-only)
         sync: false
       - key: UPSTASH_REDIS_REST_URL
         sync: false
@@ -49,6 +49,10 @@ services:
         sync: false
       - key: QSTASH_CURRENT_SIGNING_KEY
         sync: false
+      - key: QSTASH_NEXT_SIGNING_KEY
+        sync: false
+      - key: DEV_AUTH_ENABLED      # must stay false in production (startup refuses true)
+        value: "false"
       - key: LLM_API_KEY           # optional: absent ⇒ labelled template narratives
         sync: false
       - key: LLM_BASE_URL

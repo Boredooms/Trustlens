@@ -78,6 +78,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
             "demo_mode": settings.demo_mode,
             "deep_scan_enabled": settings.deep_scan_enabled,
             "llm_configured": settings.llm_configured,
+            # Host and source only, never credentials: a stale shell DATABASE_URL silently beats
+            # .env, which once pointed a running API at the test database.
+            "database_host": settings.database_host,
+            "database_source": settings.database_source,
+            "redis_configured": settings.upstash_redis_rest_url is not None,
+            "qstash_signing_configured": settings.qstash_current_signing_key is not None,
+            "chain_configured": settings.chain_configured,
         },
     )
     try:
@@ -135,7 +142,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings = settings
     app.state.runtime = RuntimeState()
-    app.state.engine = create_engine(settings.database_url)
+    app.state.engine = create_engine(settings.database_url, settings.db_connect_timeout_seconds)
     app.state.session_factory = create_session_factory(app.state.engine)
     token = settings.upstash_redis_rest_token
     app.state.rate_limiter = RateLimiter(  # shared Upstash counters when configured (§10)

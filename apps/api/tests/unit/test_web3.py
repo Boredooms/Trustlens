@@ -186,14 +186,21 @@ def test_production_refuses_the_local_dev_chain() -> None:
         "jwt_secret": "x" * 40,
         "clerk_secret_key": "sk",
         "supabase_url": "https://s",
-        "supabase_service_role_key": "k",
+        "supabase_secret_key": "k",
         "upstash_redis_rest_url": "https://u",
         "upstash_redis_rest_token": "t",
         "qstash_current_signing_key": "q",
         "ip_hash_salt": "salt",
     }
     with pytest.raises(ValueError, match="31337"):
-        Settings(**{**prod, **CHAIN, **_base()}, _env_file=None)  # type: ignore[arg-type]
+        Settings(  # type: ignore[arg-type]
+            **{**prod, **CHAIN, **_base(), "database_url": HOSTED_DB},
+            _env_file=None,
+        )
+
+
+# Production refuses a local DATABASE_URL, so production-shaped settings need a non-local host.
+HOSTED_DB = "postgresql+asyncpg://u:p@db.example.test:6543/postgres"
 
 
 def _base() -> dict[str, object]:

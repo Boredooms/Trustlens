@@ -54,8 +54,12 @@ def to_sync_url(url: str) -> str:
     return urlunsplit((scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
 
 
-def create_engine(database_url: str) -> AsyncEngine:
-    """Create the engine. No connection is attempted here (MONITORING_HEALTHCHECKS.md §6.1)."""
+def create_engine(database_url: str, connect_timeout: float = 10) -> AsyncEngine:
+    """Create the engine. No connection is attempted here (MONITORING_HEALTHCHECKS.md §6.1).
+
+    ``connect_timeout`` covers TCP + TLS + pooler auth. A new Supavisor connection measured ~4.8 s
+    from a distant client (2026-11-09), so the former fixed 5 s turned slow connects into 503s.
+    """
     return create_async_engine(
         to_asyncpg_url(database_url),
         pool_size=5,
@@ -66,7 +70,7 @@ def create_engine(database_url: str) -> AsyncEngine:
             "statement_cache_size": 0,
             "prepared_statement_cache_size": 0,
             "prepared_statement_name_func": lambda: f"__asyncpg_{uuid4().hex}__",
-            "timeout": 5,
+            "timeout": connect_timeout,
             "server_settings": {"application_name": "trustlens-api"},
         },
     )

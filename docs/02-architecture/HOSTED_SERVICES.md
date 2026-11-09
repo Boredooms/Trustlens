@@ -1,6 +1,6 @@
 # HOSTED_SERVICES
 
-> **Status:** DECIDED · **Group:** 02-architecture (supporting) · **Version:** 1.0 · **Last updated:** 2026-11-07
+> **Status:** DECIDED · **Group:** 02-architecture (supporting) · **Version:** 1.1 · **Last updated:** 2026-11-09
 > **Source of truth for:** which hosted platform provides what, its free-tier limits, its failure behaviour, and how to replace it.
 > **Related:** [`SYSTEM_ARCHITECTURE.md`](SYSTEM_ARCHITECTURE.md) · [`../00-project-foundation/TECH_STACK.md`](../00-project-foundation/TECH_STACK.md) · [`../08-infrastructure/DEPLOYMENT_ARCHITECTURE.md`](../08-infrastructure/DEPLOYMENT_ARCHITECTURE.md)
 
@@ -65,11 +65,15 @@ Three rules govern every dependency:
 
 | Service | Variables | Where set |
 | --- | --- | --- |
-| Supabase DB | `DATABASE_URL`, `DIRECT_DATABASE_URL` | Render env (API), local `.env` |
-| Clerk | `CLERK_SECRET_KEY`, `CLERK_ISSUER`, `CLERK_JWKS_URL`, `CLERK_AUTHORIZED_PARTY` (server), `VITE_CLERK_PUBLISHABLE_KEY` (web) | Render + Vercel |
-| Supabase Storage | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (`STORAGE_BUCKET` deferred with storage) | Render |
-| Upstash Redis | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Render |
-| QStash | `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY` | Render |
+| Supabase DB | `DATABASE_URL` (transaction pooler :6543), `DIRECT_DATABASE_URL` (session pooler :5432), `DB_CONNECT_TIMEOUT_SECONDS` | Render env (API), `apps/api/.env` |
+| Clerk | `CLERK_SECRET_KEY`, `CLERK_ISSUER`, `CLERK_JWKS_URL`, `CLERK_AUTHORIZED_PARTY` (server, `apps/api/.env`), `VITE_CLERK_PUBLISHABLE_KEY` (web, `apps/web/.env.local`) | Render + Vercel |
+| Supabase Storage | `SUPABASE_URL`, `SUPABASE_SECRET_KEY` (`STORAGE_BUCKET` deferred with storage) | Render, `apps/api/.env` |
+| Upstash Redis | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Render, `apps/api/.env` |
+| QStash | `QSTASH_URL` (regional, e.g. eu-central-1), `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY` | Render, `apps/api/.env` |
+
+Supabase is the **database only**. Clerk is the only identity provider: no Supabase Auth, no
+Supabase JWKS, no `VITE_SUPABASE_*`, and the browser never talks to Supabase. Check every row with
+`python -m app.scripts.online_check` (status only, no values printed).
 | Resend | `RESEND_API_KEY`, `EMAIL_FROM` | Render |
 | Sentry | `SENTRY_DSN` | Render + Vercel |
 | LangSmith | `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` | Render |
@@ -148,23 +152,16 @@ No migration requires a data model change — that is the point of the adapters.
 
 ## 9. Local development
 
-`docker-compose.yml` reproduces the stateful services locally so development does not require accounts:
+Development runs against the **hosted** services (your own Supabase project, Clerk dev instance and
+Upstash). There is no local application database. `docker-compose.yml` has only:
 
-```yaml
-services:
-  db:
-    image: postgres:16
-    environment: { POSTGRES_USER: postgres, POSTGRES_PASSWORD: postgres, POSTGRES_DB: trustlens }
-    ports: ["5432:5432"]
-  redis:
-    image: redis:7-alpine
-    ports: ["6379:6379"]
-  # optional: supabase CLI for local Postgres + Storage only
-  # npx supabase start
-```
+- `test-db` (profile `test`): Postgres on `localhost:5433`, database `trustlens_test`, used **only**
+  by `scripts/test-api.ps1` for DB integration tests. Never the hosted DB, never seeded with demo data.
+- `api` (profile `api`, optional): the API container reading `apps/api/.env`.
 
-The Redis adapter exposes both a REST client (Upstash, production) and a RESP client (local), selected
-by whether `UPSTASH_REDIS_REST_URL` is set. Tests use an in-memory fake, never a real service.
+Without `UPSTASH_REDIS_REST_URL` (or when Upstash times out) rate limits fall back to in-process
+counters (`ratelimit.redis_degraded` is logged). Tests use an in-memory fake, never a real service.
+Production refuses a `DATABASE_URL` on a local host.
 
 ---
 

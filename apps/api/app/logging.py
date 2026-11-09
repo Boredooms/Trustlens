@@ -59,6 +59,10 @@ def configure_logging(level: str, *, env: str, version: str) -> None:
     root.setLevel(level.upper())
     # uvicorn's access log duplicates our request log and includes query strings.
     logging.getLogger("uvicorn.access").disabled = True
+    # httpx/httpcore log every outbound URL at INFO — including user ids in Clerk Backend API
+    # paths and scanned URLs' query strings. Our own events carry what is needed.
+    for name in ("httpx", "httpcore"):
+        logging.getLogger(name).setLevel(logging.WARNING)
     for name in ("uvicorn", "uvicorn.error"):
         logging.getLogger(name).handlers[:] = []
         logging.getLogger(name).propagate = True

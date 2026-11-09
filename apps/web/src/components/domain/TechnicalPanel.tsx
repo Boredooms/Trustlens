@@ -3,6 +3,8 @@ import { humanise, stringifyValue } from "@/lib/format";
 import { SimulatedBadge } from "./Badges";
 
 const BLOCK_ORDER = ["action", "tls", "dns", "registration", "redirects", "page", "brand"] as const;
+/** Blocks with their own card on the scan report (TrustReports.tsx): not repeated as raw JSON here. */
+const OWN_CARD = new Set(["certificate", "security_posture", "intel"]);
 const BLOCK_TITLE: Record<string, string> = {
   action: "Action",
   tls: "TLS",
@@ -28,7 +30,7 @@ export function TechnicalPanel({ result }: TechnicalPanelProps) {
   }
   const keys = [
     ...BLOCK_ORDER.filter((k) => k in result),
-    ...Object.keys(result).filter((k) => !(BLOCK_ORDER as readonly string[]).includes(k)),
+    ...Object.keys(result).filter((k) => !(BLOCK_ORDER as readonly string[]).includes(k) && !OWN_CARD.has(k)),
   ];
   const blocks = keys
     .map((k) => [k, result[k]] as const)

@@ -62,10 +62,11 @@ def test_production_requires_platform_secrets(settings_factory) -> None:  # type
 def test_production_rejects_short_jwt_secret(settings_factory) -> None:  # type: ignore[no-untyped-def]
     complete = {
         "environment": "production",
+        "database_url": HOSTED_DB,
         "direct_database_url": "postgresql://x@db:5432/x",
         "clerk_secret_key": "sk_test_x",
         "supabase_url": "https://x.supabase.co",
-        "supabase_service_role_key": "x",
+        "supabase_secret_key": "x",
         "upstash_redis_rest_url": "https://x.upstash.io",
         "upstash_redis_rest_token": "x",
         "qstash_current_signing_key": "x",
@@ -74,6 +75,35 @@ def test_production_rejects_short_jwt_secret(settings_factory) -> None:  # type:
     with pytest.raises(ValueError, match="at least 32"):
         settings_factory(**complete, jwt_secret="short")
     assert settings_factory(**complete, jwt_secret="x" * 32).is_production
+
+
+HOSTED_DB = "postgresql+asyncpg://u:p@db.example.test:6543/postgres"
+
+
+@pytest.mark.parametrize(
+    "local_url",
+    [
+        "postgresql+asyncpg://u:p@localhost:5432/trustlens",
+        "postgresql+asyncpg://u:p@127.0.0.1:6543/trustlens",
+    ],
+)
+def test_production_refuses_a_local_database(settings_factory, local_url: str) -> None:  # type: ignore[no-untyped-def]
+    complete = {
+        "environment": "production",
+        "direct_database_url": "postgresql://x@db.example.test:5432/x",
+        "jwt_secret": "x" * 40,
+        "clerk_secret_key": "sk_test_x",
+        "supabase_url": "https://x.supabase.co",
+        "supabase_secret_key": "x",
+        "upstash_redis_rest_url": "https://x.upstash.io",
+        "upstash_redis_rest_token": "x",
+        "qstash_current_signing_key": "x",
+        "ip_hash_salt": "x",
+    }
+    with pytest.raises(ValueError, match="local host"):
+        settings_factory(**complete, database_url=local_url)
+    hosted = settings_factory(**complete, database_url=HOSTED_DB)
+    assert hosted.database_host == "db.example.test"
 
 
 def test_invalid_log_level_falls_back_to_info(settings_factory) -> None:  # type: ignore[no-untyped-def]

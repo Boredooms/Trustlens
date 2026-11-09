@@ -1,62 +1,38 @@
-# Local development stack. Hosted environments use Supabase / Render / Vercel instead
-# (docs/08-infrastructure/DEPLOYMENT_ARCHITECTURE.md). Redis is advisory and omitted locally:
-# the API degrades to in-process counters without it (ADR-013).
+# TrustLens containers. The daily path uses the HOSTED stack (Supabase, Upstash, QStash, Clerk);
+# there is no local application database. See docs/08-infrastructure/ENVIRONMENT_CONFIGURATION.md.
+#
+#   test-db  — isolated Postgres for the DB integration tests ONLY (profile "test", port 5433).
+#              Never seed it as an app database; never point the API at it.
+#                docker compose --profile test up -d test-db
+#                TEST_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5433/trustlens_test
+#   api      — optional containerised API that reads the same apps/api/.env (hosted services).
 services:
-  db:
+  test-db:
+    profiles: ["test"]
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: trustlens
+      POSTGRES_DB: trustlens_test
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - testdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d trustlens"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d trustlens_test"]
       interval: 2s
       timeout: 3s
       retries: 30
 
   api:
+    profiles: ["api"]
     build: ./apps/api
-    depends_on:
-      db:
-        condition: service_healthy
+    env_file: ./apps/api/.env
     environment:
-      ENVIRONMENT: development
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/trustlens
-      DIRECT_DATABASE_URL: postgresql://postgres:postgres@db:5432/trustlens
       ALLOWED_ORIGINS: http://localhost:5173
-      CLERK_ISSUER: ${CLERK_ISSUER:-https://dev-placeholder.clerk.accounts.dev}
-      CLERK_JWKS_URL: ${CLERK_JWKS_URL:-https://dev-placeholder.clerk.accounts.dev/.well-known/jwks.json}
-      CLERK_AUTHORIZED_PARTY: ${CLERK_AUTHORIZED_PARTY:-http://localhost:5173}
-      DEV_AUTH_ENABLED: "true"
-      DEMO_MODE: "true"
-      LOG_LEVEL: info
-    command: >
-      sh -c "alembic upgrade head && python -m app.scripts.seed_demo &&
-             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"
 
-  web:
-    image: node:22-alpine
-    working_dir: /repo
-    volumes:
-      - ./:/repo
-      - web_node_modules:/repo/node_modules
-    environment:
-      VITE_API_BASE_URL: http://localhost:8000
-      VITE_DEMO_MODE: "true"
-    command: >
-      sh -c "corepack enable && pnpm install --frozen-lockfile=false &&
-             pnpm --filter @trustlens/web dev --host 0.0.0.0 --port 5173"
-    ports:
-      - "5173:5173"
-    depends_on:
-      - api
-
 volumes:
-  pgdata:
-  web_node_modules:
+  testdata:

@@ -212,13 +212,15 @@ CI includes a documentation-drift check: if `apps/api/openapi.json` changes with
 
 ```bash
 pnpm install
-docker compose up -d db
-(cd apps/api && alembic upgrade head)
-pnpm dev            # runs web + api concurrently via turbo-less pnpm script
+# apps/api/.env points at hosted Supabase (DB only), Clerk, Upstash; there is no local app DB
+(cd apps/api && python -m app.scripts.online_check && alembic upgrade head)
+pwsh scripts/dev-up.ps1   # or bash scripts/dev-up.sh: API + web + demo sites
 
 # checks (identical to CI)
 pnpm lint && pnpm typecheck && pnpm test
-(cd apps/api && ruff check . && mypy app/services app/risk && pytest -q)
+docker compose --profile test up -d test-db   # isolated test DB :5433, once
+(cd apps/api && ruff check . && mypy app/services app/risk)
+pwsh scripts/test-api.ps1                     # pytest against the test DB only
 ```
 
 Seeding the demo dataset:

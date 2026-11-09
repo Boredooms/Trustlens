@@ -1,6 +1,6 @@
 # AUTHENTICATION_AUTHORIZATION
 
-> **Status:** DECIDED · **Group:** 03-backend · **Version:** 1.0 · **Last updated:** 2026-11-07
+> **Status:** DECIDED · **Group:** 03-backend · **Version:** 1.1 · **Last updated:** 2026-11-09
 > **Source of truth for:** sessions, tokens, API keys, device pairing, roles, permissions, scopes, audit of auth events.
 > **Related:** [`BACKEND_OVERVIEW.md`](BACKEND_OVERVIEW.md) · [`API_ENDPOINTS.md`](API_ENDPOINTS.md) · [`../09-testing-security/SECURITY_THREAT_MODEL.md`](../09-testing-security/SECURITY_THREAT_MODEL.md)
 
@@ -80,6 +80,33 @@ Consequences we accept:
 - No password and no MFA secret ever reaches our API, logs or database.
 - Revocation is two-sided: `users.is_active = false` blocks us immediately; revoking in Clerk stops
   new tokens at the source.
+
+### 2.1 Clerk routing and redirects (fixed 2026-11-09)
+
+Sign-in and sign-up stay **inside the SPA**. The single source is `CLERK_ROUTES` in
+`apps/web/src/lib/auth/AuthProvider.tsx`, spread onto `<ClerkProvider>`:
+
+| Prop | Value |
+| --- | --- |
+| `signInUrl` | `/login` |
+| `signUpUrl` | `/register` |
+| `signInFallbackRedirectUrl` | `/app` |
+| `signUpFallbackRedirectUrl` | `/app` |
+| `afterSignOutUrl` | `/` |
+
+`<SignIn>` also gets `signUpUrl="/register"` and `<SignUp>` gets `signInUrl="/login"`. A `?next=`
+parameter (validated by `safeNext`, same-origin `/app…` paths only) overrides the fallback. The
+deprecated `afterSignInUrl`/`afterSignUpUrl` props are not used.
+
+Root cause, reproduced in Chrome: without `signUpUrl`, Clerk's "Sign up" link on `/login` pointed at
+the hosted Account Portal (`https://<instance>.accounts.dev/sign-up?__clerk_db_jwt=…`). That put the
+dev-browser token in the URL bar and history, and the portal's completion never returned to `/app`
+(the user landed on `/`). Verified after the fix: "Sign up" → `/register`; sign-in → Clerk's
+new-device email code → `/app`; `?next=/app/scan` → `/app/scan`; sign-out → `/`; no token in any URL.
+Regression test: `apps/web/src/lib/auth/clerk-routes.test.ts`.
+
+Production needs a **production** Clerk instance (the dev instance uses the `__clerk_db_jwt`
+dev-browser mechanism) and `CLERK_AUTHORIZED_PARTY` / `ALLOWED_ORIGINS` set to the deployed web origin.
 
 ---
 

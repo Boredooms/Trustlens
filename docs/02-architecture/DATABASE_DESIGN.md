@@ -708,6 +708,11 @@ all table/sequence grants (now and by default). `audit_logs` is append-only by t
 a superuser): DELETE only inside a transaction with `SET LOCAL app.audit_retention = 'on'` (the
 retention job), UPDATE only for the `ON DELETE SET NULL` of `actor_user_id`.
 
+Revision `c6a0rls00001` (security, revises `c5a0intel0001`): enables RLS on `alembic_version`,
+the one table `python -m app.scripts.rls_audit` flagged on the hosted Supabase project (it had no
+`anon`/`authenticated` grants, but RLS was off). No schema change. After it, `rls_audit` reports
+33 tables, 0 problems.
+
 ### 13.1 Migration order (Alembic)
 
 `create_all` cannot infer a safe order, so the revision chain is explicit:

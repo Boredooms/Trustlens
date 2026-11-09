@@ -109,11 +109,30 @@ function ClerkBridge({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+/**
+ * Clerk routing. Every flow that leaves the embedded <SignIn>/<SignUp> (cross-links, OAuth callback,
+ * email-link verification, sign-up↔sign-in transfer) resolves against these, so it ends in /app.
+ * `afterSignInUrl`/`afterSignUpUrl` are deprecated in Clerk v5; the fallback props replace them.
+ */
+export const CLERK_ROUTES = {
+  signInUrl: "/login",
+  signUpUrl: "/register",
+  signInFallbackRedirectUrl: "/app",
+  signUpFallbackRedirectUrl: "/app",
+  afterSignOutUrl: "/",
+} as const;
+
 /** One provider, one token getter for the API client — Clerk when configured, development sign-in otherwise. */
 export function AuthProvider({ children }: { children: ReactNode }) {
   if (clerkEnabled) {
     return (
-      <ClerkProvider publishableKey={env.clerkPublishableKey} afterSignOutUrl="/">
+      <ClerkProvider
+        publishableKey={env.clerkPublishableKey}
+        // In-app auth pages. Without these, Clerk links (e.g. "Sign up" on /login) leave for the
+        // hosted Account Portal with the dev-browser token in the URL and return to "/" (verified
+        // 2026-11-09, docs/03-backend/AUTHENTICATION_AUTHORIZATION.md §Clerk redirects).
+        {...CLERK_ROUTES}
+      >
         <ClerkBridge>{children}</ClerkBridge>
       </ClerkProvider>
     );

@@ -49,7 +49,7 @@ short, opinionated version plus the things that are easy to get wrong.
 | 4 | Every outbound request passes `services/guard.py`, including redirect hops and file challenges. |
 | 5 | The model cannot add findings, change a score, or change a decision. Claims need valid refs. |
 | 6 | Never read or store passwords, OTPs, card numbers, cookies or form values. Metadata only. |
-| 7 | Secrets only in host env vars. `SUPABASE_SERVICE_ROLE_KEY` serves Storage + one cleanup job; `CLERK_SECRET_KEY` serves delete/revoke only. Neither appears in a request path or the web bundle. |
+| 7 | Secrets only in host env vars. `SUPABASE_SECRET_KEY` serves Storage + one cleanup job; `CLERK_SECRET_KEY` serves delete/revoke only. Neither appears in a request path or the web bundle. |
 | 8 | Types are generated from `openapi.json`. Never hand-edit `packages/shared-types`. |
 | 9 | Simulated data carries `simulated: true` on every surface, including CSV filenames. |
 | 10 | Do not weaken or skip tests, and do not add suppressions to pass CI. |

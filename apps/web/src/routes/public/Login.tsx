@@ -27,7 +27,7 @@ export function Register() {
         <p className="mt-2 text-sm text-muted-strong">Check websites, report impersonation and manage your organisation.</p>
       </div>
       <Suspense fallback={<Skeleton className="h-80 w-full" />}>
-        <ClerkSignUp routing="hash" forceRedirectUrl={next} signInForceRedirectUrl={next} />
+        <ClerkSignUp routing="hash" signInUrl="/login" forceRedirectUrl={next} signInForceRedirectUrl={next} />
       </Suspense>
     </div>
   );
@@ -58,7 +58,7 @@ export function Login() {
       {endedReason ? <Banner tone="neutral" title={endedReason} /> : null}
       {mode === "clerk" ? (
         <Suspense fallback={<Skeleton className="h-80 w-full" />}>
-          <ClerkSignIn routing="hash" forceRedirectUrl={next} signUpForceRedirectUrl={next} />
+          <ClerkSignIn routing="hash" signUpUrl="/register" forceRedirectUrl={next} signUpForceRedirectUrl={next} />
         </Suspense>
       ) : (
         <section

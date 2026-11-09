@@ -37,7 +37,7 @@ short, opinionated version plus the things that are easy to get wrong.
 | 4 | Every outbound request passes `services/guard.py`, including redirect hops and file challenges. |
 | 5 | The model cannot add findings, change a score, or change a decision. Claims need valid refs. |
 | 6 | Never read or store passwords, OTPs, card numbers, cookies or form values. Metadata only. |
-| 7 | Secrets only in host env vars. `SUPABASE_SERVICE_ROLE_KEY` serves Storage + one cleanup job; `CLERK_SECRET_KEY` serves delete/revoke only. Neither appears in a request path or the web bundle. |
+| 7 | Secrets only in host env vars. `SUPABASE_SECRET_KEY` serves Storage + one cleanup job; `CLERK_SECRET_KEY` serves delete/revoke only. Neither appears in a request path or the web bundle. |
 | 8 | Types are generated from `openapi.json`. Never hand-edit `packages/shared-types`. |
 | 9 | Simulated data carries `simulated: true` on every surface, including CSV filenames. |
 | 10 | Do not weaken or skip tests, and do not add suppressions to pass CI. |
@@ -77,11 +77,12 @@ docs/skills/                design + frontend craft skills (read before UI work)
 
 ```bash
 pnpm install
-docker compose up -d db   # no redis service: Upstash is hosted, rate limits degrade in-process locally
-(cd apps/api && alembic upgrade head && python -m app.serve)   # Windows-safe launcher; Linux: uvicorn app.main:app
+# no local app DB: apps/api/.env points at hosted Supabase/Clerk/Upstash
+(cd apps/api && python -m app.scripts.online_check && alembic upgrade head && python -m app.serve)   # Linux: uvicorn app.main:app
 
 pnpm lint && pnpm typecheck && pnpm test
-(cd apps/api && ruff check . && mypy app && pytest -q)
+docker compose --profile test up -d test-db   # isolated test DB :5433
+(cd apps/api && ruff check . && mypy app) && pwsh scripts/test-api.ps1
 (cd apps/api && python -m app.scripts.dump_openapi)
 ```
 

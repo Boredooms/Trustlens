@@ -118,3 +118,26 @@ runs in their own shell.
 
 API 300 tests (incl. DB integration) · ruff/format/mypy strict clean · web 66 · extension 54 · sdk 20 ·
 demo-sites 15 · all builds pass · against hosted Supabase: `demo_check` 26/26, `platform_check` 42/42.
+
+## 6. Fully online (2026-11-09, evening)
+
+- Development now runs against the owner's hosted Supabase (DB only), Clerk (only identity
+  provider), Upstash Redis and QStash, and the NVIDIA LLM. The local Postgres container and volume
+  were removed; `docker-compose.yml` keeps only `test-db` (profile `test`, :5433) and an optional
+  `api` service. Production refuses a local `DATABASE_URL`.
+- Clerk redirect bug, reproduced in Chrome: the "Sign up" link went to the hosted Account Portal with
+  `__clerk_db_jwt` in the URL and never returned to `/app`. Fixed with `CLERK_ROUTES` on
+  `ClerkProvider` (`AUTHENTICATION_AUTHORIZATION.md` §2.1).
+- `SUPABASE_SERVICE_ROLE_KEY` → `SUPABASE_SECRET_KEY` (old name still accepted); `QSTASH_URL`,
+  `QSTASH_TOKEN`, `DB_CONNECT_TIMEOUT_SECONDS` documented. `SUPABASE_JWKS_URL` and `VITE_SUPABASE_*`
+  deliberately not wired.
+- Migration `c6a0rls00001` (RLS on `alembic_version`). New scripts: `online_check`, `rls_audit`,
+  `scripts/test-api.ps1`, `scripts/secret-scan.ps1`. httpx/httpcore logging lowered to WARNING (they
+  logged Clerk user ids in URLs). Startup log records DB host and source, never the URL.
+- Old env files from the previous owner moved out of the repo.
+- Technical rail no longer repeats certificate/security-posture/intel blocks as raw JSON.
+
+Verification record: API **403 passed** against the isolated test DB · ruff/format/mypy clean (102
+files) · web **80** · extension **54** · SDK **21** · all builds pass · OpenAPI unchanged · hosted:
+`demo_check` 26/26, `platform_check` 42/42, `evidence_run --network` 17/17, QStash signature checks
+pass, Clerk sign-in → `/app` seen in Chrome. Details: [`../evidence/online/README.md`](../evidence/online/README.md).

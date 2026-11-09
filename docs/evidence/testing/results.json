@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-11-08T22:59:02+00:00",
-  "commit": "4427951",
+  "generated_at": "2026-11-09T07:15:15+00:00",
+  "commit": "26d96be",
   "api": "http://localhost:8000",
   "urls": [
     {
@@ -14,7 +14,7 @@
         "ALLOW"
       ],
       "http_status": 200,
-      "duration_ms": 324,
+      "duration_ms": 12425,
       "decision": "ALLOW",
       "risk_level": "LOW",
       "risk_score": 0,
@@ -26,7 +26,7 @@
         "IDENTITY_MATCH_CONFIRMED",
         "PAYEE_MATCH_CONFIRMED"
       ],
-      "scan_id": "01M6YP60G7K6VM2499FPJTB9M3",
+      "scan_id": "01M6ZJJP9RF66225KRZMDM92T8",
       "engine_version": "1.1.0",
       "simulated": true,
       "certificate": "valid",
@@ -47,7 +47,7 @@
         "ALLOW"
       ],
       "http_status": 200,
-      "duration_ms": 305,
+      "duration_ms": 7022,
       "decision": "ALLOW",
       "risk_level": "LOW",
       "risk_score": 0,
@@ -60,7 +60,7 @@
         "IDENTITY_MATCH_CONFIRMED",
         "LOGIN_ON_VERIFIED_ENDPOINT"
       ],
-      "scan_id": "01M6YP60XPPHADVFY9320KXXAQ",
+      "scan_id": "01M6ZJK3ZCRTQVBVZ5N6Y7VZ7P",
       "engine_version": "1.1.0",
       "simulated": true,
       "certificate": "valid",
@@ -81,7 +81,7 @@
         "ALLOW"
       ],
       "http_status": 200,
-      "duration_ms": 405,
+      "duration_ms": 11131,
       "decision": "ALLOW",
       "risk_level": "LOW",
       "risk_score": 2,
@@ -96,7 +96,7 @@
         "CERT_ISSUER_AFFECTED_BY_INCIDENT",
         "IDENTITY_MATCH_CONFIRMED"
       ],
-      "scan_id": "01M6YP61AXBPTFYN2BKRC1SJA0",
+      "scan_id": "01M6ZJKCN9PKCRGN25C267GRYJ",
       "engine_version": "1.1.0",
       "simulated": true,
       "certificate": "misconfigured",
@@ -117,7 +117,7 @@
         "BLOCK"
       ],
       "http_status": 200,
-      "duration_ms": 307,
+      "duration_ms": 7701,
       "decision": "BLOCK",
       "risk_level": "CRITICAL",
       "risk_score": 81,
@@ -140,7 +140,7 @@
         "RELATED_THREAT_FOUND",
         "SHARES_INFRA_WITH_REPORTED_THREAT"
       ],
-      "scan_id": "01M6YP61TZFJRKRF2H0G1VS995",
+      "scan_id": "01M6ZJKS9K2HXNY9JKWRM7BJ7J",
       "engine_version": "1.1.0",
       "simulated": true,
       "certificate": "valid",
@@ -169,7 +169,7 @@
         "BLOCK"
       ],
       "http_status": 200,
-      "duration_ms": 313,
+      "duration_ms": 8441,
       "decision": "BLOCK",
       "risk_level": "HIGH",
       "risk_score": 57,
@@ -190,7 +190,7 @@
         "RELATED_THREAT_FOUND",
         "SHARES_INFRA_WITH_REPORTED_THREAT"
       ],
-      "scan_id": "01M6YP628JJ5XWEJTEWRR01279",
+      "scan_id": "01M6ZJM3EKVB8DVP6CBMQ1JH8K",
       "engine_version": "1.1.0",
       "simulated": true,
       "certificate": "valid",
@@ -219,7 +219,7 @@
         "BLOCK"
       ],
       "http_status": 200,
-      "duration_ms": 289,
+      "duration_ms": 9405,
       "decision": "BLOCK",
       "risk_level": "MEDIUM",
       "risk_score": 34,
@@ -238,7 +238,7 @@
         "LISTED_BY_EXTERNAL_FEED",
         "SHARES_INFRA_WITH_REPORTED_THREAT"
       ],
-      "scan_id": "01M6YP62NVKFZ62G3H746EGCMX",
+      "scan_id": "01M6ZJMDF5SC7MQNRZS5JWHM4F",
       "engine_version": "1.1.0",
       "simulated": true,
       "certificate": "valid",
@@ -268,7 +268,7 @@
         "BLOCK"
       ],
       "http_status": 200,
-      "duration_ms": 304,
+      "duration_ms": 6663,
       "decision": "WARN",
       "risk_level": "LOW",
       "risk_score": 10,
@@ -283,7 +283,7 @@
         "CERT_REVOKED",
         "SHARES_INFRA_WITH_REPORTED_THREAT"
       ],
-      "scan_id": "01M6YP632PBGM04GP11BM10K61",
+      "scan_id": "01M6ZJMRH748PDWX8E720W123Q",
       "engine_version": "1.1.0",
       "simulated": true,
       "certificate": "trust_compromised",
@@ -314,7 +314,7 @@
         "REVIEW"
       ],
       "http_status": 200,
-      "duration_ms": 298,
+      "duration_ms": 6301,
       "decision": "REVIEW",
       "risk_level": "LOW",
       "risk_score": 10,
@@ -331,7 +331,7 @@
         "DOMAIN_RECENTLY_REGISTERED",
         "SHARES_INFRA_WITH_REPORTED_THREAT"
       ],
-      "scan_id": "01M6YP63FVAFK17VFV5BZ3PMM8",
+      "scan_id": "01M6ZJN0V7HHEVNK5XH9ZRWZ76",
       "engine_version": "1.1.0",
       "simulated": true,
       "certificate": "trust_compromised",
@@ -360,7 +360,7 @@
         "UNKNOWN"
       ],
       "http_status": 200,
-      "duration_ms": 289,
+      "duration_ms": 5963,
       "decision": "UNKNOWN",
       "risk_level": "LOW",
       "risk_score": 24,
@@ -377,7 +377,7 @@
         "DOMAIN_NOT_REGISTERED_BY_BRAND",
         "DOMAIN_NXDOMAIN"
       ],
-      "scan_id": "01M6YP63WXTH4FFRCH0NM4XFBQ",
+      "scan_id": "01M6ZJN8X5Q9J8RQM09AHG0AWT",
       "engine_version": "1.1.0",
       "simulated": true,
       "certificate": "unavailable",
@@ -400,7 +400,7 @@
         "UNKNOWN"
       ],
       "http_status": 200,
-      "duration_ms": 2900,
+      "duration_ms": 10903,
       "decision": "ALLOW",
       "risk_level": "LOW",
       "risk_score": 0,
@@ -409,7 +409,7 @@
       "overrides": [],
       "reasons": [],
       "codes": [],
-      "scan_id": "01M6YP64C1XNF07WDABBTCN2P3",
+      "scan_id": "01M6ZJNGK0EF5MD3V6N068T70Y",
       "engine_version": "1.1.0",
       "simulated": false,
       "certificate": "valid",
@@ -436,7 +436,7 @@
         "UNKNOWN"
       ],
       "http_status": 200,
-      "duration_ms": 2582,
+      "duration_ms": 11899,
       "decision": "ALLOW",
       "risk_level": "LOW",
       "risk_score": 0,
@@ -445,11 +445,11 @@
       "overrides": [],
       "reasons": [],
       "codes": [],
-      "scan_id": "01M6YP67BGH0D1M2X30N9A460F",
+      "scan_id": "01M6ZJNXG28YEZ16PE9TW4NHCT",
       "engine_version": "1.1.0",
       "simulated": false,
       "certificate": "valid",
-      "revocation": "good",
+      "revocation": "unavailable",
       "intel": [],
       "posture": [
         "CSP_MISSING_OR_WEAK",
@@ -474,16 +474,16 @@
         "UNKNOWN"
       ],
       "http_status": 200,
-      "duration_ms": 1953,
+      "duration_ms": 7530,
       "decision": "ALLOW",
       "risk_level": "LOW",
       "risk_score": 0,
       "risk_class": "low",
-      "coverage": 85,
+      "coverage": 75,
       "overrides": [],
       "reasons": [],
       "codes": [],
-      "scan_id": "01M6YP69Z53J91WGM5AZWKVG4S",
+      "scan_id": "01M6ZJPANR41EZ383JZ359294G",
       "engine_version": "1.1.0",
       "simulated": false,
       "certificate": "valid",
@@ -508,7 +508,7 @@
         "UNKNOWN"
       ],
       "http_status": 200,
-      "duration_ms": 1871,
+      "duration_ms": 13485,
       "decision": "ALLOW",
       "risk_level": "LOW",
       "risk_score": 0,
@@ -517,7 +517,7 @@
       "overrides": [],
       "reasons": [],
       "codes": [],
-      "scan_id": "01M6YP6BXXC9CCHTWCPYD9RX32",
+      "scan_id": "01M6ZJPM0KXYZ990528AKXX2F3",
       "engine_version": "1.1.0",
       "simulated": false,
       "certificate": "valid",
@@ -551,7 +551,7 @@
       "links": [
         "northstar-placement.example \u2192 BLOCK"
       ],
-      "narrative_source": "template",
+      "narrative_source": "llm",
       "first_reason": "A link in the message (northstar-placement.example) was assessed BLOCK.",
       "passed": true,
       "expect": [
@@ -579,7 +579,7 @@
       "links": [
         "northstar-admissions.example \u2192 BLOCK"
       ],
-      "narrative_source": "template",
+      "narrative_source": "llm",
       "first_reason": "A link in the message (northstar-admissions.example) was assessed BLOCK.",
       "passed": true,
       "expect": [
@@ -605,7 +605,7 @@
         "PAYEE_NOT_IN_VERIFIED_PROFILE"
       ],
       "links": [],
-      "narrative_source": "template",
+      "narrative_source": "llm",
       "first_reason": "The payment address hr.northstar@ybl is not one registered by Northstar University (registered: fees@northstar-demo).",
       "passed": true,
       "expect": [
@@ -630,7 +630,7 @@
       "links": [
         "northstar-demo.example \u2192 ALLOW"
       ],
-      "narrative_source": "template",
+      "narrative_source": "llm",
       "first_reason": "The message asks you to make a payment.",
       "passed": true,
       "expect": [
@@ -653,7 +653,7 @@
       "links": [
         "northstar-demo.example \u2192 ALLOW"
       ],
-      "narrative_source": "template",
+      "narrative_source": "llm",
       "first_reason": null,
       "passed": true,
       "expect": [
@@ -676,7 +676,7 @@
       "links": [
         "northstar-demo.example \u2192 ALLOW"
       ],
-      "narrative_source": "template",
+      "narrative_source": "llm",
       "first_reason": null,
       "passed": true,
       "expect": [
@@ -707,12 +707,12 @@
     }
   ],
   "web3": {
-    "report_id": "01M6YP6G38XJACJF5P29XMNY2T",
+    "report_id": "01M6ZJTGT3M0NAD7ASJYFQ3F3X",
     "contract": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
     "chain_id": 31337,
-    "tx_hash": "0x0aa212c0f387c4287f69ebea79231a7a1db7d668274921a81bfd29983873cf42",
-    "block_number": 6,
-    "commitment": "0xcd33a482f15f2743df02952b515b00fdc3fd0bc8e00412002450f85d7775314b",
+    "tx_hash": "0xa2f1730759864dc17e12c3b2e2d82e1b7105f431288ca66d30f70028686f91cf",
+    "block_number": 8,
+    "commitment": "0x956a31119643a39acd5bef8202750633e1f340524239acc9ad08d473ff05a8d3",
     "valid": true,
     "checks": {
       "payload_hash_matches": true,

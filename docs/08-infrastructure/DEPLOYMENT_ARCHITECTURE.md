@@ -110,10 +110,11 @@ Notes:
 
 ```bash
 pnpm install
-docker compose up -d db
-(cd apps/api && alembic upgrade head)
+# apps/api/.env points at the hosted Supabase/Clerk/Upstash services; there is no local app DB
+(cd apps/api && python -m app.scripts.online_check && alembic upgrade head)
 (cd apps/api && uvicorn app.main:app --reload --port 8000)
 pnpm --filter web dev
+# integration tests: docker compose --profile test up -d test-db && pwsh scripts/test-api.ps1
 ```
 
 ### 3.2 CI (GitHub Actions, `.github/workflows/ci.yml`)

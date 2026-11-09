@@ -103,11 +103,31 @@
 | `CLERK_AUTHORIZED_PARTY` | yes | no | Expected `azp` — the web origin; tokens from elsewhere are rejected |
 | `CLERK_WEBHOOK_SECRET` | no | no | OPTIONAL. Svix signing secret for `user.created`/`user.deleted` sync |
 | `SUPABASE_URL` | yes | no | Project URL — Storage and `pg_dump` only, **not** auth |
-| `SUPABASE_SERVICE_ROLE_KEY` | yes | **yes** | Storage uploads + deletion cleanup; never in a request path |
+| `SUPABASE_SECRET_KEY` | yes | **yes** | `sb_secret_…` key. Storage uploads + deletion cleanup; never in a request path. The legacy name `SUPABASE_SERVICE_ROLE_KEY` is still accepted |
 | `UPSTASH_REDIS_REST_URL` | yes | no | Rate limits, cache, idempotency |
 | `UPSTASH_REDIS_REST_TOKEN` | yes | **yes** | Redis auth |
+| `QSTASH_URL` | no | no | Regional QStash API, e.g. `https://qstash-eu-central-1.upstash.io` (default `https://qstash.upstash.io`) |
+| `QSTASH_TOKEN` | no | **yes** | Publishing/schedule management (`online_check` reads schedules) |
 | `QSTASH_CURRENT_SIGNING_KEY` | yes (prod) | **yes** | Verify cron calls |
 | `QSTASH_NEXT_SIGNING_KEY` | no | **yes** | Key rotation |
+
+Not used, on purpose: `SUPABASE_JWKS_URL`, the Supabase publishable/anon key and any
+`VITE_SUPABASE_*`. Clerk is the only identity provider and the API is the only database client
+(RLS denies `anon`); wiring those would add Supabase Auth or browser→database access without an ADR.
+
+### 2.5a Database connection
+
+| Name | Required | Secret | Purpose |
+| --- | --- | --- | --- |
+| `DATABASE_URL` | yes | **yes** | Runtime: Supabase **transaction pooler**, port **6543**, `postgresql+asyncpg://…` (statement cache disabled in the engine) |
+| `DIRECT_DATABASE_URL` | yes (prod) | **yes** | Alembic + LangGraph checkpointer: Supabase **session pooler**, same host, port **5432** |
+| `DB_CONNECT_TIMEOUT_SECONDS` | no | no | Connect timeout, default `10` (a cold pooler connect measured ~4.8 s from a distant network) |
+| `TEST_DATABASE_URL` | tests only | no | Set by `scripts/test-api.ps1` for its process only; points at the isolated `test-db` (docker compose profile `test`, `localhost:5433/trustlens_test`). Never the hosted DB |
+
+Production refuses a `DATABASE_URL` on a local host (`localhost`, `127.0.0.1`, `::1`, `db`,
+`test-db`). The startup log records `database_host` and `database_source` (`process environment`
+or `.env file`, because a process env var silently overrides `.env`), never the URL itself. `python -m app.scripts.online_check`
+reports reachability of every hosted service without printing values.
 | `RESEND_API_KEY` | no | no | OPTIONAL. Invites/notifications; absent ⇒ link logged in dev, shown in the UI in prod. The demo sends no email |
 | `EMAIL_FROM` | no | no | `TrustLens <no-reply@trustlens.example>` |
 | `LANGSMITH_API_KEY` | no | **yes** | Optional trace export |
@@ -115,10 +135,10 @@
 
 Rules:
 
-- `SUPABASE_SERVICE_ROLE_KEY` bypasses RLS. It is loaded only by the deletion task; a startup check
+- `SUPABASE_SECRET_KEY` bypasses RLS. It is loaded only by the deletion task; a startup check
   asserts it is not referenced by any route module (import-time guard).
 - The web app receives only `VITE_CLERK_PUBLISHABLE_KEY` and `VITE_API_BASE_URL` — both are public by
-  design (the anon key is constrained by RLS).
+  design. The web app has no Supabase key at all; RLS denies `anon` on every table.
 - Redis and QStash tokens are never given to the frontend or the extension.
 
 ### 2.8 External intelligence (owner: `02-architecture/THREAT_INTELLIGENCE_SOURCES.md` §3)
@@ -171,18 +191,24 @@ No key is baked in. The device token is obtained at runtime through pairing.
 ENVIRONMENT=development
 APP_VERSION=0.4.1
 PORT=8000
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/trustlens
-DIRECT_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/trustlens
+# Database: your Supabase project (there is no local app database)
+DATABASE_URL=postgresql+asyncpg://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres
+DIRECT_DATABASE_URL=postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres
+DB_CONNECT_TIMEOUT_SECONDS=10
 JWT_SECRET=replace-with-32-plus-random-bytes
 
-# Hosted platforms (use local Supabase CLI or a dev project)
-SUPABASE_URL=http://127.0.0.1:54321        # local Postgres + Storage only
-SUPABASE_SERVICE_ROLE_KEY=local-dev-service-role
+# Hosted platforms
+SUPABASE_URL=https://<project-ref>.supabase.co   # Storage only, not auth
+SUPABASE_SECRET_KEY=sb_secret_...
 CLERK_ISSUER=https://<dev-instance>.clerk.accounts.dev
 CLERK_JWKS_URL=https://<dev-instance>.clerk.accounts.dev/.well-known/jwks.json
 CLERK_AUTHORIZED_PARTY=http://localhost:5173
-UPSTASH_REDIS_REST_URL=https://example.upstash.io
-UPSTASH_REDIS_REST_TOKEN=local-dev-token
+UPSTASH_REDIS_REST_URL=https://<db>.upstash.io
+UPSTASH_REDIS_REST_TOKEN=...
+QSTASH_URL=https://qstash-<region>.upstash.io
+# QSTASH_TOKEN=
+# QSTASH_CURRENT_SIGNING_KEY=
+# QSTASH_NEXT_SIGNING_KEY=
 # RESEND_API_KEY=
 # LANGSMITH_API_KEY=
 ACCESS_TOKEN_MINUTES=15
