@@ -115,6 +115,8 @@ LIMITS: dict[str, dict[str, tuple[int, int]]] = {
     "inspect": _ASSESS_LIMITS,
     "reports": {"user": (30, 3600), "api_key": (100, 3600), "extension": (30, 3600)},
     "investigations": {"user": (20, 86400), "api_key": (50, 86400)},
+    # Notes autosave (debounced in the editor): generous, but bounded.
+    "notes": {"user": (240, 3600)},
     "pair": {"user": (10, 3600)},
     # Anonymous appeal creation and challenge checks, per IP (API_CONTRACTS §10 "verification
     # attempts" budget applied to the public appeal path).

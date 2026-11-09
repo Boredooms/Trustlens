@@ -31,6 +31,7 @@ from app.api.routes import (  # platform
     investigations,
     invites,  # governance
     messages,  # message analysis
+    notes,  # investigation notes
     organisations,
     reports,
     scans,
@@ -200,6 +201,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(admin.router)  # operator demo controls
     app.include_router(anchors.router)  # web3 report registry (WEB3_REGISTRY.md)
     app.include_router(messages.router)  # message analysis (MESSAGE_ANALYSIS.md)
+    app.include_router(notes.router)  # investigation notes (API_ENDPOINTS.md §18)
     return app
 
 

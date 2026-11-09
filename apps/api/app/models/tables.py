@@ -746,3 +746,27 @@ class IntelObservation(Base):
     queried_at: Mapped[datetime] = ts(False)
     expires_at: Mapped[datetime] = ts(False)
     created_at: Mapped[datetime] = created_at()
+
+
+# ── Investigation notes (API_ENDPOINTS.md §18, DATABASE_DESIGN.md §7.7) ─────────
+NOTE_SUBJECTS = ("scan", "campaign", "investigation", "report")
+
+
+class Note(Base):
+    """A person's private block-structured notes about one subject (scan, campaign, investigation,
+    report). One row per (author, subject). Notes never feed the risk engine or any decision."""
+
+    __tablename__ = "notes"
+    __table_args__ = (
+        CheckConstraint(in_check("subject_type", NOTE_SUBJECTS), name="subject_type"),
+        CheckConstraint("jsonb_typeof(blocks) = 'array'", name="blocks_array"),
+        UniqueConstraint("user_id", "subject_type", "subject_id"),
+        Index("ix_notes_user_recent", "user_id", text("updated_at DESC")),
+    )
+    id: Mapped[str] = ulid_pk()
+    user_id: Mapped[str] = fk("users.id", "CASCADE", nullable=False)
+    subject_type: Mapped[str] = mapped_column(Text, nullable=False)
+    subject_id: Mapped[str] = mapped_column(CHAR(26), nullable=False)
+    blocks: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, nullable=False, server_default="[]")
+    created_at: Mapped[datetime] = created_at()
+    updated_at: Mapped[datetime] = updated_at()

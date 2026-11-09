@@ -266,3 +266,11 @@ The options page states this in plain language and offers "Clear all local data"
 | Password managers autofill before our observer runs | We see a password field but not values (by design) | Presence detection only |
 | Service worker termination mid-request | Request may be aborted | Idempotency key + retry once on wake |
 | Chrome Web Store review of broad host access | Distribution delay | Ship with narrow optional permissions and clear copy |
+
+## 13. Popup startup
+
+The popup must paint styled and show its first status without waiting on the network. Design tokens are
+applied by a synchronous `tokens.js` loaded in `<head>` (`src/shared/apply-tokens.ts`), so there is no
+unstyled flash. `API_STATUS` (the `/health` call) is asynchronous and never blocks the first render; the
+popup renders from cached storage and the page verdict, then updates. Measured in real Chromium: commit
+about 50–120 ms, first status about 220–500 ms, including with the API busy (`popup_timing.mjs`).

@@ -3,7 +3,10 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { FileSearch, Link2, RotateCw, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { VerdictBadge, SimulatedBadge, StatusPill } from "@/components/domain/Badges";
-import { CoverageMeter, ScoreDial } from "@/components/domain/Meters";
+import { CoverageMeter } from "@/components/domain/Meters";
+import { RiskScoreRing } from "@/components/domain/RiskScoreRing";
+import { ScanAssistant } from "@/components/domain/ScanAssistant";
+import { NotesPanel } from "@/components/domain/NotesPanel";
 import { FindingRow, ObservedExpected } from "@/components/domain/FindingRow";
 import { EvidenceDrawer } from "@/components/domain/EvidenceDrawer";
 import { TechnicalPanel } from "@/components/domain/TechnicalPanel";
@@ -122,7 +125,7 @@ function VerdictPanel({ scan }: { scan: Scan }) {
   const reasons = scan.reasons ?? [];
   const overrides = scan.overrides ?? [];
   return (
-    <section aria-labelledby="verdict-title" className="rounded-md border border-border bg-surface p-5">
+    <section aria-labelledby="verdict-title" className="mesh-panel rounded-xl border border-border p-6 shadow-raised">
       <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0">
           <p className="label-eyebrow">Decision</p>
@@ -130,15 +133,15 @@ function VerdictPanel({ scan }: { scan: Scan }) {
             <VerdictBadge decision={scan.decision} riskLevel={scan.risk_level} size="lg" />
             {scan.simulated ? <SimulatedBadge /> : null}
           </div>
-          <h2 id="verdict-title" className="mt-3 text-2xl font-medium" aria-live="polite">
+          <h2 id="verdict-title" className="font-display mt-3 text-4xl leading-none" aria-live="polite">
             {copy.label}
           </h2>
           <p className="mt-2 max-w-prose text-sm text-muted-strong">
             {d === "ALLOW" ? allowSublabel(pct) : copy.meaning}
           </p>
         </div>
-        <div className="flex shrink-0 flex-col gap-3 md:w-56 md:items-end md:text-right">
-          <ScoreDial score={scan.risk_score} />
+        <div className="flex shrink-0 flex-col items-start gap-3 md:w-56 md:items-end md:text-right">
+          <RiskScoreRing score={scan.risk_score} decision={scan.decision} riskLevel={scan.risk_level} />
           <p className="text-xs text-muted">
             Risk level <span className="text-foreground">{RISK_LEVEL_LABEL[toRiskLevel(scan.risk_level)]}</span>
           </p>
@@ -303,6 +306,30 @@ function Findings({
         </details>
       ))}
     </section>
+  );
+}
+
+// ── Intel strip: the scan in five numbers ─────────────────────────────────────
+function IntelStrip({ scan }: { scan: Scan }) {
+  const findings = scan.findings ?? [];
+  const bySev = (s: string) => findings.filter((f) => f.severity === s).length;
+  const cells: Array<{ label: string; value: string; tone?: string; detail?: string }> = [
+    { label: "Findings", value: String(findings.length), detail: `${bySev("critical")} critical · ${bySev("high")} high · ${bySev("medium")} medium` },
+    { label: "Evidence", value: String(scan.evidence?.length ?? 0), detail: "items the findings cite" },
+    { label: "Coverage", value: scan.coverage ? `${Math.round(scan.coverage.percent)}%` : "—", detail: `${scan.coverage?.unavailable?.length ?? 0} group(s) unavailable` },
+    { label: "Duration", value: durationMs(scan.duration_ms), detail: `${scan.cached_groups?.length ?? 0} group(s) from cache` },
+    { label: "Engine", value: scan.engine_version ?? "—", detail: scan.registrable_domain ?? "" },
+  ];
+  return (
+    <dl className="grid grid-cols-2 overflow-hidden rounded-lg border border-border bg-surface shadow-card sm:grid-cols-3 lg:grid-cols-5">
+      {cells.map((c) => (
+        <div key={c.label} className="flex min-w-0 flex-col gap-1 border-b border-r border-border px-4 py-3 last:border-r-0 lg:border-b-0">
+          <dt className="label-eyebrow text-2xs">{c.label}</dt>
+          <dd className="font-mono tabular text-lg text-foreground">{c.value}</dd>
+          {c.detail ? <dd className="truncate text-2xs text-muted">{c.detail}</dd> : null}
+        </div>
+      ))}
+    </dl>
   );
 }
 
@@ -509,10 +536,37 @@ export default function ScanReport() {
             ) : null}
             {scan.coverage && pct < 50 ? <Banner title="Low coverage">{COPY.lowCoverage}</Banner> : null}
             <VerdictPanel scan={scan} />
+            <IntelStrip scan={scan} />
             <ActionEvidence scan={scan} />
             <Findings scan={scan} focusFinding={focusFinding} onOpenEvidence={openEvidence} />
+            <ScanAssistant
+              scan={scan}
+              onInvestigate={startInvestigation}
+              investigating={investigate.isPending}
+              onReport={() => setReportOpen(true)}
+              onRescan={() => rescan.mutate({ url: scan.url, intent: scan.intent }, { onSuccess: (r) => navigate(`/app/scan/${r.id}`) })}
+              onFocusNotes={() => {
+                const el = document.getElementById("scan-notes");
+                el?.scrollIntoView({ block: "start", behavior: "smooth" });
+                el?.querySelector("textarea")?.focus();
+              }}
+              onOpenFinding={(id) =>
+                setParams(
+                  (p) => {
+                    const next = new URLSearchParams(p);
+                    next.set("finding", id);
+                    return next;
+                  },
+                  { replace: true },
+                )
+              }
+              onOpenEvidence={(id) => openEvidence(id)}
+            />
           </div>
           <aside className="flex min-w-0 flex-col gap-6 xl:col-span-4" aria-label="Scan details">
+            <div id="scan-notes">
+              <NotesPanel subjectType="scan" subjectId={scan.id} />
+            </div>
             <Card title="Coverage">
               <CoverageMeter coverage={scan.coverage} showGroups />
             </Card>

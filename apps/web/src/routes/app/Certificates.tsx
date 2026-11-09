@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { FlaskConical } from "lucide-react";
+import { CalendarClock, FlaskConical, Network, ShieldAlert, ShieldHalf, Timer } from "lucide-react";
+import { ChartPanel, type ChartPanelState } from "@/components/data/ChartPanel";
+import { RankedBars } from "@/components/data/Charts";
+import { AnimatedNumber, Stagger, StaggerItem } from "@/components/motion/Motion";
+import { StatTile } from "@/components/ui/Card";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { SeverityBadge, SimulatedBadge } from "@/components/domain/Badges";
 import { TimeText } from "@/components/domain/Text";
@@ -14,7 +18,7 @@ import { EmptyState, ErrorState } from "@/components/ui/States";
 import { Table, Td, Th, Tr } from "@/components/ui/Table";
 import { useCertIncidents, useCertMonitors, useCertificates, useCreateIncident, useOrganisations, useRole } from "@/lib/query/hooks";
 import { listData } from "@/lib/api/endpoints";
-import type { CertificateIncident, IncidentCreateBody } from "@/lib/api/types";
+import type { CertificateIncident, CertificateMonitor, IncidentCreateBody } from "@/lib/api/types";
 import { COPY } from "@/lib/copy";
 import { env } from "@/lib/env";
 import { cn } from "@/lib/utils/cn";
@@ -290,6 +294,104 @@ function DemoTools({ onCreated }: { onCreated: () => void }) {
   );
 }
 
+interface PostureItem {
+  key: string;
+  domain: string;
+  detail: string;
+  tone: "danger" | "warning" | "neutral";
+  to?: string;
+  simulated?: boolean;
+}
+
+/**
+ * The two kinds of certificate problem, kept apart on purpose:
+ *   Hygiene           the site's own certificate is expiring or expired → the operator renews it
+ *   Trust compromised an issuer the domain depends on has an incident → replace with another issuer
+ * Built from monitors and incidents only; nothing is inferred.
+ */
+function TrustPosture({ monitors, incidents }: { monitors: CertificateMonitor[]; incidents: CertificateIncident[] }) {
+  const hygiene: PostureItem[] = monitors
+    .filter((m) => m.days_to_expiry !== null && m.days_to_expiry <= 30)
+    .sort((a, b) => (a.days_to_expiry ?? 0) - (b.days_to_expiry ?? 0))
+    .map((m) => ({
+      key: m.id,
+      domain: m.domain,
+      detail: (m.days_to_expiry ?? 0) < 0 ? `expired ${Math.abs(m.days_to_expiry ?? 0)} days ago` : `expires in ${m.days_to_expiry} days · ${m.issuer_cn ?? "issuer unknown"}`,
+      tone: (m.days_to_expiry ?? 0) <= 7 ? "danger" : "warning",
+      to: m.current_certificate_id ? `/app/certificates/${m.current_certificate_id}` : undefined,
+    }));
+  const compromised: PostureItem[] = incidents.flatMap((i) =>
+    (i.affected ?? []).map((a, n) => ({
+      key: `${i.id}-${n}`,
+      domain: a.domain,
+      detail: `issuer ${i.issuer_cn} · ${i.title}`,
+      tone: "danger" as const,
+      to: a.certificate_id ? `/app/certificates/${a.certificate_id}` : undefined,
+      simulated: i.simulated,
+    })),
+  );
+  const lane = (title: string, subtitle: string, items: PostureItem[], empty: string, icon: typeof CalendarClock) => (
+    <Card title={title} description={subtitle} icon={icon} className="h-full">
+      {items.length === 0 ? (
+        <EmptyState title={empty} />
+      ) : (
+        <Stagger as="ul" className="-my-1 divide-y divide-border">
+          {items.slice(0, 8).map((it, i) => (
+            <StaggerItem as="li" key={it.key} index={i} className="flex items-center gap-3 py-2">
+              <span aria-hidden className={cn("h-2 w-2 shrink-0 rounded-full", it.tone === "danger" ? "bg-danger" : it.tone === "warning" ? "bg-warning" : "bg-border-strong")} />
+              <span className="min-w-0 flex-1">
+                {it.to ? (
+                  <Link to={it.to} className="block truncate font-mono text-xs hover:underline">
+                    {it.domain}
+                  </Link>
+                ) : (
+                  <span className="block truncate font-mono text-xs">{it.domain}</span>
+                )}
+                <span className="block truncate text-2xs text-muted">{it.detail}</span>
+              </span>
+              {it.simulated ? <SimulatedBadge /> : null}
+            </StaggerItem>
+          ))}
+        </Stagger>
+      )}
+    </Card>
+  );
+  return (
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      {lane("Hygiene — renew", "The site's own certificate is expiring or expired. Misconfiguration, not compromise.", hygiene, "No monitored certificate expires within 30 days", CalendarClock)}
+      {lane("Trust compromised — replace", "An issuer these domains depend on has an incident. Renewing with the same issuer does not help.", compromised, "No monitored domain depends on an issuer with an incident", ShieldAlert)}
+    </div>
+  );
+}
+
+function ExpiryChart({ monitors, state }: { monitors: CertificateMonitor[]; state: ChartPanelState }) {
+  const rows = monitors
+    .filter((m) => m.days_to_expiry !== null)
+    .sort((a, b) => (a.days_to_expiry ?? 0) - (b.days_to_expiry ?? 0))
+    .slice(0, 8);
+  const soonest = rows[0];
+  return (
+    <ChartPanel
+      title="Days to expiry"
+      description="Monitored certificates, soonest first."
+      icon={Timer}
+      state={state.kind === "ready" && rows.length === 0 ? { kind: "empty", title: "No monitor has checked a certificate yet" } : state}
+      summary={soonest ? <>Soonest: <span className="font-mono text-foreground">{soonest.domain}</span> in {soonest.days_to_expiry} days.</> : null}
+      numbers={{
+        columns: [
+          { key: "domain", label: "Domain" },
+          { key: "days", label: "Days", align: "right" },
+          { key: "issuer", label: "Issuer" },
+        ],
+        rows: rows.map((m) => ({ domain: <span className="font-mono">{m.domain}</span>, days: m.days_to_expiry ?? "—", issuer: m.issuer_cn ?? "—" })),
+      }}
+      source="GET /certificates/monitors · last check per monitor"
+    >
+      <RankedBars data={rows.map((m) => ({ label: m.domain, value: Math.max(0, m.days_to_expiry ?? 0) }))} valueLabel="Days to expiry" />
+    </ChartPanel>
+  );
+}
+
 export default function Certificates() {
   const [params, setParams] = useSearchParams();
   const tab = toTab(params.get("tab"));
@@ -297,24 +399,40 @@ export default function Certificates() {
   const monitors = useCertMonitors();
   const incidents = useCertIncidents();
   const monitorRows = listData(monitors.data);
+  const incidentRows = listData(incidents.data);
   const expiring = monitorRows.filter((m) => m.days_to_expiry !== null && m.days_to_expiry <= 30).length;
+  const affected = incidentRows.reduce((s, i) => s + i.affected_domain_count, 0);
+  const chartState: ChartPanelState = monitors.isPending
+    ? { kind: "loading" }
+    : monitors.isError
+      ? { kind: "error", error: monitors.error, onRetry: () => void monitors.refetch(), retrying: monitors.isFetching }
+      : monitorRows.length === 0
+        ? { kind: "no-data", title: "No monitored domains yet", description: "Add a monitor to track expiry and issuer incidents." }
+        : { kind: "ready" };
 
   return (
     <>
-      <PageHeader title="Certificates" subtitle="Certificate expiry for monitored domains, and the issuers they depend on." />
-      <dl className="mb-6 grid grid-cols-3 gap-4 rounded-md border border-border bg-surface p-5">
-        {[
-          ["Monitored", monitors.data ? monitorRows.length : null],
-          ["Expiring ≤ 30 days", monitors.data ? expiring : null],
-          ["Incidents", incidents.data ? listData(incidents.data).length : null],
-        ].map(([label, value]) => (
-          <div key={String(label)}>
-            <dt className="text-xs text-muted">{label}</dt>
-            <dd className="mt-1 font-mono tabular text-2xl">{value === null ? "—" : value}</dd>
-          </div>
-        ))}
-      </dl>
-      {role === "operator" ? <DemoTools onCreated={() => setParams({ tab: "incidents" })} /> : null}
+      <PageHeader eyebrow="Intelligence" title="Certificates" subtitle="Expiry for monitored domains, the issuers they depend on, and what to do when either goes wrong." />
+      <div className="flex flex-col gap-6">
+        <Stagger className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <StaggerItem index={0}>
+            <StatTile label="Monitored" icon={ShieldHalf} value={<AnimatedNumber face="display" value={monitors.data ? monitorRows.length : null} />} hint="domains watched" />
+          </StaggerItem>
+          <StaggerItem index={1}>
+            <StatTile label="Expiring ≤ 30 days" icon={CalendarClock} tone={expiring ? "warning" : "neutral"} value={<AnimatedNumber face="display" value={monitors.data ? expiring : null} />} hint="hygiene — renew" />
+          </StaggerItem>
+          <StaggerItem index={2}>
+            <StatTile label="Issuer incidents" icon={ShieldAlert} tone={incidentRows.length ? "danger" : "neutral"} value={<AnimatedNumber face="display" value={incidents.data ? incidentRows.length : null} />} hint="trust events" />
+          </StaggerItem>
+          <StaggerItem index={3}>
+            <StatTile label="Domains affected" icon={Network} tone={affected ? "danger" : "neutral"} value={<AnimatedNumber face="display" value={incidents.data ? affected : null} />} hint="by issuer incidents" />
+          </StaggerItem>
+        </Stagger>
+        {monitors.data && incidents.data ? <TrustPosture monitors={monitorRows} incidents={incidentRows} /> : null}
+        <ExpiryChart monitors={monitorRows} state={chartState} />
+        {role === "operator" ? <DemoTools onCreated={() => setParams({ tab: "incidents" })} /> : null}
+      </div>
+      <div className="mt-6" />
       <TabList label="Certificate views" idPrefix="cert" tabs={TABS} value={tab} onChange={(t) => setParams({ tab: t })} />
       <Card bodyClassName="p-0" id={tabIds("cert", tab).panel} role="tabpanel" aria-labelledby={tabIds("cert", tab).tab}>
         {tab === "inventory" ? <Inventory /> : tab === "monitors" ? <Monitors /> : <Incidents />}

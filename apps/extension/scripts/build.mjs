@@ -57,6 +57,7 @@ await Promise.all([
   build({ ...common, entryPoints: [join(root, "src/background/service-worker.ts")], outfile: join(dist, "background.js"), format: "esm" }),
   build({ ...common, entryPoints: [join(root, "src/content/content.ts")], outfile: join(dist, "content.js"), format: "iife" }),
   build({ ...common, entryPoints: [join(root, "src/content/bridge.ts")], outfile: join(dist, "bridge.js"), format: "iife" }),
+  build({ ...common, entryPoints: [join(root, "src/shared/apply-tokens.ts")], outfile: join(dist, "tokens.js"), format: "iife" }),
   build({ ...common, entryPoints: [join(root, "src/popup/popup.ts")], outfile: join(dist, "popup.js"), format: "iife" }),
   build({ ...common, entryPoints: [join(root, "src/options/options.ts")], outfile: join(dist, "options.js"), format: "iife" }),
 ]);

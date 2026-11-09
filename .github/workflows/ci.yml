@@ -1,0 +1,114 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# Throwaway password for the ephemeral CI Postgres service only.
+env:
+  CI_DB_PASSWORD: postgres
+
+jobs:
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan tracked files for secret patterns
+        shell: bash
+        run: |
+          # Same patterns as scripts/secret-scan.ps1. Prints path:line and the pattern name only.
+          hits=0
+          while IFS= read -r f; do
+            [ -f "$f" ] || continue
+            while IFS=: read -r name pattern; do
+              if grep -nEq -- "$pattern" "$f" 2>/dev/null; then
+                echo "$f [$name]"; hits=$((hits+1))
+              fi
+            done <<'PATTERNS'
+          clerk_secret:sk_(live|test)_[A-Za-z0-9]{20,}
+          supabase_secret:sb_secret_[A-Za-z0-9_-]{16,}
+          nvidia_key:nvapi-[A-Za-z0-9_-]{20,}
+          qstash_signing:sig_[A-Za-z0-9]{20,}
+          jwt_or_qstash_tok:eyJ[A-Za-z0-9_=-]{40,}
+          upstash_token:gQAAAAAAA[A-Za-z0-9]{20,}
+          svix_secret:whsec_[A-Za-z0-9+/=]{20,}
+          private_key:BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY
+          PATTERNS
+          done < <(git ls-files)
+          echo "hits=$hits"
+          [ "$hits" -eq 0 ]
+
+  web:
+    name: JS packages (typecheck, lint, test, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+      - name: Build (web, SDK, extension)
+        run: pnpm build
+        env:
+          VITE_API_BASE_URL: https://api.example.invalid
+          VITE_WEB_BASE_URL: https://app.example.invalid
+          VITE_DEMO_SITES_ORIGIN: https://demo.example.invalid
+      - name: Extension bundle contains no secrets or remote code
+        run: pnpm --filter @trustlens/extension exec node scripts/check-bundle.mjs
+
+  api:
+    name: API (ruff, mypy, pytest, OpenAPI drift)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ${{ env.CI_DB_PASSWORD }}
+          POSTGRES_DB: trustlens_test
+        ports: ["5433:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: apps/api
+    env:
+      DIRECT_DATABASE_URL: postgresql://postgres:${{ env.CI_DB_PASSWORD }}@localhost:5433/trustlens_test
+      DATABASE_URL: postgresql+asyncpg://postgres:${{ env.CI_DB_PASSWORD }}@localhost:5433/trustlens_test
+      TEST_DATABASE_URL: postgresql+asyncpg://postgres:${{ env.CI_DB_PASSWORD }}@localhost:5433/trustlens_test
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: apps/api/requirements*.txt
+      - run: pip install -r requirements.txt -r requirements-dev.txt
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: mypy app
+      - name: Migrate the test database
+        run: alembic upgrade head
+      - run: pytest -q -p no:cacheprovider
+      - name: OpenAPI has not drifted
+        run: |
+          python -m app.scripts.dump_openapi
+          git diff --exit-code openapi.json

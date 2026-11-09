@@ -3,7 +3,7 @@ import { getAuthToken, refreshAuthToken, reportAuthFailure } from "@/lib/auth/to
 import { ApiError } from "./errors";
 import type { ErrorEnvelope } from "./types";
 
-type Method = "GET" | "POST" | "PATCH" | "DELETE";
+type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 type QueryValue = string | number | boolean | null | undefined;
 
 export interface RequestOptions {

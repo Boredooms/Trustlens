@@ -5,12 +5,12 @@ import { COPY, DECISION_COPY, NEUTRAL_FAILURES, failureText, fill, relativeAgo }
 import { CONNECT_URL, DEMO_SITES_ORIGIN, EXT_VERSION, aiExplainUrl, appealUrl, fullReportUrl, isAppealable } from "../shared/config";
 import { hostOf, toReportedUrl } from "../shared/demo-url";
 import { send, type PairingState } from "../shared/messages";
-import { applyTokens, byId, h } from "../shared/page";
+import { byId, h } from "../shared/page";
 import { wirePairForm } from "../shared/pair-form";
 import { DECISION_TOKENS } from "../shared/tokens";
 import type { Assessment, CheckResult, Decision } from "../shared/types";
 
-applyTokens();
+// Tokens are applied by tokens.js in <head>, so the first frame is already themed.
 
 const SVG = "http://www.w3.org/2000/svg";
 const pageStatus = byId<HTMLDivElement>("page-status");
@@ -142,8 +142,11 @@ function render(result: CheckResult): void {
   stopTicker();
   lastResult = result;
   pageStatus.replaceChildren(result.kind === "assessment" ? renderAssessment(result.assessment, result.checkedAt) : renderFailure(result));
-  recheck.hidden = !(paired && (result.kind === "assessment" || !NEUTRAL_FAILURES.has(result.failure.code)));
-  reportCard.hidden = !paired || (result.kind === "failure" && NEUTRAL_FAILURES.has(result.failure.code));
+  const neutral = result.kind === "failure" && NEUTRAL_FAILURES.has(result.failure.code);
+  recheck.hidden = !(paired && !neutral);
+  reportCard.hidden = !paired || neutral;
+  // Nothing to watch on TrustLens itself or a local address.
+  watchBtn.hidden = result.kind === "failure" && (result.failure.code === "OWN_SITE" || result.failure.code === "LOCAL_PAGE");
 }
 
 function renderChecking(host: string, since: number): void {
@@ -260,19 +263,27 @@ watchBtn.addEventListener("click", async () => {
   }
 });
 
+/**
+ * Open path, ordered for speed. Only local reads (tab, pairing, settings — chrome.storage, a few ms)
+ * gate the first render; the page status uses the saved result when there is one. The server health
+ * line is filled in asynchronously and NEVER blocks the popup: when the API is busy scanning, a
+ * health call can take seconds, and an earlier build awaited it before drawing anything.
+ */
 void (async () => {
   // popup.html?tab=<id> renders the popup for a specific tab (opened as a page, e.g. in tests);
   // otherwise it describes the active tab, as when opened from the toolbar.
   const tabParam = Number(new URLSearchParams(location.search).get("tab"));
   activeTab = Number.isInteger(tabParam) && tabParam > 0 ? await chrome.tabs.get(tabParam).catch(() => undefined) : undefined;
   if (!activeTab) [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  const [pairing, settings, api] = await Promise.all([send({ type: "GET_PAIRING" }), send({ type: "GET_SETTINGS" }), send({ type: "API_STATUS" })]);
+  const [pairing, settings] = await Promise.all([send({ type: "GET_PAIRING" }), send({ type: "GET_SETTINGS" })]);
   const enabled = settings.ok ? settings.data.enabled : true;
   protect.checked = enabled;
   byId("protect-label").textContent = enabled ? COPY.popup.protectionOn : COPY.popup.protectionOff;
   if (pairing.ok) renderPairing(pairing.data, enabled);
-  const dot = byId("api-dot");
-  dot.dataset.up = String(api.ok && api.data.reachable);
-  byId("api-line").textContent = api.ok && api.data.reachable ? `Server ${api.data.version ?? ""}`.trim() : COPY.popup.apiDown;
+  byId("api-line").textContent = "Server…";
+  void send({ type: "API_STATUS" }).then((api) => {
+    byId("api-dot").dataset.up = String(api.ok && api.data.reachable);
+    byId("api-line").textContent = api.ok && api.data.reachable ? `Server ${api.data.version ?? ""}`.trim() : COPY.popup.apiDown;
+  });
   await loadStatus();
 })();

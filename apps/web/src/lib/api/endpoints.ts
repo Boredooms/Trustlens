@@ -1,3 +1,4 @@
+import type { components } from "@trustlens/shared-types";
 import { path, request, downloadFile } from "./client";
 import type {
   DemoStatus,
@@ -176,7 +177,20 @@ export const api = {
     revoke: (id: string) => request<void>("DELETE", path`/api/v1/api-keys/${id}`),
   },
   overview: () => request<Overview>("GET", "/api/v1/overview"),
+  notes: {
+    list: (f: { subject_type?: NoteSubject; limit?: number } = {}) => request<{ data: Note[] }>("GET", "/api/v1/notes", { query: { ...f } }),
+    get: (type: NoteSubject, id: string) => request<Note>("GET", path`/api/v1/notes/${type}/${id}`),
+    save: (type: NoteSubject, id: string, blocks: NoteBlock[]) => request<Note>("PUT", path`/api/v1/notes/${type}/${id}`, { body: { blocks } }),
+    remove: (type: NoteSubject, id: string) => request<void>("DELETE", path`/api/v1/notes/${type}/${id}`),
+  },
 };
+
+// ── Notes (API_ENDPOINTS.md §18): generated from OpenAPI, never hand-written ──────
+type Schemas = components["schemas"];
+export type Note = Schemas["NoteOut"];
+export type NoteSubject = Note["subject_type"];
+export type NoteBlock = Schemas["NoteBlock"];
+export type NoteBlockType = NoteBlock["type"];
 
 /** Some list endpoints are documented as "list of" without the envelope; accept both. */
 export function listData<T>(v: List<T> | T[] | undefined | null): T[] {

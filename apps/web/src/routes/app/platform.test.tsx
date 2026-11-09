@@ -101,7 +101,9 @@ describe("certificates", () => {
       [{ id: "ORG1", name: "Northstar University", role: "org_admin" }],
     );
     renderAt("/app/certificates?tab=monitors");
-    expect(await screen.findByText("login.northstar-demo.example", {}, LONG)).toBeInTheDocument();
+    // The domain also appears in the "Hygiene — renew" posture lane (21 days left); assert the monitors table.
+    const panel = await screen.findByRole("tabpanel", {}, LONG);
+    expect(await within(panel).findByText("login.northstar-demo.example", {}, LONG)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: /add monitor/i }));
     const dialog = await screen.findByRole("dialog", { name: /monitor a domain/i });
     await userEvent.type(within(dialog).getByLabelText(/^domain/i), "pay.northstar-demo.example");

@@ -1,12 +1,24 @@
+/**
+ * Investigation — the narrative an analyst reads next to the rule-decided verdict. Panels and states:
+ *   Decision context  the engine's verdict + score ring (never changed by the narrative)
+ *   KPI row           steps done · run time · references · dropped claims
+ *   Narrative         writing (skeleton) · empty · sections with resolvable citation chips
+ *   Step timings      Bklit bars · running · empty · numbers popover
+ *   Notes             private block editor (loading · error · saved)
+ *   Steps / References timeline and resolved citations
+ */
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Bot, CheckCircle2, Circle, Download, FileText, Loader2, XCircle } from "lucide-react";
+import { Bot, CheckCircle2, Circle, Clock, Download, FileText, Link2, ListChecks, Loader2, Timer, Unlink, XCircle } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { ChartPanel } from "@/components/data/ChartPanel";
+import { RankedBars } from "@/components/data/Charts";
 import { VerdictBadge } from "@/components/domain/Badges";
-import { ScoreDial } from "@/components/domain/Meters";
+import { NotesPanel } from "@/components/domain/NotesPanel";
+import { RiskScoreRing } from "@/components/domain/RiskScoreRing";
 import { TimeText } from "@/components/domain/Text";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, StatTile } from "@/components/ui/Card";
 import { Tooltip } from "@/components/ui/Overlay";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Banner, EmptyState, ErrorState } from "@/components/ui/States";
@@ -124,6 +136,13 @@ export default function InvestigationView() {
   const dropped = inv.dropped_claims?.length ?? 0;
   const aiUsed = inv.ai?.generated === true;
   const ctx = inv.decision_context;
+  const steps = inv.steps ?? [];
+  const doneSteps = steps.filter((s) => s.status === "completed").length;
+  const failedSteps = steps.filter((s) => s.status === "failed").length;
+  const timed = steps.filter((s) => typeof s.duration_ms === "number" && (s.status === "completed" || s.status === "failed"));
+  const totalMs = timed.reduce((sum, s) => sum + (s.duration_ms ?? 0), 0);
+  const slowest = timed.slice().sort((a, b) => (b.duration_ms ?? 0) - (a.duration_ms ?? 0))[0];
+  const refCount = (inv.references ?? []).length;
 
   return (
     <>
@@ -189,27 +208,50 @@ export default function InvestigationView() {
         </Banner>
       ) : null}
 
+      {ctx ? (
+        <section aria-labelledby="ctx-title" className="mesh-panel mb-6 rounded-xl border border-border p-6 shadow-raised">
+          <div className="flex flex-wrap items-center justify-between gap-6">
+            <div className="min-w-0">
+              <p className="label-eyebrow">Decision — unchanged</p>
+              <div className="mt-2">
+                <VerdictBadge decision={ctx.decision} riskLevel={ctx.risk_level} size="lg" />
+              </div>
+              <h2 id="ctx-title" className="mt-3 text-sm text-muted-strong">
+                {COPY.rulesDecide}
+              </h2>
+              <p className="mt-1 text-xs text-muted">
+                Risk level {RISK_LEVEL_LABEL[toRiskLevel(ctx.risk_level)]} ·{" "}
+                <Link to={`/app/scan/${inv.scan_id}`} className="underline underline-offset-4">
+                  open the scan report
+                </Link>
+              </p>
+            </div>
+            <RiskScoreRing score={ctx.risk_score} decision={ctx.decision} riskLevel={ctx.risk_level} size={112} />
+          </div>
+        </section>
+      ) : null}
+
+      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatTile
+          label="Steps done"
+          icon={ListChecks}
+          value={steps.length ? `${doneSteps}/${steps.length}` : "—"}
+          hint={failedSteps ? `${failedSteps} failed` : humanise(inv.status)}
+          tone={failedSteps ? "danger" : "neutral"}
+        />
+        <StatTile label="Run time" icon={Timer} value={timed.length ? durationMs(totalMs) : "—"} hint={slowest ? `Slowest: ${humanise(slowest.name)}` : "No timed steps yet"} />
+        <StatTile label="References" icon={Link2} value={refCount} hint="Citations into the scan" />
+        <StatTile
+          label="Dropped claims"
+          icon={Unlink}
+          value={dropped}
+          hint="Uncited claims removed"
+          tone={dropped ? "warning" : "neutral"}
+        />
+      </div>
+
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-6 xl:col-span-8">
-          {ctx ? (
-            <section aria-labelledby="ctx-title" className="rounded-md border border-border bg-surface p-5">
-              <div className="flex flex-wrap items-start justify-between gap-6">
-                <div>
-                  <p className="label-eyebrow">Decision — unchanged</p>
-                  <div className="mt-2">
-                    <VerdictBadge decision={ctx.decision} riskLevel={ctx.risk_level} size="lg" />
-                  </div>
-                  <h2 id="ctx-title" className="mt-3 text-sm text-muted-strong">
-                    {COPY.rulesDecide}
-                  </h2>
-                </div>
-                <div className="text-right">
-                  <ScoreDial score={ctx.risk_score} className="text-3xl" />
-                  <p className="mt-1 text-xs text-muted">Risk level {RISK_LEVEL_LABEL[toRiskLevel(ctx.risk_level)]}</p>
-                </div>
-              </div>
-            </section>
-          ) : null}
 
           <section aria-labelledby="narrative-title" className="rounded-md border border-border bg-surface">
             <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3">
@@ -278,11 +320,38 @@ export default function InvestigationView() {
               ) : null}
             </footer>
           </section>
+
+          <ChartPanel
+            title="Step timings"
+            description="Where the investigation spent its time."
+            icon={Clock}
+            state={
+              timed.length
+                ? { kind: "ready" }
+                : terminal
+                  ? { kind: "empty", title: "No timed steps recorded" }
+                  : { kind: "loading" }
+            }
+            summary={slowest ? <>Slowest: <span className="text-foreground">{humanise(slowest.name)}</span> ({durationMs(slowest.duration_ms)}).</> : null}
+            numbers={{
+              columns: [
+                { key: "step", label: "Step" },
+                { key: "status", label: "Status" },
+                { key: "ms", label: "Duration", align: "right" },
+              ],
+              rows: timed.map((s) => ({ step: humanise(s.name), status: humanise(s.status), ms: durationMs(s.duration_ms) })),
+            }}
+            source="GET /investigations/{id} · steps"
+          >
+            <RankedBars data={timed.map((s) => ({ label: humanise(s.name), value: s.duration_ms ?? 0 }))} valueLabel="Milliseconds" />
+          </ChartPanel>
+
+          <NotesPanel subjectType="investigation" subjectId={inv.id} title="Analyst notes" />
         </div>
 
         <aside className="flex min-w-0 flex-col gap-6 xl:col-span-4" aria-label="Investigation progress">
           <Card title="Steps" actions={<span className="text-xs text-muted">{humanise(inv.status)}</span>}>
-            <Timeline steps={inv.steps ?? []} />
+            <Timeline steps={steps} />
           </Card>
           <Card title="References">
             {(inv.references ?? []).length === 0 ? (
@@ -297,7 +366,7 @@ export default function InvestigationView() {
                 ))}
               </ul>
             )}
-            <p className="mt-3 text-xs text-muted">{plural((inv.references ?? []).length, "reference")} resolved against the scan.</p>
+            <p className="mt-3 text-xs text-muted">{plural(refCount, "reference")} resolved against the scan.</p>
           </Card>
         </aside>
       </div>

@@ -2,11 +2,10 @@
 import { COPY, fill } from "../shared/copy";
 import { API_BASE_URL, EXT_VERSION } from "../shared/config";
 import { send, type PairingState } from "../shared/messages";
-import { applyTokens, byId, h } from "../shared/page";
+import { byId, h } from "../shared/page";
 import { wirePairForm } from "../shared/pair-form";
 
-applyTokens();
-
+// Tokens are applied by tokens.js in <head> (first frame themed).
 byId("version").textContent = fill(COPY.popup.version, { v: EXT_VERSION });
 byId("api-origin").textContent = API_BASE_URL;
 byId("privacy").replaceChildren(...COPY.options.privacy.map((p) => h("li", { text: p })));

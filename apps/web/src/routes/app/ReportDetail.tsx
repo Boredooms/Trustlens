@@ -3,7 +3,11 @@ import { Link, useParams } from "react-router-dom";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatusPill, VerdictBadge } from "@/components/domain/Badges";
 import { OnChainProofPanel } from "@/components/domain/OnChainProof";
-import { CoverageMeter, ScoreDial } from "@/components/domain/Meters";
+import { History } from "lucide-react";
+import { CoverageMeter } from "@/components/domain/Meters";
+import { RiskScoreRing } from "@/components/domain/RiskScoreRing";
+import { NotesPanel } from "@/components/domain/NotesPanel";
+import { cn } from "@/lib/utils/cn";
 import { TimeText, UrlText } from "@/components/domain/Text";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -71,6 +75,44 @@ function ReviewPanel({ report }: { report: Report }) {
   );
 }
 
+/** Created → in review → outcome, from the report's own timestamps and status. */
+function ReviewTimeline({ report }: { report: Report }) {
+  const done = report.status === "confirmed" || report.status === "dismissed";
+  const steps = [
+    { label: "Reported", at: report.created_at, state: "done" as const, detail: report.channel ? `via ${humanise(report.channel)}` : null },
+    { label: "In review", at: null, state: report.status === "pending" ? ("next" as const) : ("done" as const), detail: report.status === "pending" ? "waiting for an analyst" : null },
+    {
+      label: done ? humanise(report.status) : "Outcome",
+      at: report.review?.reviewed_at ?? null,
+      state: done ? ("done" as const) : ("next" as const),
+      detail: done ? (report.status === "confirmed" ? "reputation recorded for the domain" : "no action taken") : "confirm or dismiss",
+    },
+  ];
+  return (
+    <Card title="Timeline" icon={History}>
+      <ol className="relative flex flex-col gap-4 border-l border-border pl-5">
+        {steps.map((s) => (
+          <li key={s.label} className="relative">
+            <span
+              aria-hidden
+              className={cn(
+                "absolute -left-[1.6rem] top-1 h-2.5 w-2.5 rounded-full border",
+                s.state === "done" ? (report.status === "confirmed" && s.label === "Confirmed" ? "border-danger bg-danger" : "border-foreground bg-foreground") : "border-border-strong bg-surface",
+              )}
+            />
+            <p className="text-sm text-foreground">{s.label}</p>
+            <p className="text-xs text-muted">
+              {s.at ? <TimeText iso={s.at} /> : null}
+              {s.at && s.detail ? " · " : null}
+              {s.detail}
+            </p>
+          </li>
+        ))}
+      </ol>
+    </Card>
+  );
+}
+
 export default function ReportDetail() {
   const { reportId = "" } = useParams();
   const q = useReport(reportId);
@@ -130,6 +172,7 @@ export default function ReportDetail() {
               <dd>{r.channel ? humanise(r.channel) : "—"}</dd>
             </dl>
           </Card>
+          <ReviewTimeline report={r} />
           {isAnalystRole(role) ? (
             <ReviewPanel report={r} />
           ) : (
@@ -137,6 +180,7 @@ export default function ReportDetail() {
               Analysts confirm or dismiss reports. You will see the outcome here.
             </Banner>
           )}
+          <NotesPanel subjectType="report" subjectId={r.id} title="Review notes" />
         </div>
         <aside className="flex min-w-0 flex-col gap-6 xl:col-span-4" aria-label="Linked scan">
           <Card title="Linked scan">
@@ -144,7 +188,7 @@ export default function ReportDetail() {
               <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between gap-3">
                   <VerdictBadge decision={scan.decision} riskLevel={scan.risk_level} />
-                  <ScoreDial score={scan.risk_score} className="text-2xl" />
+                  <RiskScoreRing score={scan.risk_score} decision={scan.decision} riskLevel={scan.risk_level} size={88} />
                 </div>
                 <CoverageMeter coverage={scan.coverage ?? null} />
                 {scanId ? (

@@ -165,3 +165,17 @@ pass, Clerk sign-in → `/app` seen in Chrome. Details: [`../evidence/online/REA
 Verification: API 406 passed (test DB) · ruff/format/mypy clean · web 19 files · extension 5 files ·
 SDK pass · all typechecks/lints pass · OpenAPI unchanged. Not done: deployment (needs the owner's
 Render/Vercel/GitHub access), production Clerk instance, Chrome Web Store packaging.
+## 8. Notes, assistant, page redesigns, CI (2026-11-10)
+- Popup: tokens applied synchronously in `<head>`; `API_STATUS` no longer blocks first render.
+- Notes: table `notes` (migration `c7a0note0001`), `/notes` API (human sessions only), block editor
+  (`BlockEditor`, closed block model, no HTML), `NotesPanel` on scan, campaign, investigation, report.
+- Scan report: `ScanAssistant` (deterministic reshape + "Ask the AI" via `POST /investigations`).
+- Redesigned to the dashboard standard with all four panel states: Messages, Certificates, Campaigns,
+  CampaignDetail, Reports, ReportDetail, Intelligence, Investigation.
+- CI/CD: `.github/workflows/ci.yml` (secret scan, JS typecheck/lint/test/build + bundle check, API ruff /
+  format / mypy / pytest on Postgres 16 / OpenAPI drift) and manual `release.yml` (migrate, Render deploy
+  hook, extension zip). Neither deploys on push.
+Verification: API 410 passed · ruff, format, mypy clean · web 20 files / 106 tests · all typechecks and
+lints pass · extension E2E 16/16 · popup first status 220–500 ms. Not verified: CI workflows have not run on
+GitHub; new pages not visually screenshot-reviewed. Not done: live deployment (needs the owner's GitHub,
+Render and Vercel access), production Clerk instance, Chrome Web Store packaging.

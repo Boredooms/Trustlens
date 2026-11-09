@@ -510,6 +510,12 @@ RLS on, no policy. Owner: [`THREAT_INTELLIGENCE_SOURCES.md`](THREAT_INTELLIGENCE
 
 ---
 
+### 7.7 `notes` (investigator notes, migration `c7a0note0001`)
+
+`id`, `user_id` (FK users CASCADE), `subject_type` (`scan|campaign|investigation|report`, CHECK),
+`subject_id CHAR(26)`, `blocks JSONB` (CHECK `jsonb_typeof = 'array'`), `created_at`, `updated_at`.
+`UNIQUE(user_id, subject_type, subject_id)`. Row-level security: owner only. Revises `c6a0rls00001`.
+
 ## 8. Representative DDL
 
 ```sql

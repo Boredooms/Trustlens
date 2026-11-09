@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Download } from "lucide-react";
+import { Download, Layers } from "lucide-react";
+import { ChartPanel } from "@/components/data/ChartPanel";
+import { RankedBars } from "@/components/data/Charts";
+import { NotesPanel } from "@/components/domain/NotesPanel";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ConfidenceBar } from "@/components/domain/Meters";
 import { SimulatedBadge } from "@/components/domain/Badges";
@@ -67,6 +70,16 @@ export default function CampaignDetail() {
   const members = c.members ?? [];
   const indicators = (c.shared_indicators ?? []).slice().sort((a, b) => b.confidence - a.confidence);
   const selected = root ?? (members[0] ? { id: members[0].id, label: members[0].label } : null);
+  const byType = Object.values(
+    indicators.reduce<Record<string, { type: string; count: number; sum: number }>>((acc, s) => {
+      const t = (acc[s.type] ??= { type: s.type, count: 0, sum: 0 });
+      t.count += 1;
+      t.sum += s.confidence;
+      return acc;
+    }, {}),
+  )
+    .map((t) => ({ type: t.type, count: t.count, avg: t.count ? t.sum / t.count : 0 }))
+    .sort((a, b) => b.count - a.count);
 
   return (
     <>
@@ -88,13 +101,13 @@ export default function CampaignDetail() {
         }
       />
 
-      <section aria-labelledby="conf-title" className="mb-6 rounded-md border border-border bg-surface p-5">
+      <section aria-labelledby="conf-title" className="mesh-panel mb-6 rounded-xl border border-border p-6 shadow-raised">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p id="conf-title" className="label-eyebrow">
               Confidence
             </p>
-            <p className="mt-1 font-mono tabular text-4xl font-medium leading-none">{percent(c.confidence)}</p>
+            <p className="font-display mt-2 text-6xl leading-none">{percent(c.confidence)}</p>
             <p className="mt-2 max-w-prose text-sm text-muted-strong">{COPY.campaignConfidence}.</p>
             {possible ? (
               <p className="mt-1 max-w-prose text-sm text-muted-strong">
@@ -179,6 +192,28 @@ export default function CampaignDetail() {
             </Table>
           )}
         </Card>
+      </div>
+
+      <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <ChartPanel
+          title="Indicator types"
+          description="What this campaign's members share, by kind."
+          icon={Layers}
+          state={indicators.length ? { kind: "ready" } : { kind: "empty", title: "No shared indicators recorded" }}
+          summary={byType[0] ? <>Most shared: <span className="text-foreground">{humanise(byType[0].type)}</span> ({byType[0].count}).</> : null}
+          numbers={{
+            columns: [
+              { key: "type", label: "Type" },
+              { key: "count", label: "Indicators", align: "right" },
+              { key: "avg", label: "Mean confidence", align: "right" },
+            ],
+            rows: byType.map((t) => ({ type: humanise(t.type), count: t.count, avg: percent(t.avg) })),
+          }}
+          source="GET /campaigns/{id} · shared_indicators"
+        >
+          <RankedBars data={byType.map((t) => ({ label: humanise(t.type), value: t.count }))} valueLabel="Indicators" />
+        </ChartPanel>
+        <NotesPanel subjectType="campaign" subjectId={c.id} title="Case notes" />
       </div>
 
       {selected ? (

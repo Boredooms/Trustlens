@@ -779,7 +779,26 @@ redacted at write time; the IP hash is never returned. `Cache-Control: no-store`
 
 ---
 
-## 17. Endpoint-to-feature map
+## 17. Notes
+
+Private, owner-only investigator notes stored as a closed list of blocks (no HTML). Human sessions only:
+API keys and extension device tokens get `403 INSUFFICIENT_SCOPE`. Rate group `notes` (240/h).
+`subject_type` is one of `scan | campaign | investigation | report`; `subject_id` is a ULID.
+A `scan` subject must exist and be visible (`404 SCAN_NOT_FOUND`); other subjects only validate the ULID
+(`422 VALIDATION_FAILED`). Notes never change a finding, score or decision.
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/notes?subject_type=&limit=` | List my notes (newest first, `limit` 1–100, default 20) |
+| `GET` | `/notes/{subject_type}/{subject_id}` | Read my note for a subject (empty blocks when none) |
+| `PUT` | `/notes/{subject_type}/{subject_id}` | Replace the blocks (autosave target, idempotent upsert) |
+| `DELETE` | `/notes/{subject_type}/{subject_id}` | Delete my note |
+
+Schema: `NoteOut`, `NoteBlock` in `openapi.json` (block types are the closed enum there).
+
+---
+
+## 18. Endpoint-to-feature map
 
 | Feature | Endpoints |
 | --- | --- |
