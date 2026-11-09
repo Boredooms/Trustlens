@@ -1,5 +1,5 @@
 /**
- * Public types for trustlens-sdk.
+ * Public types for @boredooms/trustlens-sdk.
  *
  * Field names are snake_case exactly as the API returns them (ADR-007). There is no camelCase
  * translation layer. Shapes mirror docs/06-sdk/SDK_SPECIFICATION.md §4 and

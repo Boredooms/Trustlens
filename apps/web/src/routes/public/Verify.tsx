@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { ProofFacts, VerifyResult, INTEGRITY_CAVEAT, isChainUnavailable } from "@/components/domain/OnChainProof";
+import { ProofFacts, VerifyResult, INTEGRITY_CAVEAT, isChainUnavailable, simulatedNote } from "@/components/domain/OnChainProof";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Field, Textarea } from "@/components/ui/Field";
@@ -79,7 +79,7 @@ export function Verify() {
             <VerifyResult result={q.data} />
           </Card>
           <Card title="On-chain record">
-            {q.data.simulated ? <p className="mb-3 text-xs text-muted">simulated: demo report on a local development chain.</p> : null}
+            {q.data.simulated ? <p className="mb-3 text-xs text-muted">{simulatedNote(q.data.chain_id)}</p> : null}
             <ProofFacts anchor={q.data} />
           </Card>
           <Card title="What was committed">

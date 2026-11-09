@@ -148,6 +148,10 @@ class Settings(BaseSettings):
 
     # ── 2.7 Web3 report registry (docs/02-architecture/WEB3_REGISTRY.md §7) ──────
     # Unset CHAIN_RPC_URL disables anchoring; scans and reports never depend on the chain.
+    # CHAIN_MODE=simulated runs the registry's exact rules (real keccak256 commitments) inside the
+    # API, persisted in Postgres, for demo deployments without a funded testnet wallet. Every
+    # anchor it produces is labelled simulated and uses chain id 0, which no real network uses.
+    chain_mode: Literal["rpc", "simulated"] = "rpc"
     chain_rpc_url: str | None = None
     chain_id: int = 31337
     chain_registry_address: str | None = None
@@ -226,6 +230,15 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "CHAIN_ID=31337 is the local development chain and is refused in production"
                 )
+        if self.chain_mode == "simulated":
+            if self.chain_rpc_url:
+                raise ValueError(
+                    "CHAIN_MODE=simulated and CHAIN_RPC_URL are mutually exclusive — unset one"
+                )
+            if self.environment == "production" and not self.demo_mode:
+                raise ValueError(
+                    "CHAIN_MODE=simulated is allowed in production only with DEMO_MODE"
+                )
         if self.chain_rpc_url and not (self.chain_registry_address and self.chain_sender_address):
             raise ValueError(
                 "CHAIN_REGISTRY_ADDRESS and CHAIN_SENDER_ADDRESS are required when CHAIN_RPC_URL "
@@ -261,8 +274,17 @@ class Settings(BaseSettings):
         return "process environment" if "DATABASE_URL" in os.environ else ".env file"
 
     @property
+    def chain_simulated(self) -> bool:
+        return self.chain_mode == "simulated"
+
+    @property
     def chain_configured(self) -> bool:
-        return bool(self.chain_rpc_url and self.chain_registry_address)
+        return self.chain_simulated or bool(self.chain_rpc_url and self.chain_registry_address)
+
+    @property
+    def effective_chain_id(self) -> int:
+        """Chain id recorded on anchors: 0 for the simulated registry, CHAIN_ID otherwise."""
+        return 0 if self.chain_simulated else self.chain_id
 
     @property
     def is_production(self) -> bool:

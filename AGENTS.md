@@ -70,7 +70,7 @@ apps/api          FastAPI             owner: backend
 apps/api/app/services, app/risk        owner: scanner/security
 apps/api/app/agents                    owner: AI
 apps/extension    Chrome MV3          owner: extension
-packages/sdk      trustlens-sdk       owner: SDK
+packages/sdk      @boredooms/trustlens-sdk       owner: SDK
 packages/shared-types  generated      nobody edits
 docs/             specifications       tech lead
 ```

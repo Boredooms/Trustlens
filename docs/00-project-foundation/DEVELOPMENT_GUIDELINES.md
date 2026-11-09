@@ -15,7 +15,7 @@ trustlens/
 │   ├── api/          FastAPI backend (the only verdict producer)
 │   └── extension/    Chrome MV3 extension
 ├── packages/
-│   ├── sdk/          trustlens-sdk
+│   ├── sdk/          @boredooms/trustlens-sdk
 │   ├── shared-types/ generated from apps/api/openapi.json — never hand-edited
 │   └── ui/           thin shared primitives (optional)
 ├── infrastructure/   render.yaml, docker-compose.yml, deploy scripts

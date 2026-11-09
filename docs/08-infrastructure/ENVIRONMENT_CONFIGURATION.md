@@ -153,6 +153,7 @@ Rules:
 
 | Variable | Required | Secret | Meaning / default |
 | --- | --- | --- | --- |
+| `CHAIN_MODE` | no | no | `rpc` (default) or `simulated`: the registry runs inside the API on Postgres with real keccak256 commitments, chain id 0, every anchor labelled simulated. Excludes `CHAIN_RPC_URL`; in production only with `DEMO_MODE=true` (startup aborts otherwise) |
 | `CHAIN_RPC_URL` | no | no | JSON-RPC node. Unset ⇒ anchoring disabled, anchor routes answer `503 CHAIN_UNAVAILABLE` |
 | `CHAIN_ID` | no | no | `31337` (local Hardhat). **Refused in production** |
 | `CHAIN_REGISTRY_ADDRESS` | with RPC | no | Deployed `ThreatReportRegistry` |

@@ -140,7 +140,7 @@ Measured from the working tree on 2026-11-08 with commands, not from prose.
 | API | `apps/api` | 68 OpenAPI operations on 55 paths; 25 tables; 3 Alembic revisions | Implemented |
 | Web | `apps/web` | 19 dashboard routes + 9 public pages (`src/app.tsx`); 66 tests claimed | Implemented |
 | Extension | `apps/extension` | MV3, esbuild, overlay + popup + options + pairing | Implemented, builds to `dist/` |
-| SDK | `packages/sdk` | `trustlens-sdk`, 20 tests | Implemented |
+| SDK | `packages/sdk` | `@boredooms/trustlens-sdk`, 20 tests | Implemented |
 | Shared types | `packages/shared-types` | generated from `apps/api/openapi.json` | Generated — never hand-edit |
 | Demo sites | `apps/demo-sites` | 6 inert sites, 2 lookalike families, 15 tests | Implemented |
 | Infra | `infrastructure/render.yaml`, `docker-compose.yml`, `apps/web/vercel.json` | Blueprints only | **Not deployed** |
@@ -291,7 +291,7 @@ Never put an API secret in a `VITE_*` variable; it is compiled into a public bun
 | API unit / contract / integration | `apps/api/tests/{unit,contracts,integration}` | `pytest -q` | 300 (incl. DB) |
 | Web | colocated `*.test.tsx` under `apps/web/src` | `pnpm --filter @trustlens/web test` | 66 |
 | Extension | `apps/extension/test` | `pnpm --filter @trustlens/extension test` | 54 |
-| SDK | `packages/sdk/test` | `pnpm --filter trustlens-sdk test` | 20 |
+| SDK | `packages/sdk/test` | `pnpm --filter @boredooms/trustlens-sdk test` | 20 |
 | Demo sites | `apps/demo-sites/test` | `pnpm --filter @trustlens/demo-sites test` | 15 |
 
 Pytest markers: `db` (needs `TEST_DATABASE_URL`), `network` (never in default CI). DB tests skip
@@ -543,7 +543,7 @@ Run in order; each rung must pass before the next is meaningful.
 | 5 | DB integration | `TEST_DATABASE_URL=... pytest -m db -q` | pass against migrated Postgres |
 | 6 | Web checks | `pnpm --filter @trustlens/web lint typecheck test build` | clean, 66+ tests |
 | 7 | Extension | `pnpm --filter @trustlens/extension lint typecheck test build` | clean, 54+ tests |
-| 8 | SDK + demo sites | `pnpm --filter trustlens-sdk test` `pnpm --filter @trustlens/demo-sites test` | clean |
+| 8 | SDK + demo sites | `pnpm --filter @boredooms/trustlens-sdk test` `pnpm --filter @trustlens/demo-sites test` | clean |
 | 9 | API e2e | `demo_check` | 26/26 |
 | 10 | Platform e2e | `platform_check` | 42/42 |
 | 11 | Manual browser | load web, scan the lookalike, open report | `BLOCK`, findings listed, coverage shown |
@@ -672,7 +672,7 @@ trustlens/
 │   ├── demo-sites/     zero-dependency demo server
 │   └── edge/           PROPOSED — only if §11 is approved
 ├── packages/
-│   ├── sdk/            trustlens-sdk
+│   ├── sdk/            @boredooms/trustlens-sdk
 │   └── shared-types/   generated from openapi.json
 ├── infrastructure/     render.yaml, future IaC
 ├── docs/               specification + handover

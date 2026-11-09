@@ -9,7 +9,7 @@ do next. Facts below were checked on 2026-11-09 unless marked **unverified**.
 - **Runs locally** against the hosted Supabase DB (migrated to `c7a0note0001`, 34 tables, RLS audit clean), Clerk, Upstash Redis, QStash and the NVIDIA LLM.
 - **Deployed:** four Vercel projects serving labelled, inert fixtures (genuine `trustlens-demo-northstar`, lookalikes `-admissions`, `-scholarships`, `-placement`, all `*.vercel.app`).
 - **Live:** dashboard https://trustlens-web-three.vercel.app (Vercel `trustlens-web`, root `apps/web`, Git-connected); API https://trustlens-api-m65a.onrender.com (Render Docker `srv-dbotade7bikc73a7ick0`, free, Singapore, auto-deploy on `main`); QStash schedules point at it. Verified in real Chromium: Clerk sign-in → `/app`, scan of a live lookalike, notes PUT through CORS (7/7); extension paired on the live dashboard and blocked the live lookalikes (10/10).
-- **Not done:** public testnet contract (live `/verify` returns `CHAIN_UNAVAILABLE`), npm publish (`trustlens-sdk`, blocked on the account's 2FA OTP), Chrome Web Store, production Clerk instance (the dev instance works on the Vercel domain).
+- **Not done:** public testnet contract (live `/verify` returns `CHAIN_UNAVAILABLE`), npm publish (`@boredooms/trustlens-sdk`, blocked on the account's 2FA OTP), Chrome Web Store, production Clerk instance (the dev instance works on the Vercel domain).
 
 ## 2. Stack decisions
 
@@ -69,4 +69,24 @@ No secrets in tracked files (staged scan clean; one **fake** webhook fixture str
 ## 8. Questions
 
 - Answered: chart library (Bklit), CSS stack (Tailwind v3), fixtures on Vercel only, logout in the sidebar.
-- Answered: Render deployment (done), npm name (`trustlens-sdk`, unscoped). Open: testnet and signing path; npm OTP or automation token.
+- Answered: Render deployment (done), npm name (`@boredooms/trustlens-sdk`, unscoped). Open: testnet and signing path; npm OTP or automation token.
+
+## 9. Update 2026-11-10 (local, not pushed)
+
+- **Web3 mocked end to end:** `CHAIN_MODE=simulated` (`app/services/sim_registry.py`, WEB3_REGISTRY.md
+  §7.1). It answers the registry's JSON-RPC with the contract's exact rules and real keccak256
+  commitments (pinned to the deployed contract by tests), persists in Postgres (migration
+  `c8a0simreg01`, applied to the hosted DB), and labels every anchor simulated with chain id 0.
+  Verified against the hosted DB: three reports anchored and verified valid, tampered copy rejected.
+  Render has `CHAIN_MODE=simulated` set; it takes effect on the next deploy (next push to `main`).
+- **SDK:** renamed `@boredooms/trustlens-sdk` (user scope, no org). Publish was blocked because the
+  owner's `~/.npmrc` token is invalid (E401; npm answers a bad-token PUT with 404). Next action:
+  `npm login`, then `npm publish --access public` in `packages/sdk`.
+- **Release:** local tag `v0.1.0`; notes in `releases/RELEASE_NOTES_v0.1.0.md`; assets
+  `releases/trustlens-extension-production.zip` and `-local.zip`. Next action after the owner
+  approves: `git push origin main --follow-tags`, then create the GitHub release from the tag and attach
+  both zips.
+- **Frontend:** the landing rebuild (Hero → Features → About → Docs; GSAP + ScrollTrigger and Lenis on
+  the public page only, Motion in-app, Radix/shadcn, Tailwind v3) is briefed in
+  [`FRONTEND_LANDING_PROMPT.md`](FRONTEND_LANDING_PROMPT.md), including making the sidebar logo link
+  to `/`.

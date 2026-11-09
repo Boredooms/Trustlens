@@ -46,6 +46,20 @@ function CopyValue({ label, value }: { label: string; value: string | null | und
   );
 }
 
+/** Chain id 0 is the API's simulated registry (CHAIN_MODE=simulated); 31337 is a local Hardhat node. */
+export function chainLabel(chainId: number | null | undefined): string {
+  if (chainId === 0) return "0 · simulated registry (not a public blockchain)";
+  if (chainId === 31337) return "31337 · local development chain";
+  return chainId === null || chainId === undefined ? "—" : String(chainId);
+}
+
+/** One honest sentence for a simulated anchor, by where it was recorded. */
+export function simulatedNote(chainId: number | null | undefined): string {
+  return chainId === 0
+    ? "Simulated: recorded by the TrustLens demo registry, not a public blockchain. The commitment is the same keccak256 the contract computes, so tampering is still detected."
+    : "Simulated: demo report on a local development chain.";
+}
+
 export function ProofFacts({ anchor }: { anchor: Anchor }) {
   return (
     <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-xs">
@@ -54,7 +68,7 @@ export function ProofFacts({ anchor }: { anchor: Anchor }) {
         <CopyValue label="contract address" value={anchor.contract} />
       </dd>
       <dt className="text-muted">Chain id</dt>
-      <dd className="font-mono">{anchor.chain_id ?? "—"}</dd>
+      <dd className="font-mono">{chainLabel(anchor.chain_id)}</dd>
       <dt className="text-muted">Report id (bytes32)</dt>
       <dd>
         <CopyValue label="report id bytes" value={anchor.report_id_bytes32} />
@@ -165,7 +179,7 @@ export function OnChainProofPanel({ reportId }: { reportId: string }) {
           </>
         ) : (
           <>
-            {a.simulated ? <p className="text-xs text-muted">simulated: demo report on a local development chain.</p> : null}
+            {a.simulated ? <p className="text-xs text-muted">{simulatedNote(a.chain_id)}</p> : null}
             <ProofFacts anchor={a} />
             <div className="flex flex-wrap gap-3">
               <Button

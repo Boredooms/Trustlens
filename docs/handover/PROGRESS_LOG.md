@@ -191,5 +191,5 @@ Render and Vercel access), production Clerk instance, Chrome Web Store packaging
 - API: CORS now allows `PUT` (notes autosave preflight failed before); `ALLOWED_ORIGIN_REGEX` (anchored, https, no `.*`, team-scoped) for Vercel deployment URLs, also accepted for Clerk `azp`; `CLERK_AUTHORIZED_PARTY` takes a list. Tests added.
 - QStash schedules re-registered to the Render URL; unsigned `/internal/jobs/*` → 401.
 - Production E2E: dashboard 7/7 (Clerk → /app, live scan, notes PUT); extension against production 10/10 (BLOCK on live lookalikes).
-- SDK renamed `trustlens-sdk` (MIT, public metadata, default base URL = Render API); publish blocked by npm 2FA (EOTP).
+- SDK renamed `@boredooms/trustlens-sdk` (MIT, public metadata, default base URL = Render API); publish blocked by npm 2FA (EOTP).
 - Web3: live `/verify` returns `CHAIN_UNAVAILABLE` (no chain on Render; 31337 refused in production by design). Testnet needs a decision.

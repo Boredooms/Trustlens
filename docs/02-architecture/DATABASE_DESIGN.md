@@ -516,6 +516,20 @@ RLS on, no policy. Owner: [`THREAT_INTELLIGENCE_SOURCES.md`](THREAT_INTELLIGENCE
 `subject_id CHAR(26)`, `blocks JSONB` (CHECK `jsonb_typeof = 'array'`), `created_at`, `updated_at`.
 `UNIQUE(user_id, subject_type, subject_id)`. Row-level security: owner only. Revises `c6a0rls00001`.
 
+### 7.8 `sim_registry_records`, `sim_registry_txs` (simulated registry, migration `c8a0simreg01`)
+
+State of `ThreatReportRegistry` when `CHAIN_MODE=simulated` ([`WEB3_REGISTRY.md`](WEB3_REGISTRY.md) §7.1). Hashes only.
+
+- `sim_registry_records`: `report_id_bytes32` (PK, `^0x[0-9a-f]{64}$`), `commitment`, `payload_hash`
+  (same check), `reporter`, `registered_at BIGINT` (unix seconds), `revision BIGINT >= 0`,
+  `status SMALLINT` 1 active · 2 disputed · 3 withdrawn, `updated_at`.
+- `sim_registry_txs`: `tx_hash` (PK, hex32), `block_number BIGINT GENERATED ALWAYS AS IDENTITY UNIQUE`,
+  `method` (`register|revise|dispute|withdraw`), `report_id_bytes32`, `sender`, `input` (calldata),
+  `created_at`. A trigger refuses every `UPDATE`/`DELETE` (append-only, like a chain).
+
+RLS on, no policies (system tables; the API connects as the owner), `anon`/`authenticated` revoked.
+Revises `c7a0note0001`.
+
 ## 8. Representative DDL
 
 ```sql

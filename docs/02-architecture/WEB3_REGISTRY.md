@@ -159,6 +159,25 @@ unlocked, which is what a local Hardhat node provides. Anchoring through the API
 therefore needs a signing node or proxy and is **not implemented**; the contract itself deploys to any
 EVM network with `packages/contracts` scripts. Production refuses to boot with `CHAIN_ID=31337`.
 
+### 7.1 Simulated registry (`CHAIN_MODE=simulated`)
+
+For a hosted demo without a funded testnet wallet. `services/sim_registry.py` answers the same
+JSON-RPC calls a node would (`eth_chainId`, `eth_getCode`, `eth_call`, `eth_sendTransaction`,
+`eth_getTransactionReceipt`), so anchoring and verification run unchanged code.
+
+| Property | Value |
+| --- | --- |
+| Rules | The contract's, exactly: register once, `revise` only by the reporter with a higher revision, anyone may `dispute`, only the reporter may `withdraw`; reverts surface as `502 ANCHOR_TX_FAILED` |
+| Commitment | Real `keccak256(abi.encode(reportId, payloadHash, salt, revision))` (pure-Python Keccak-f[1600]); unit tests pin it to values read from the deployed contract |
+| State | Postgres: `sim_registry_records` and append-only `sim_registry_txs` (DATABASE_DESIGN.md §7.8); survives restarts |
+| Identity | Chain id **0** (invalid on every EVM network), contract `0x7357…7357`, sender `0x5e4d…5e4d` |
+| Labelling | Every anchor and verification it produces has `simulated: true`; the web shows "simulated registry (not a public blockchain)" |
+| Gate | Excludes `CHAIN_RPC_URL`; in production only with `DEMO_MODE=true` |
+
+What it does **not** give: independence. Only this API can write to it, so it proves tamper evidence
+of the stored payload (a changed copy fails), not that TrustLens could not rewrite its own history.
+That property needs a public chain; the reproducible local chain (§10) shows the real contract.
+
 The RPC URL is operator configuration, like `LLM_BASE_URL`, not user input. It is not routed through
 `services/guard.py` (which would correctly refuse a localhost node); every call is bounded by
 `CHAIN_TIMEOUT_SECONDS` and the response size is capped.

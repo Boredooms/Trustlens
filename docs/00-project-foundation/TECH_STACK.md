@@ -234,7 +234,7 @@ protection inside cross-origin iframes, closed shadow roots, or native payment s
 
 | Aspect | Detail |
 | --- | --- |
-| Package | `trustlens-sdk` |
+| Package | `@boredooms/trustlens-sdk` |
 | Language | TypeScript 5, dual ESM+CJS, `.d.ts` shipped |
 | Build | `tsup` |
 | HTTP | Native `fetch` (Node 18+, browsers, Workers); no axios |

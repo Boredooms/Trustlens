@@ -34,6 +34,12 @@ SELECTORS: dict[str, str] = {
     "withdraw(bytes32)": "0x8e19899e",
 }
 STATUS = ("unknown", "active", "disputed", "withdrawn")
+# CHAIN_MODE=simulated (services/sim_registry.py). Fixed, recognisable, and not a real deployment:
+# chain id 0 is invalid on every EVM network, and these addresses hold no code anywhere.
+SIMULATED_CHAIN_ID = 0
+SIMULATED_RPC_URL = "http://simulated-registry.invalid/"
+SIMULATED_CONTRACT = "0x" + "7357" * 10
+SIMULATED_SENDER = "0x" + "5e4d" * 10
 MAX_RESPONSE_BYTES = 1_000_000
 _HEX32 = re.compile(r"^0x[0-9a-f]{64}$")
 
@@ -117,9 +123,15 @@ class ChainClient:
         if not settings.chain_configured:
             raise ChainUnavailable()
         self.settings = settings
-        self.url = str(settings.chain_rpc_url)
-        self.contract = str(settings.chain_registry_address).lower()
-        self.sender = (settings.chain_sender_address or "").lower()
+        if settings.chain_simulated:
+            # Never contacted over the network: the simulated registry transport answers it.
+            self.url = SIMULATED_RPC_URL
+            self.contract = SIMULATED_CONTRACT
+            self.sender = SIMULATED_SENDER
+        else:
+            self.url = str(settings.chain_rpc_url)
+            self.contract = str(settings.chain_registry_address).lower()
+            self.sender = (settings.chain_sender_address or "").lower()
         self._transport = transport
         self._id = 0
 
@@ -147,7 +159,7 @@ class ChainClient:
     async def check(self) -> None:
         """Right chain, and a contract at the configured address. Raises ChainUnavailable."""
         chain_id = int(await self._rpc("eth_chainId", []), 16)
-        if chain_id != self.settings.chain_id:
+        if chain_id != self.settings.effective_chain_id:
             raise ChainUnavailable()
         code = await self._rpc("eth_getCode", [self.contract, "latest"])
         if not code or code == "0x":

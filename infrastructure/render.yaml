@@ -52,6 +52,8 @@ services:
         sync: false
       - key: QSTASH_NEXT_SIGNING_KEY
         sync: false
+      - key: CHAIN_MODE            # simulated registry in Postgres (WEB3_REGISTRY.md §7.1); demo only
+        value: simulated
       - key: DEV_AUTH_ENABLED      # must stay false in production (startup refuses true)
         value: "false"
       - key: LLM_API_KEY           # optional: absent ⇒ labelled template narratives

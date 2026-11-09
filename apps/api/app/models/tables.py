@@ -18,6 +18,7 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Identity,
     Index,
     Integer,
     Numeric,
@@ -770,3 +771,51 @@ class Note(Base):
     blocks: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, nullable=False, server_default="[]")
     created_at: Mapped[datetime] = created_at()
     updated_at: Mapped[datetime] = updated_at()
+
+
+# ── Simulated report registry (WEB3_REGISTRY.md §7.1, DATABASE_DESIGN.md §7.8) ─────
+# State of ThreatReportRegistry when CHAIN_MODE=simulated. Same fields and rules as the contract;
+# commitments are real keccak256(abi.encode(...)). Holds hashes only — never report content.
+HEX32 = "'^0x[0-9a-f]{64}$'"
+
+
+class SimRegistryRecord(Base):
+    """Current record per report id, as the contract's ``_records`` mapping."""
+
+    __tablename__ = "sim_registry_records"
+    __table_args__ = (
+        CheckConstraint(f"report_id_bytes32 ~ {HEX32}", name="rid_hex"),
+        CheckConstraint(f"commitment ~ {HEX32}", name="commitment_hex"),
+        CheckConstraint(f"payload_hash ~ {HEX32}", name="payload_hash_hex"),
+        CheckConstraint("status BETWEEN 1 AND 3", name="status_range"),
+        CheckConstraint("revision >= 0", name="revision_nonneg"),
+    )
+    report_id_bytes32: Mapped[str] = mapped_column(Text, primary_key=True)
+    commitment: Mapped[str] = mapped_column(Text, nullable=False)
+    payload_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    reporter: Mapped[str] = mapped_column(Text, nullable=False)
+    registered_at: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    revision: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    status: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    updated_at: Mapped[datetime] = updated_at()
+
+
+class SimRegistryTx(Base):
+    """Append-only transaction log; ``block_number`` is a database identity (one tx per block)."""
+
+    __tablename__ = "sim_registry_txs"
+    __table_args__ = (
+        CheckConstraint(f"tx_hash ~ {HEX32}", name="tx_hash_hex"),
+        CheckConstraint(
+            in_check("method", ("register", "revise", "dispute", "withdraw")), name="method"
+        ),
+    )
+    tx_hash: Mapped[str] = mapped_column(Text, primary_key=True)
+    block_number: Mapped[int] = mapped_column(
+        BigInteger, Identity(always=True), unique=True, nullable=False
+    )
+    method: Mapped[str] = mapped_column(Text, nullable=False)
+    report_id_bytes32: Mapped[str] = mapped_column(Text, nullable=False)
+    sender: Mapped[str] = mapped_column(Text, nullable=False)
+    input: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = created_at()

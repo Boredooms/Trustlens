@@ -38,7 +38,7 @@ Full product: [`../00-project-foundation/PROJECT_OVERVIEW.md`](../00-project-fou
 | API (FastAPI) | 55 OpenAPI paths (+ `/internal/jobs/*`, `/webhooks/clerk` excluded from OpenAPI). **300 tests pass** incl. DB-backed integration tests; ruff + mypy strict clean |
 | Web (React/Vite) | All screens incl. org governance, appeals, audit log, usage, certificates, settings (delete account, Clerk profile, demo controls). **66 tests**; builds |
 | Extension (MV3) | Overlay + popup + pairing + appeal link. **54 tests**; builds to `apps/extension/dist` |
-| SDK | `trustlens-sdk`, **20 tests** |
+| SDK | `@boredooms/trustlens-sdk`, **20 tests** |
 | Demo sites | Inert lookalike pages on :8081, **15 tests** |
 | Database | Alembic head `c2a0plat0001` (chain `b019d0cc250d` → `c1a0gov00001` → `c2a0plat0001`). The previous owner's Supabase project is migrated to head |
 | End-to-end | `demo_check` **26/26** and `platform_check` **42/42** passed against hosted Supabase on 2026-11-08 |
@@ -68,7 +68,7 @@ apps/api            FastAPI backend — the ONLY verdict producer
 apps/web            React + Vite + Tailwind SPA (public site + dashboard)
 apps/extension      Chrome MV3 extension (esbuild)
 apps/demo-sites     Node server for inert demo pages (path mode: /site/<host>/...)
-packages/sdk        trustlens-sdk
+packages/sdk        @boredooms/trustlens-sdk
 packages/shared-types  generated from apps/api/openapi.json (`pnpm gen:types`)
 infrastructure/     render.yaml
 docs/               the specification (source of truth) + this handover folder

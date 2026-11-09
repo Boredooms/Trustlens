@@ -28,7 +28,7 @@ from app.errors import DomainError, ValidationFailed
 from app.models.tables import ReportAnchor, Scan, ScanFinding, ThreatReport
 from app.schemas.enums import ErrorCode
 from app.services import guard
-from app.services.chain import ChainClient, ChainUnavailable
+from app.services.chain import SIMULATED_CHAIN_ID, ChainClient, ChainUnavailable
 from app.services.serialise import ts
 from app.utils import new_ulid, utcnow
 
@@ -226,7 +226,7 @@ async def anchor_report(
         tx = await client.register(rid, commitment, ph, revision)
 
     anchor = existing or ReportAnchor(id=new_ulid(), report_id=report.id, created_by=user_id)
-    anchor.chain_id = settings.chain_id
+    anchor.chain_id = settings.effective_chain_id
     anchor.contract = client.contract
     anchor.report_id_bytes32 = rid
     anchor.payload = payload
@@ -257,7 +257,9 @@ def anchor_view(anchor: ReportAnchor | None, report_id: str) -> dict[str, Any]:
         "tx_hash": anchor.tx_hash,
         "block_number": anchor.block_number,
         "anchored_at": ts(anchor.anchored_at),
-        "simulated": bool(anchor.payload.get("simulated", False)),
+        # Simulated demo data, or anchored on the simulated registry (chain id 0): never "on chain".
+        "simulated": bool(anchor.payload.get("simulated", False))
+        or anchor.chain_id == SIMULATED_CHAIN_ID,
     }
 
 

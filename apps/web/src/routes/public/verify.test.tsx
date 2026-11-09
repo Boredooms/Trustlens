@@ -126,3 +126,15 @@ describe("report detail on-chain proof panel", () => {
     expect(screen.getByText("Asked for fees to a personal UPI handle.")).toBeInTheDocument();
   });
 });
+
+describe("chain labelling", () => {
+  it("never presents the simulated registry as a public blockchain", async () => {
+    const { chainLabel, simulatedNote } = await import("@/components/domain/OnChainProof");
+    expect(chainLabel(0)).toContain("simulated registry");
+    expect(chainLabel(0)).toContain("not a public blockchain");
+    expect(simulatedNote(0)).toMatch(/not a public blockchain/);
+    expect(chainLabel(31337)).toContain("local development chain");
+    expect(chainLabel(11155111)).toBe("11155111");
+    expect(chainLabel(null)).toBe("—");
+  });
+});

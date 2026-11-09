@@ -1,5 +1,5 @@
 {
-  "name": "trustlens-sdk",
+  "name": "@boredooms/trustlens-sdk",
   "version": "0.1.0",
   "description": "TypeScript client for the TrustLens API. ALLOW means no known threat within executed checks — never a guarantee.",
   "license": "MIT",

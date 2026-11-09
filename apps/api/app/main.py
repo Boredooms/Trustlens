@@ -86,6 +86,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
             "redis_configured": settings.upstash_redis_rest_url is not None,
             "qstash_signing_configured": settings.qstash_current_signing_key is not None,
             "chain_configured": settings.chain_configured,
+            "chain_mode": settings.chain_mode,
         },
     )
     try:
@@ -145,6 +146,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.runtime = RuntimeState()
     app.state.engine = create_engine(settings.database_url, settings.db_connect_timeout_seconds)
     app.state.session_factory = create_session_factory(app.state.engine)
+    if settings.chain_simulated:
+        # CHAIN_MODE=simulated: the same ChainClient, answered by the in-API registry (Postgres).
+        from app.services.chain import ChainClient
+        from app.services.sim_registry import SimulatedRegistryTransport
+
+        sim = SimulatedRegistryTransport(app.state.session_factory)
+        app.state.chain_client_factory = lambda s: ChainClient(s, transport=sim)
     token = settings.upstash_redis_rest_token
     app.state.rate_limiter = RateLimiter(  # shared Upstash counters when configured (§10)
         settings.upstash_redis_rest_url, token.get_secret_value() if token else None

@@ -1,7 +1,7 @@
 # SDK_SPECIFICATION
 
 > **Status:** DECIDED · **Group:** 06-sdk · **Version:** 1.0 · **Last updated:** 2026-11-07
-> **Source of truth for:** `trustlens-sdk` public surface, types, errors, retries, versioning.
+> **Source of truth for:** `@boredooms/trustlens-sdk` public surface, types, errors, retries, versioning.
 > **Related:** [`SDK_INTEGRATION_GUIDE.md`](SDK_INTEGRATION_GUIDE.md) · [`../03-backend/API_ENDPOINTS.md`](../03-backend/API_ENDPOINTS.md)
 
 ---
@@ -10,7 +10,7 @@
 
 | Property | Value |
 | --- | --- |
-| Name | `trustlens-sdk` |
+| Name | `@boredooms/trustlens-sdk` |
 | Language | TypeScript 5, compiled to ESM + CJS + `.d.ts` |
 | Runtime | Node ≥ 18, modern browsers, Cloudflare Workers, Deno, Bun |
 | Transport | global `fetch` (no axios) |
@@ -23,7 +23,7 @@
 ## 2. Construction
 
 ```ts
-import { TrustLens } from "trustlens-sdk";
+import { TrustLens } from "@boredooms/trustlens-sdk";
 
 const tl = new TrustLens({
   apiKey: process.env.TRUSTLENS_API_KEY!,   // tl_live_...
@@ -210,7 +210,7 @@ log it.
 Optional, opt-in:
 
 ```ts
-import { requiresConfirmation, shouldBlock } from "trustlens-sdk";
+import { requiresConfirmation, shouldBlock } from "@boredooms/trustlens-sdk";
 
 if (shouldBlock(result)) return refuse();          // decision === "BLOCK"
 if (requiresConfirmation(result)) return confirm(); // "WARN"

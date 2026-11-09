@@ -243,7 +243,7 @@ one-click pairing on the live dashboard, and Pay / Sign-in held and blocked on a
 ### SDK
 
 ```bash
-npm install trustlens-sdk      # publish pending: the npm account needs a 2FA one-time code
+npm install @boredooms/trustlens-sdk   # first publish: `npm login` then `npm publish` in packages/sdk
 ```
 ## Repository layout
 
@@ -253,7 +253,7 @@ apps/web            React + Vite dashboard and public pages (/verify/:reportId)
 apps/extension      Chrome MV3 extension
 apps/demo-sites     Inert genuine + lookalike fixtures (local server and Vercel build)
 packages/contracts  ThreatReportRegistry (Solidity 0.8.24, Hardhat)
-packages/sdk        trustlens-sdk
+packages/sdk        @boredooms/trustlens-sdk
 packages/shared-types  generated from apps/api/openapi.json
 docs/               specification, evidence, handover
 releases/           packaged extension
@@ -266,7 +266,7 @@ releases/           packaged extension
 - The Northstar organisation profile is a demo profile; lookalike detection on `*.vercel.app` hosts relies on brand tokens and the registered payee.
 - Revocation is best-effort (OCSP, CRL fallback); a timeout is `unavailable`, never "good".
 - Header posture is one unauthenticated response; it is reported, never scored.
-- The SDK (`trustlens-sdk`) is ready to publish but not on npm yet: the publish needs the account's 2FA one-time code.
+- The SDK (`@boredooms/trustlens-sdk`) is ready to publish but not on npm yet; the first publish is interactive (`npm login` with the security key, then `npm publish`).
 
 ## License
 
