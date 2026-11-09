@@ -19,7 +19,9 @@ pairing takes one click, and the device token never reaches the page.
 - Dashboard: scan reports, message analysis, certificate posture, campaigns and entity graph, reports
   with integrity anchors, analyst notes (block editor), scan assistant, developer keys.
 - API (FastAPI) with `/health`, `/ready`, `/api/v1/health`; Render Docker service; Supabase Postgres.
-- Extension: checks every page; holds Pay and Sign-in until the server decides; explains a block.
+- Extension v0.5.0: checks every page; **page guard** covers a login or payment page on load until the
+  server decides and keeps a blocked page covered (two clicks to override); stops links to hosts flagged
+  in the last 10 minutes; holds Pay and Sign-in until the server decides; explains every block.
 - SDK: `@boredooms/trustlens-sdk` (TypeScript, ESM + CJS).
 - Web3: `ThreatReportRegistry` (Solidity 0.8.24) with a reproducible local chain, plus
   `CHAIN_MODE=simulated` for hosted demos. That mode applies the contract's rules with real keccak256
@@ -28,6 +30,8 @@ pairing takes one click, and the device token never reaches the page.
 ## Verified
 
 - API 431 tests; web 20 test files; extension, SDK, contracts, demo-sites suites; CI green on `main`.
+- Page guard against production in real Chromium: lookalike `/pay` covered within 2 s with no click and
+  kept blocked; link to it stopped; genuine pay page released (13/13).
 - Production E2E in real Chromium: Clerk sign-in → `/app`, live scan, notes autosave (7/7). Extension
   paired on the live dashboard; Pay and Sign-in blocked on the live lookalikes (10/10).
 - Simulated registry against the hosted database: three reports anchored, publicly verified valid, a

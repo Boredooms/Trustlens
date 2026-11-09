@@ -51,19 +51,28 @@ function coverageText(percent: number | null): string {
   return percent === null ? COPY.coverageMissing : fill(COPY.coverageLine, { n: percent });
 }
 
+/**
+ * `stage` — "action": a submit/click is held (the original flow). "page": the page guard holds the
+ * whole page before it can be used (§5.5); `intent` may then be "browse" (page-load verdict).
+ */
+export type GuardIntent = ActionIntent | "browse";
+
 export function buildOverlayModel(
   result: CheckResult,
-  intent: ActionIntent,
+  intent: GuardIntent,
   now: number = Date.now(),
   pageHost: string | null = null,
+  stage: "action" | "page" = "action",
 ): OverlayModel {
+  const page = stage === "page" || intent === "browse";
+  const notCheckedBody = intent === "browse" ? COPY.page.notChecked : COPY.couldNotVerifyBody[intent];
   if (result.kind === "failure") {
     return {
       mode: "unknown",
       tone: "UNKNOWN",
       label: DECISION_COPY.UNKNOWN.label,
       title: COPY.couldNotVerify,
-      body: `${failureText(result.failure.code, result.failure.retryAfter)} ${COPY.couldNotVerifyBody[intent]}`,
+      body: `${failureText(result.failure.code, result.failure.retryAfter)} ${notCheckedBody}`,
       mismatch: null,
       reasons: [],
       coverageLine: COPY.coverageMissing,
@@ -95,8 +104,15 @@ export function buildOverlayModel(
   }
 
   const titles: Record<OverlayMode, string> = {
-    block: COPY.stopped[intent],
-    confirm: a.decision === "REVIEW" ? COPY.review[intent] : COPY.suspicious[intent],
+    block: page ? COPY.page.stopped[intent] : COPY.stopped[intent as ActionIntent],
+    confirm:
+      a.decision === "REVIEW"
+        ? page
+          ? COPY.page.review[intent]
+          : COPY.review[intent as ActionIntent]
+        : page
+          ? COPY.page.suspicious[intent]
+          : COPY.suspicious[intent as ActionIntent],
     unknown: COPY.couldNotVerify,
     proceed: DECISION_COPY.ALLOW.label,
   };
@@ -108,7 +124,7 @@ export function buildOverlayModel(
     tone: a.decision,
     label: DECISION_COPY[a.decision].label,
     title: titles[mode],
-    body: mode === "unknown" ? COPY.couldNotVerifyBody[intent] : null,
+    body: mode === "unknown" ? notCheckedBody : null,
     mismatch,
     reasons: topReasons(a),
     coverageLine: coverageText(percent),
@@ -122,5 +138,32 @@ export function buildOverlayModel(
     secondaryConfirmLabel: mode === "block" ? COPY.proceedConfirm : null,
     toast:
       mode !== "proceed" ? null : percent === null ? COPY.allowToastNoCoverage : fill(COPY.allowToast, { n: percent }),
+  };
+}
+
+/**
+ * Link pre-check (§5.5): a link to a host the server flagged BLOCK/WARN in the last 10 minutes.
+ * The decision is the cached server answer for that host; nothing here re-scores anything.
+ */
+export function buildLinkModel(decision: "BLOCK" | "WARN", host: string): OverlayModel {
+  const block = decision === "BLOCK";
+  return {
+    mode: block ? "block" : "confirm",
+    tone: decision,
+    label: DECISION_COPY[decision].label,
+    title: COPY.page.linkStopped,
+    body: fill(COPY.page.linkBody, { host }),
+    mismatch: null,
+    reasons: [],
+    coverageLine: "",
+    decidedLine: null,
+    fullReportUrl: null,
+    appealUrl: isAppealable(decision) ? appealUrl(host) : null,
+    scanId: null,
+    observedPayee: null,
+    primaryLabel: COPY.goBack,
+    secondaryLabel: block ? COPY.proceedAnyway : COPY.continue,
+    secondaryConfirmLabel: block ? COPY.proceedConfirm : null,
+    toast: null,
   };
 }

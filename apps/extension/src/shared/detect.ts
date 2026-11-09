@@ -159,6 +159,28 @@ export function detectFormAction(form: HTMLFormElement, submitter?: Element | nu
   return { intent, destination, payee: intent === "payment" ? findPayee(submitter ?? form) : null };
 }
 
+/**
+ * Page guard (BROWSER_PROTECTION_LOGIC.md §5.5): the page's own sensitive action, found before the
+ * user does anything. A payment beats a login (it carries the payee the server compares). Metadata
+ * only, exactly as for submits: form actions, password-field presence, displayed payee.
+ */
+export function detectPageAction(doc: Document): DetectedAction | null {
+  let login: DetectedAction | null = null;
+  for (const form of Array.from(doc.forms)) {
+    if (isHidden(form)) continue;
+    const a = detectFormAction(form, null);
+    if (a?.intent === "payment") return a;
+    if (a && !login) login = a;
+  }
+  if (login) return login;
+  for (const el of Array.from(doc.querySelectorAll(CLICKABLE))) {
+    if (isHidden(el)) continue;
+    const hit = detectClickAction(el);
+    if (hit) return hit.action;
+  }
+  return null;
+}
+
 function sameOrigin(a: string, b: string): boolean {
   try {
     return new URL(a).origin === new URL(b).origin;

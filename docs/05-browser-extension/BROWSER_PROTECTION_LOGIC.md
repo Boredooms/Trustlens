@@ -150,11 +150,38 @@ Requirements:
 - Shows coverage and scan age in a footer line.
 - Names the mismatch in ≤ 15 words.
 
-### 5.4 Non-blocking warning
+### 5.4 Non-blocking warning (superseded by §5.5 for page-level verdicts)
 
-For `WARN`: a top-right banner, 44 px tall, one line + "Details", dismissible for the session per
-domain. Dismissal is remembered in `chrome.storage.session` (not persisted across restarts) so a user
-is not nagged, but a new session starts protected.
+Originally: for `WARN`, a top-right banner, 44 px tall, one line + "Details", dismissible for the
+session per domain. Since v0.5.0 a page-level `WARN` is a covering interstitial (§5.5); the banner
+component remains for future non-blocking notices.
+
+### 5.5 Page guard (v0.5.0)
+
+The content script runs at `document_start`. Three cases hold a page **before it can be used**; all
+use an opaque, blurred shield in the closed shadow root, take focus, and trap Tab.
+
+| Trigger | What happens | Override |
+| --- | --- | --- |
+| The page contains a login form or a payment (same detection as §5.1, metadata only) | Covered as soon as the DOM exists ("Checking this payment/sign-in page before you use it…"); the server is asked with the page's own `intent`, `form_action` and displayed `payee`. `BLOCK`/`WARN`/`REVIEW` keep it covered; `ALLOW` releases it with the coverage toast | `BLOCK`: two clicks · `WARN`/`REVIEW`: one |
+| The page's own browse verdict is `BLOCK` or `WARN` (a fresh cached verdict answers before paint) | Covering interstitial; skipped if the page guard already decided (the action-level answer is more specific) | same |
+| A click on a link to a host the server answered `BLOCK`/`WARN` for in the last 10 minutes | Navigation is stopped; "TrustLens stopped this link" names the destination host | same, then navigates as the link would have |
+
+Rules:
+
+- The decision is always the server's. The guard enforces it; it never scores.
+- **Fail open with disclosure (§6)**: a failed or timed-out check releases the page with "could not
+  check this page" (never a pass); the submit is still checked at §5.2.
+- Overrides are per host for the browser session, kept in `chrome.storage.session` by the service
+  worker (`SET_PAGE_OVERRIDE` is accepted only for the sender's own host). Flagged hosts for the link
+  pre-check live there too. A page cannot read or seed either.
+- An action released at the guard is not asked about again on submit (same intent, destination and
+  payee). Action results are cached for 10 minutes under the full request identity, so the submit
+  reuses the guard's answer instead of a second wait.
+- "Go back" returns to the previous page; with no history the page stays covered.
+- A login/payment form rendered by script up to 8 s after load is still guarded.
+- Cost: a first visit to a login or payment page is held for the server round trip (≈ 10–30 s on a
+  cold scan; immediate on a repeat within 10 minutes).
 
 ---
 
@@ -181,10 +208,10 @@ Overriding a `BLOCK` is always possible with two clicks, and the override is cou
 
 | Decision | Icon | Banner | Overlay | Popup headline |
 | --- | --- | --- | --- | --- |
-| `BLOCK` | red | no | on action | "Blocked: {top reason}" |
-| `WARN` | amber | yes | confirm on action | "Suspicious: {top reason}" |
+| `BLOCK` | red | no | page covered (§5.5) + on action; links to the host stopped | "Blocked: {top reason}" |
+| `WARN` | amber | no (page interstitial, §5.5) | page covered, one click to continue; links stopped | "Suspicious: {top reason}" |
 | `ALLOW` | neutral | no | no | "No known threat ({coverage}% checked)" |
-| `REVIEW` | grey | no | confirm on action | "Needs review: not enough evidence" |
+| `REVIEW` | grey | no | guarded login/payment page covered + confirm on action | "Needs review: not enough evidence" |
 | `UNKNOWN` | grey | no | no | "Not verified: {reason}" |
 
 The word "Safe" must not appear anywhere in the extension bundle. CI greps for it.

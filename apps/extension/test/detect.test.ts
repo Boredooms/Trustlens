@@ -132,3 +132,26 @@ describe("payee extraction", () => {
     expect(detectFormAction(f)?.payee).toBe("real@okicici");
   });
 });
+
+describe("detectPageAction (page guard, §5.5)", () => {
+  it("finds the payment on a lookalike page (payment beats login), with its payee and form action", async () => {
+    const { detectPageAction } = await import("../src/shared/detect");
+    document.body.innerHTML = LOOKALIKE;
+    const a = detectPageAction(document);
+    expect(a).toEqual({ intent: "payment", destination: "https://collect.badhost.example/pay", payee: "fees@okaxis" });
+  });
+
+  it("finds a login when there is no payment, and nothing on an ordinary page", async () => {
+    const { detectPageAction } = await import("../src/shared/detect");
+    document.body.innerHTML = `<form action="https://collect.badhost.example/login"><input type="password"><button>Sign in</button></form>`;
+    expect(detectPageAction(document)?.intent).toBe("login");
+    document.body.innerHTML = `<form action="/search"><input type="search" name="q"><button>Search</button></form><a href="/about">About</a>`;
+    expect(detectPageAction(document)).toBeNull();
+  });
+
+  it("ignores hidden forms", async () => {
+    const { detectPageAction } = await import("../src/shared/detect");
+    document.body.innerHTML = `<div hidden><form action="https://x.example/login"><input type="password"></form></div>`;
+    expect(detectPageAction(document)).toBeNull();
+  });
+});

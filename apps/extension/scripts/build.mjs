@@ -154,7 +154,7 @@ const manifest = {
   action: { default_popup: "popup.html", default_title: "TrustLens", default_icon: icons },
   options_page: "options.html",
   content_scripts: [
-    { matches: ALL_PAGES, exclude_matches: ownPages, js: ["content.js"], run_at: "document_idle", all_frames: false },
+    { matches: ALL_PAGES, exclude_matches: ownPages, js: ["content.js"], run_at: "document_start", all_frames: false },
     { matches: [`${WEB_BASE_URL}/*`], js: ["bridge.js"], run_at: "document_start", all_frames: false },
   ],
   content_security_policy: { extension_pages: "script-src 'self'; object-src 'self'" },

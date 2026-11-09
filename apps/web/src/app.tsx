@@ -33,6 +33,15 @@ const Verify = lazy(() => import("@/routes/public/Verify").then((m) => ({ defaul
 const HowItWorks = lazy(() => import("@/routes/public/InfoPages").then((m) => ({ default: m.HowItWorks })));
 const PublicDevelopers = lazy(() => import("@/routes/public/InfoPages").then((m) => ({ default: m.PublicDevelopers })));
 const SecurityPage = lazy(() => import("@/routes/public/InfoPages").then((m) => ({ default: m.SecurityPage })));
+const FeaturesPage = lazy(() =>
+  import("@/routes/public/MarketingPages").then((m) => ({ default: m.FeaturesPage })),
+);
+const MethodPage = lazy(() =>
+  import("@/routes/public/MarketingPages").then((m) => ({ default: m.MethodPage })),
+);
+const DemoPage = lazy(() => import("@/routes/public/MarketingPages").then((m) => ({ default: m.DemoPage })));
+const DocsPage = lazy(() => import("@/routes/public/MarketingPages").then((m) => ({ default: m.DocsPage })));
+const AboutPage = lazy(() => import("@/routes/public/MarketingPages").then((m) => ({ default: m.AboutPage })));
 
 /** Emailed invitation links (`/invites/:token`) hand off to the authenticated accept route. */
 function InviteRedirect() {
@@ -47,6 +56,11 @@ export const routes: RouteObject[] = [
     errorElement: <RouteError />,
     children: [
       { index: true, element: <Landing /> },
+      { path: "features", element: <FeaturesPage /> },
+      { path: "method", element: <MethodPage /> },
+      { path: "demo", element: <DemoPage /> },
+      { path: "docs", element: <DocsPage /> },
+      { path: "about", element: <AboutPage /> },
       { path: "login", element: <Login /> },
       { path: "register", element: <Register /> },
       { path: "how-it-works", element: <HowItWorks /> },

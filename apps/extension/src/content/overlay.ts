@@ -42,6 +42,7 @@ ${tokensCss(":host")}
 :host{all:initial;position:fixed;inset:0;z-index:${Z_TOP};pointer-events:none;font-family:var(--font-sans);color:var(--foreground);}
 *{box-sizing:border-box;margin:0;padding:0;font:inherit;color:inherit;}
 .scrim{position:fixed;inset:0;pointer-events:auto;display:flex;align-items:center;justify-content:center;padding:16px;background:color-mix(in srgb, var(--foreground) 45%, transparent);}
+.scrim.guard{background:color-mix(in srgb, var(--surface) 97%, transparent);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);}
 .panel{width:100%;max-width:440px;max-height:90vh;overflow:auto;background:var(--surface);color:var(--foreground);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-modal);font-size:14px;line-height:1.55;}
 .head{display:flex;align-items:center;gap:8px;padding:12px 20px;border-bottom:1px solid var(--border);font-size:12px;font-weight:500;letter-spacing:.02em;}
 .head .brand{color:var(--muted-strong);}
@@ -127,11 +128,18 @@ function header(tone: Decision, label: string): HTMLElement {
   return head;
 }
 
+export interface HoldOptions {
+  /** Page guard: hide the page behind an opaque shield instead of dimming it. */
+  guard?: boolean;
+  title?: string;
+  note?: string;
+}
+
 /** Holds the action while the server is asked. Focus moves here because the action is held. */
-export function showChecking(intent: "login" | "payment", onCancel: () => void): () => void {
+export function showChecking(intent: "login" | "payment", onCancel: () => void, opts: HoldOptions = {}): () => void {
   const r = ensureRoot();
   clear(".scrim");
-  const scrim = el("div", "scrim");
+  const scrim = el("div", opts.guard ? "scrim guard" : "scrim");
   const panel = el("div", "panel");
   panel.setAttribute("role", "dialog");
   panel.setAttribute("aria-modal", "true");
@@ -140,10 +148,11 @@ export function showChecking(intent: "login" | "payment", onCancel: () => void):
   const body = el("div", "body");
   const row = el("div", "actions");
   row.appendChild(el("span", "spin"));
-  const h = el("h2", undefined, COPY.checking[intent]);
+  const h = el("h2", undefined, opts.title ?? COPY.checking[intent]);
   h.id = "tl-title";
   row.appendChild(h);
   body.appendChild(row);
+  if (opts.note) body.appendChild(el("p", "note", opts.note));
   const cancel = el("button", "secondary", COPY.goBack);
   cancel.type = "button";
   cancel.addEventListener("click", onCancel);
@@ -164,13 +173,17 @@ export interface DecisionHandlers {
  * Show a holding overlay for block/confirm/unknown modes. Resolves "proceed" or "back".
  * BLOCK needs two clicks to proceed ("Proceed anyway" → "I understand the risk — proceed").
  */
-export function showDecision(model: OverlayModel, handlers: DecisionHandlers): Promise<"proceed" | "back"> {
+export function showDecision(
+  model: OverlayModel,
+  handlers: DecisionHandlers,
+  opts: Pick<HoldOptions, "guard"> = {},
+): Promise<"proceed" | "back"> {
   const r = ensureRoot();
   clear(".scrim");
   const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
   return new Promise((resolve) => {
-    const scrim = el("div", "scrim");
+    const scrim = el("div", opts.guard ? "scrim guard" : "scrim");
     const panel = el("div", "panel");
     panel.setAttribute("role", model.mode === "block" ? "alertdialog" : "dialog");
     panel.setAttribute("aria-modal", "true");
@@ -340,4 +353,24 @@ export function showWarnBanner(text: string, reasons: string[], onDismiss: () =>
   });
   b.appendChild(dismiss);
   r.appendChild(b);
+}
+
+/** Page guard, after "Go back" when there is no history: the page stays covered. */
+export function showLeft(text: string): void {
+  const r = ensureRoot();
+  clear(".scrim");
+  const scrim = el("div", "scrim guard");
+  const panel = el("div", "panel");
+  panel.setAttribute("role", "status");
+  panel.appendChild(header("BLOCK", COPY.product));
+  const body = el("div", "body");
+  body.appendChild(el("p", undefined, text));
+  panel.appendChild(body);
+  scrim.appendChild(panel);
+  r.appendChild(scrim);
+}
+
+/** Remove any page-guard shield (used when the check lets the page through). */
+export function clearGuard(): void {
+  clear(".scrim");
 }

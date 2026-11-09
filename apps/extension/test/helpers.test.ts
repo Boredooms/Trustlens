@@ -261,3 +261,57 @@ describe("idempotency key", () => {
     expect(await assessIdempotencyKey({ ...body, payee: "x@y" }, t)).not.toBe(k1);
   });
 });
+
+describe("page guard models (§5.5)", () => {
+  const assessed = (decision: "BLOCK" | "WARN" | "REVIEW" | "ALLOW"): CheckResult => ({
+    kind: "assessment",
+    assessment: parseAssessment({
+      decision,
+      risk_level: "HIGH",
+      risk_score: 50,
+      coverage: { percent: 65, collected: [], unavailable: [], skipped: [] },
+      reasons: ["The page claims to be Northstar University but x.example is not one of its verified domains."],
+      identity_verified: false,
+      findings: [],
+      scan_id: "01M70B0DHPX4YRZZFKR6YD29V3",
+      cached: false,
+      decided_at: new Date().toISOString(),
+    })!,
+    checkedAt: Date.now(),
+  });
+
+  it("titles a held page as a page, not as an action", async () => {
+    const { buildOverlayModel: build } = await import("../src/shared/overlay-model");
+    expect(build(assessed("BLOCK"), "payment", Date.now(), "x.example", "page").title).toBe(COPY.page.stopped.payment);
+    expect(build(assessed("BLOCK"), "browse", Date.now(), "x.example", "page").title).toBe(COPY.page.stopped.browse);
+    expect(build(assessed("WARN"), "browse", Date.now(), "x.example", "page").title).toBe(COPY.page.suspicious.browse);
+    expect(build(assessed("REVIEW"), "login", Date.now(), "x.example", "page").title).toBe(COPY.page.review.login);
+    // The action stage is unchanged.
+    expect(build(assessed("BLOCK"), "payment").title).toBe(COPY.stopped.payment);
+  });
+
+  it("BLOCK needs a confirmation click; WARN does not; ALLOW lets the page through", async () => {
+    const { buildOverlayModel: build } = await import("../src/shared/overlay-model");
+    expect(build(assessed("BLOCK"), "browse", Date.now(), null, "page").secondaryConfirmLabel).toBe(COPY.proceedConfirm);
+    expect(build(assessed("WARN"), "browse", Date.now(), null, "page").secondaryConfirmLabel).toBeNull();
+    expect(build(assessed("ALLOW"), "browse", Date.now(), null, "page").mode).toBe("proceed");
+  });
+
+  it("a failed check is never a pass", async () => {
+    const { buildOverlayModel: build } = await import("../src/shared/overlay-model");
+    const m = build({ kind: "failure", failure: { code: "TIMEOUT" }, checkedAt: Date.now() }, "browse", Date.now(), null, "page");
+    expect(m.mode).toBe("unknown");
+    expect(m.body).toContain(COPY.page.notChecked);
+  });
+
+  it("link model: names the destination, BLOCK needs two clicks", async () => {
+    const { buildLinkModel } = await import("../src/shared/overlay-model");
+    const b = buildLinkModel("BLOCK", "trustlens-demo-admissions.vercel.app");
+    expect(b.mode).toBe("block");
+    expect(b.title).toBe(COPY.page.linkStopped);
+    expect(b.body).toContain("trustlens-demo-admissions.vercel.app");
+    expect(b.secondaryConfirmLabel).toBe(COPY.proceedConfirm);
+    expect(buildLinkModel("WARN", "x.example").mode).toBe("confirm");
+    expect(buildLinkModel("WARN", "x.example").secondaryConfirmLabel).toBeNull();
+  });
+});

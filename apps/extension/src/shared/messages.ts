@@ -31,6 +31,11 @@ export type Msg =
   | { type: "RECORD_OVERRIDE"; taken: boolean }
   | { type: "DISMISS_WARN"; host: string }
   | { type: "IS_WARN_DISMISSED"; host: string }
+  /** Page guard: hosts the server flagged BLOCK/WARN in the last 10 min (link pre-check). No network. */
+  | { type: "FLAGGED_HOSTS" }
+  /** Page guard: the user proceeded past a page-level BLOCK/WARN for this host (session only). */
+  | { type: "SET_PAGE_OVERRIDE"; host: string; decision: "BLOCK" | "WARN" }
+  | { type: "GET_PAGE_OVERRIDE"; host: string }
   /** Popup: the saved result and/or an in-flight check for this URL, without starting a request. */
   | { type: "PEEK_STATUS"; url: string }
   /** Popup: the page URL this tab's content script last reported (when the tab URL is not visible). */
@@ -74,6 +79,9 @@ export interface ResponseMap {
   RECORD_OVERRIDE: null;
   DISMISS_WARN: null;
   IS_WARN_DISMISSED: boolean;
+  FLAGGED_HOSTS: Record<string, "BLOCK" | "WARN">;
+  SET_PAGE_OVERRIDE: null;
+  GET_PAGE_OVERRIDE: "BLOCK" | "WARN" | null;
   PEEK_STATUS: PeekResult;
   TAB_URL: string | null;
   BRIDGE_HELLO: BridgeHello;

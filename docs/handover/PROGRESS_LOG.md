@@ -193,3 +193,13 @@ Render and Vercel access), production Clerk instance, Chrome Web Store packaging
 - Production E2E: dashboard 7/7 (Clerk → /app, live scan, notes PUT); extension against production 10/10 (BLOCK on live lookalikes).
 - SDK renamed `@boredooms/trustlens-sdk` (MIT, public metadata, default base URL = Render API); publish blocked by npm 2FA (EOTP).
 - Web3: live `/verify` returns `CHAIN_UNAVAILABLE` (no chain on Render; 31337 refused in production by design). Testnet needs a decision.
+## 11. Extension page guard v0.5.0, landing page, release (2026-11-10)
+- Extension: content script at `document_start`; login/payment pages are covered on load while the
+  server checks the page's own form destination and payee; page-level BLOCK/WARN is a covering
+  interstitial (BLOCK two clicks); links to hosts flagged in the last 10 min are stopped; overrides
+  and flags in `chrome.storage.session` only; action answers cached 10 min (no double wait).
+  BROWSER_PROTECTION_LOGIC.md §5.5 + §7 updated. Tests: 6 files incl. guard integration; production
+  E2E 13/13 (live lookalike covered within 2 s without a click; link stopped; genuine page released).
+- Landing (other editor): Serene hero, marketing pages, banner scoped to the dashboard. Hero film
+  re-encoded 4K 13.7 MB → 1080p 1.2 MB. Unused OriginKit hero-19 (three.js, Tailwind v4 CSS, ~10 MB
+  PNGs) and the unused gsap/three dependencies were left out of the commit (still on disk).

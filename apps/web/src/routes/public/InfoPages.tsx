@@ -7,10 +7,11 @@ function Page({ title, lead, children }: { title: string; lead: string; children
     document.title = `${title} · TrustLens`;
   }, [title]);
   return (
-    <article className="mx-auto flex max-w-3xl flex-col gap-10 px-4 py-16 md:px-6">
-      <header>
-        <h1 className="text-3xl font-medium tracking-tight">{title}</h1>
-        <p className="mt-3 text-muted-strong">{lead}</p>
+    <article className="mx-auto flex max-w-3xl flex-col gap-10 px-4 pb-20 pt-28 sm:px-6 md:pt-32">
+      <header className="rounded-xl border border-border mesh-panel px-6 py-8">
+        <p className="label-eyebrow">TrustLens</p>
+        <h1 className="mt-3 font-display text-3xl tracking-tight md:text-4xl">{title}</h1>
+        <p className="mt-3 max-w-reading text-base text-muted-strong">{lead}</p>
       </header>
       {children}
     </article>
@@ -19,8 +20,8 @@ function Page({ title, lead, children }: { title: string; lead: string; children
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="flex flex-col gap-3 text-sm leading-6">
-      <h2 className="text-lg font-medium">{title}</h2>
+    <section className="flex flex-col gap-3 border-t border-border pt-8 text-sm leading-6">
+      <h2 className="text-lg">{title}</h2>
       {children}
     </section>
   );
@@ -28,7 +29,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 function Code({ children }: { children: string }) {
   return (
-    <pre className="overflow-x-auto rounded-md border border-border bg-surface-secondary p-4 font-mono text-xs leading-5">
+    <pre className="overflow-x-auto rounded-lg border border-border bg-surface p-4 font-mono text-xs leading-6 shadow-card">
       <code>{children}</code>
     </pre>
   );

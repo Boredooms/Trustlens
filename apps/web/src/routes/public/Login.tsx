@@ -21,7 +21,7 @@ export function Register() {
   if (status === "signed_in") return <Navigate to={next} replace />;
   if (mode !== "clerk") return <Navigate to={`/login${params.toString() ? `?${params.toString()}` : ""}`} replace />;
   return (
-    <div className="mx-auto flex max-w-auth flex-col gap-6 px-4 py-16">
+    <div className="mx-auto flex max-w-auth flex-col gap-6 px-4 pb-16 pt-28">
       <div>
         <h1 className="text-3xl font-medium tracking-tight">Create your account</h1>
         <p className="mt-2 text-sm text-muted-strong">Check websites, report impersonation and manage your organisation.</p>
@@ -50,7 +50,7 @@ export function Login() {
   if (status === "signed_in") return <Navigate to={next} replace />;
 
   return (
-    <div className="mx-auto flex max-w-auth flex-col gap-6 px-4 py-16">
+    <div className="mx-auto flex max-w-auth flex-col gap-6 px-4 pb-16 pt-28">
       <div>
         <h1 className="text-3xl font-medium tracking-tight">Sign in</h1>
         <p className="mt-2 text-sm text-muted-strong">Use your TrustLens account to open the dashboard.</p>

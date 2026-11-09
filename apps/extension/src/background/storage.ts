@@ -1,6 +1,6 @@
 // chrome.storage wrappers (EXTENSION_ARCHITECTURE.md §5). No in-memory state that matters:
 // the worker can be terminated at any time and rehydrates from here.
-import { readCache, isCacheable, type CachedVerdict, type CacheRead } from "../shared/cache";
+import { readCache, isCacheable, VERDICT_TTL_MS, type CachedVerdict, type CacheRead } from "../shared/cache";
 import { sha256Hex } from "../shared/hash";
 import { DEFAULT_SETTINGS, type CheckResult, type Settings } from "../shared/types";
 import type { PairingState } from "../shared/messages";
@@ -127,6 +127,42 @@ export async function isWarnDismissed(host: string): Promise<boolean> {
   const k = `warn_dismissed:${host}`;
   const got = await chrome.storage.session.get(k);
   return got[k] === true;
+}
+
+// ---- page guard: flagged hosts (link pre-check) and per-host overrides (session only) ----------
+// Lives in extension storage, never the page's: a page cannot pre-seed its own bypass.
+
+export type GuardDecision = "BLOCK" | "WARN";
+
+/** Remember a host the server answered BLOCK/WARN for, so links to it are stopped before navigating. */
+export async function flagHost(host: string, decision: GuardDecision, now = Date.now()): Promise<void> {
+  await chrome.storage.session.set({ [`flag:${host}`]: { decision, at: now } });
+}
+
+/** Hosts flagged within the last 10 minutes (the same freshness rule as verdicts). */
+export async function flaggedHosts(now = Date.now()): Promise<Record<string, GuardDecision>> {
+  const all = await chrome.storage.session.get(null);
+  const out: Record<string, GuardDecision> = {};
+  for (const [k, v] of Object.entries(all)) {
+    if (!k.startsWith("flag:")) continue;
+    const e = v as { decision?: unknown; at?: unknown } | null;
+    if (!e || typeof e.at !== "number" || now - e.at < 0 || now - e.at > VERDICT_TTL_MS) continue;
+    if (e.decision === "BLOCK" || e.decision === "WARN") out[k.slice(5)] = e.decision;
+  }
+  return out;
+}
+
+/** The user chose to proceed past a page-level BLOCK/WARN for this host (this browser session). */
+export async function setPageOverride(host: string, decision: GuardDecision): Promise<void> {
+  const current = await getPageOverride(host);
+  if (current === "BLOCK") return; // a BLOCK override already covers WARN
+  await chrome.storage.session.set({ [`page_override:${host}`]: decision });
+}
+
+export async function getPageOverride(host: string): Promise<GuardDecision | null> {
+  const k = `page_override:${host}`;
+  const got = await chrome.storage.session.get(k);
+  return got[k] === "BLOCK" || got[k] === "WARN" ? got[k] : null;
 }
 
 export async function recordOverride(taken: boolean): Promise<void> {

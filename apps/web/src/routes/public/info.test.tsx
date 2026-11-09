@@ -34,7 +34,9 @@ describe("public information pages", () => {
   });
 
   it("footer links reach every public page", async () => {
-    renderAt("/");
+    // The landing page is a full-bleed marketing surface with no footer; every other public page
+    // keeps it, so this guarantee is asserted from an information page.
+    renderAt("/how-it-works");
     const footer = await screen.findByRole("navigation", { name: "Footer" }, LONG);
     for (const [name, href] of [
       ["How it works", "/how-it-works"],

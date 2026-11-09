@@ -98,6 +98,7 @@ async function browseCheck(rawUrl: string, forceRefresh = false, tabId?: number)
   const promise = (async () => {
     const result = await afterResult(await assess({ url, intent: "browse" }, token));
     await store.writeVerdict(url, result);
+    await noteFlag(url, result);
     return result;
   })();
   inflight.set(url, { promise, startedAt: Date.now() });
@@ -129,6 +130,19 @@ function senderOrigin(sender: chrome.runtime.MessageSender): string | null {
   }
 }
 
+/** Host of a content script's page (demo path-mode URLs map back to the impersonated host). */
+function hostOfSender(sender: chrome.runtime.MessageSender): string | null {
+  return sender.url ? hostOf(toReportedUrl(sender.url, DEMO_SITES_ORIGIN)) : null;
+}
+
+/** Remember BLOCK/WARN answers per host so the link pre-check can stop navigation to them. */
+async function noteFlag(url: string, result: CheckResult): Promise<void> {
+  if (result.kind !== "assessment") return;
+  const d = result.assessment.decision;
+  const host = hostOf(url);
+  if (host && (d === "BLOCK" || d === "WARN")) await store.flagHost(host, d);
+}
+
 function fromDashboard(sender: chrome.runtime.MessageSender): boolean {
   return typeof sender.tab?.id === "number" && sender.frameId === 0 && senderOrigin(sender) === new URL(WEB_BASE_URL).origin;
 }
@@ -156,8 +170,27 @@ async function actionCheck(msg: Extract<Msg, { type: "ACTION_INTENT" }>): Promis
     const payee = msg.payee.trim().slice(0, MAX_PAYEE_LEN);
     if (payee) body.payee = payee;
   }
+  // Same action, same page, within 10 minutes: reuse the server's answer (the page guard asks on
+  // load, the submit asks again). Keyed by the full request identity, so a different payee or
+  // destination is always a new check. Only server assessments are cached; failures retry.
+  const actionKey = ["action", url, body.intent, body.payee ?? "", body.form_action ?? "", body.destination_host ?? ""].join("\n");
+  const cached = await store.readVerdict(actionKey);
+  if (cached.state === "fresh") return cached.result;
+  const running = inflight.get(actionKey);
+  if (running) return running.promise;
   // Protection over quota: action checks still attempt once during a 429 window (§7).
-  return afterResult(await assess(body, token));
+  const promise = (async () => {
+    const result = await afterResult(await assess(body, token));
+    await store.writeVerdict(actionKey, result);
+    await noteFlag(url, result);
+    return result;
+  })();
+  inflight.set(actionKey, { promise, startedAt: Date.now() });
+  try {
+    return await promise;
+  } finally {
+    inflight.delete(actionKey);
+  }
 }
 
 async function pair(code: string, deviceName: string): Promise<Reply<PairingState>> {
@@ -286,6 +319,9 @@ const CONTENT_ALLOWED = new Set<Msg["type"]>([
   "RECORD_OVERRIDE",
   "DISMISS_WARN",
   "IS_WARN_DISMISSED",
+  "FLAGGED_HOSTS",
+  "SET_PAGE_OVERRIDE",
+  "GET_PAGE_OVERRIDE",
 ]);
 
 function isMsg(m: unknown): m is Msg {
@@ -396,6 +432,18 @@ async function handle(msg: Msg, sender: chrome.runtime.MessageSender): Promise<R
     case "IS_WARN_DISMISSED":
       if (!str(msg.host)) break;
       return { ok: true, data: await store.isWarnDismissed(msg.host) };
+    case "FLAGGED_HOSTS":
+      return { ok: true, data: await store.flaggedHosts() };
+    case "SET_PAGE_OVERRIDE": {
+      // Scoped to the sender's own page: a content script can only override the host it runs on.
+      const own = hostOfSender(sender);
+      if (!str(msg.host) || (msg.decision !== "BLOCK" && msg.decision !== "WARN") || own !== msg.host) break;
+      await store.setPageOverride(msg.host, msg.decision);
+      return { ok: true, data: null };
+    }
+    case "GET_PAGE_OVERRIDE":
+      if (!str(msg.host)) break;
+      return { ok: true, data: await store.getPageOverride(msg.host) };
   }
   return { ok: false, error: { code: "BAD_MESSAGE", message: "Malformed message" } };
 }

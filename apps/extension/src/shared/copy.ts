@@ -71,6 +71,33 @@ export const COPY = {
     payment: "TrustLens could not check this payment. It was not checked — decide for yourself.",
     login: "TrustLens could not check this login. It was not checked — decide for yourself.",
   },
+  /** Page guard (BROWSER_PROTECTION_LOGIC.md §5.5): the page is held before it can be used. */
+  page: {
+    checking: {
+      payment: "Checking this payment page before you use it…",
+      login: "Checking this sign-in page before you use it…",
+    },
+    stopped: {
+      payment: "TrustLens blocked this payment page",
+      login: "TrustLens blocked this sign-in page",
+      browse: "TrustLens blocked this page",
+    },
+    suspicious: {
+      payment: "This payment page looks suspicious",
+      login: "This sign-in page looks suspicious",
+      browse: "This page looks suspicious",
+    },
+    review: {
+      payment: "This payment page needs review",
+      login: "This sign-in page needs review",
+      browse: "This page needs review",
+    },
+    held: "TrustLens is holding this page until the check finishes. Nothing you type here is read.",
+    leaveBody: "You left the page. You can close this tab.",
+    linkStopped: "TrustLens stopped this link",
+    linkBody: "This link opens {host}, which TrustLens flagged in the last few minutes.",
+    notChecked: "TrustLens could not check this page. It was not checked — decide for yourself when you use it.",
+  },
   payeeMismatch: "This page asks you to pay {observed}. {org} has registered {expected}.",
   payeeObservedOnly: "This page asks you to pay {observed}.",
   credentialMismatch:
