@@ -50,6 +50,8 @@ export interface PeekResult {
   result: CheckResult | null;
   /** Epoch ms when an in-flight check for this URL started, or null. */
   pendingSince: number | null;
+  /** Most severe action-level decision enforced on this page in the last 10 min (page guard / submit). */
+  enforced: { intent: ActionIntent; result: CheckResult } | null;
 }
 
 export interface BridgeHello {

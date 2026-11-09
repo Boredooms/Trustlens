@@ -42,7 +42,7 @@ describe("assess", () => {
     expect(init.credentials).toBe("omit");
     const headers = init.headers as Record<string, string>;
     expect(headers.Authorization).toBe(`Bearer ${TOKEN}`);
-    expect(headers["X-Client"]).toBe("ext/0.5.0");
+    expect(headers["X-Client"]).toBe("ext/0.5.1");
     expect(headers["Idempotency-Key"]).toMatch(/^[0-9a-f]{64}$/);
     const body = JSON.parse(String(init.body));
     expect(body).toEqual({

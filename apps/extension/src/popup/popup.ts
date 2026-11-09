@@ -4,7 +4,7 @@ import { topReasons } from "../shared/assessment";
 import { COPY, DECISION_COPY, NEUTRAL_FAILURES, failureText, fill, relativeAgo } from "../shared/copy";
 import { CONNECT_URL, DEMO_SITES_ORIGIN, EXT_VERSION, aiExplainUrl, appealUrl, fullReportUrl, isAppealable } from "../shared/config";
 import { hostOf, toReportedUrl } from "../shared/demo-url";
-import { send, type PairingState } from "../shared/messages";
+import { send, type PairingState, type PeekResult } from "../shared/messages";
 import { byId, h } from "../shared/page";
 import { wirePairForm } from "../shared/pair-form";
 import { DECISION_TOKENS } from "../shared/tokens";
@@ -75,7 +75,7 @@ function scoreRing(decision: Decision, score: number | null): HTMLElement {
   return wrap;
 }
 
-function renderAssessment(a: Assessment, checkedAt: number): HTMLElement {
+function renderAssessment(a: Assessment, checkedAt: number, source: string | null = null): HTMLElement {
   const d = a.decision;
   const copy = DECISION_COPY[d];
   const reasons = topReasons(a);
@@ -88,6 +88,8 @@ function renderAssessment(a: Assessment, checkedAt: number): HTMLElement {
   const box = h("div", { className: "scanning" }, [
     h("div", { className: "verdict" }, [scoreRing(d, a.risk_score), h("div", { className: "v-text" }, [label, h("p", { className: "v-reason", text: reasonText })])]),
   ]);
+  // Which check this decision came from, when it is the page guard's / an action's, not the page view.
+  if (source) box.appendChild(h("p", { className: "muted tiny enforced", text: source }));
 
   const pct = a.coverage.percent;
   const meter = h("div", { className: "meter", attrs: { role: "meter", "aria-label": "Coverage", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": String(pct ?? 0) } }, [h("span")]);
@@ -138,10 +140,10 @@ function renderFailure(r: Extract<CheckResult, { kind: "failure" }>): HTMLElemen
   return box;
 }
 
-function render(result: CheckResult): void {
+function render(result: CheckResult, source: string | null = null): void {
   stopTicker();
   lastResult = result;
-  pageStatus.replaceChildren(result.kind === "assessment" ? renderAssessment(result.assessment, result.checkedAt) : renderFailure(result));
+  pageStatus.replaceChildren(result.kind === "assessment" ? renderAssessment(result.assessment, result.checkedAt, source) : renderFailure(result));
   const neutral = result.kind === "failure" && NEUTRAL_FAILURES.has(result.failure.code);
   recheck.hidden = !(paired && !neutral);
   reportCard.hidden = !paired || neutral;
@@ -183,6 +185,21 @@ async function tabUrl(): Promise<string | null> {
   return knownUrl;
 }
 
+const SEVERITY: Record<string, number> = { BLOCK: 3, WARN: 2, REVIEW: 1, UNKNOWN: 0, ALLOW: 0 };
+const severityOf = (r: CheckResult | null | undefined) => (r?.kind === "assessment" ? (SEVERITY[r.assessment.decision] ?? 0) : 0);
+
+/**
+ * Show what TrustLens actually enforced on this page: the page-view verdict, or — when the page guard
+ * or an action check decided something more severe (e.g. BLOCK on this page's payment) — that.
+ */
+function show(result: CheckResult, enforced: PeekResult["enforced"]): void {
+  if (enforced && severityOf(enforced.result) > severityOf(result)) {
+    render(enforced.result, COPY.popup.enforcedFrom[enforced.intent]);
+    return;
+  }
+  render(result);
+}
+
 async function loadStatus(refresh = false): Promise<void> {
   const url = await tabUrl();
   if (!url || !/^https?:/i.test(url)) {
@@ -194,18 +211,21 @@ async function loadStatus(refresh = false): Promise<void> {
   }
   const host = hostOf(toReportedUrl(url, DEMO_SITES_ORIGIN)) ?? "";
   pageHost.textContent = host;
+  const peek = await send({ type: "PEEK_STATUS", url });
+  const enforced = peek.ok ? peek.data.enforced : null;
   if (!refresh) {
-    const peek = await send({ type: "PEEK_STATUS", url });
     if (peek.ok && peek.data.result) {
-      render(peek.data.result);
+      show(peek.data.result, enforced);
       return;
     }
-    renderChecking(host, peek.ok && peek.data.pendingSince ? peek.data.pendingSince : Date.now());
+    // The page guard already decided while the page-view check is still running: show that now.
+    if (enforced) render(enforced.result, COPY.popup.enforcedFrom[enforced.intent]);
+    else renderChecking(host, peek.ok && peek.data.pendingSince ? peek.data.pendingSince : Date.now());
   } else {
     renderChecking(host, Date.now());
   }
   const reply = await send({ type: "GET_STATUS", url, refresh, tabId: activeTab?.id });
-  render(reply.ok ? reply.data : { kind: "failure", failure: { code: "UNAVAILABLE" }, checkedAt: Date.now() });
+  show(reply.ok ? reply.data : { kind: "failure", failure: { code: "UNAVAILABLE" }, checkedAt: Date.now() }, enforced);
 }
 
 function renderPairing(state: PairingState, enabled: boolean): void {

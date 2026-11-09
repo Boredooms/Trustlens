@@ -5,7 +5,7 @@
 import { COPY, DECISION_COPY } from "../shared/copy";
 import type { OverlayModel } from "../shared/overlay-model";
 import { DECISION_TOKENS, tokensCss, Z_TOP } from "../shared/tokens";
-import type { Decision } from "../shared/types";
+import type { ActionIntent, Decision } from "../shared/types";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const SHIELD = "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z";
@@ -136,7 +136,7 @@ export interface HoldOptions {
 }
 
 /** Holds the action while the server is asked. Focus moves here because the action is held. */
-export function showChecking(intent: "login" | "payment", onCancel: () => void, opts: HoldOptions = {}): () => void {
+export function showChecking(intent: ActionIntent, onCancel: () => void, opts: HoldOptions = {}): () => void {
   const r = ensureRoot();
   clear(".scrim");
   const scrim = el("div", opts.guard ? "scrim guard" : "scrim");

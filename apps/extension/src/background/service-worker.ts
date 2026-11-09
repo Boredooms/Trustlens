@@ -111,13 +111,14 @@ async function browseCheck(rawUrl: string, forceRefresh = false, tabId?: number)
 
 async function peekStatus(rawUrl: string): Promise<ResponseMap["PEEK_STATUS"]> {
   const settings = await store.getSettings();
-  if (!settings.enabled) return { result: fail("PAUSED"), pendingSince: null };
+  if (!settings.enabled) return { result: fail("PAUSED"), pendingSince: null, enforced: null };
   const local = localState(rawUrl);
-  if (local.result || !local.url) return { result: local.result, pendingSince: null };
+  if (local.result || !local.url) return { result: local.result, pendingSince: null, enforced: null };
   const cached = await store.readVerdict(local.url);
   return {
     result: cached.state === "fresh" ? cached.result : null,
     pendingSince: inflight.get(local.url)?.startedAt ?? null,
+    enforced: await store.readEnforced(local.url),
   };
 }
 
@@ -159,7 +160,16 @@ async function actionCheck(msg: Extract<Msg, { type: "ACTION_INTENT" }>): Promis
 
   const body: AssessBody = { url, intent: msg.intent };
   const formAction = msg.formAction ? toReportedUrl(msg.formAction, DEMO_SITES_ORIGIN) : null;
-  if (formAction) {
+  if (msg.intent === "download") {
+    // A download is judged by the host that serves the file (its site root: the API never fetches
+    // the file itself). Same-host downloads are judged with the page.
+    const fileHost = formAction ? hostOf(formAction) : null;
+    if (formAction && fileHost && fileHost !== hostOf(url)) {
+      const local2 = localState(new URL(formAction).origin + "/");
+      if (local2.url) body.url = local2.url;
+    }
+    if (fileHost) body.destination_host = fileHost;
+  } else if (formAction) {
     body.form_action = formAction;
     const host = hostOf(formAction);
     if (host) body.destination_host = host;
@@ -182,7 +192,8 @@ async function actionCheck(msg: Extract<Msg, { type: "ACTION_INTENT" }>): Promis
   const promise = (async () => {
     const result = await afterResult(await assess(body, token));
     await store.writeVerdict(actionKey, result);
-    await noteFlag(url, result);
+    await noteFlag(body.url, result);
+    await store.recordEnforced(url, msg.intent, result);
     return result;
   })();
   inflight.set(actionKey, { promise, startedAt: Date.now() });
@@ -298,6 +309,8 @@ async function apiStatus(): Promise<ResponseMap["API_STATUS"]> {
 
 // ---- router ---------------------------------------------------------------------------------
 
+const ACTION_INTENTS: ReadonlySet<unknown> = new Set(["login", "payment", "data_submission", "download"]);
+
 const EXTENSION_PAGE_ONLY = new Set<Msg["type"]>([
   "GET_STATUS",
   "PEEK_STATUS",
@@ -387,7 +400,7 @@ async function handle(msg: Msg, sender: chrome.runtime.MessageSender): Promise<R
       return { ok: true, data: typeof got[key] === "string" ? (got[key] as string) : null };
     }
     case "ACTION_INTENT": {
-      if (!str(msg.url) || (msg.intent !== "login" && msg.intent !== "payment")) break;
+      if (!str(msg.url) || !ACTION_INTENTS.has(msg.intent)) break;
       const r = await actionCheck({
         type: "ACTION_INTENT",
         url: msg.url,

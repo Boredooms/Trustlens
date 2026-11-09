@@ -2,7 +2,7 @@
 // the worker can be terminated at any time and rehydrates from here.
 import { readCache, isCacheable, VERDICT_TTL_MS, type CachedVerdict, type CacheRead } from "../shared/cache";
 import { sha256Hex } from "../shared/hash";
-import { DEFAULT_SETTINGS, type CheckResult, type Settings } from "../shared/types";
+import { DEFAULT_SETTINGS, type ActionIntent, type CheckResult, type Settings } from "../shared/types";
 import type { PairingState } from "../shared/messages";
 
 const SCHEMA_VERSION = 1;
@@ -163,6 +163,37 @@ export async function getPageOverride(host: string): Promise<GuardDecision | nul
   const k = `page_override:${host}`;
   const got = await chrome.storage.session.get(k);
   return got[k] === "BLOCK" || got[k] === "WARN" ? got[k] : null;
+}
+
+// ---- enforced decision per page (popup shows what was actually enforced, §5.5) --------------
+
+export interface EnforcedEntry {
+  intent: ActionIntent;
+  result: CheckResult;
+  at: number;
+}
+const SEVERITY: Record<string, number> = { BLOCK: 3, WARN: 2, REVIEW: 1 };
+
+/** Remember the most severe action-level decision for this page (BLOCK > WARN > REVIEW). */
+export async function recordEnforced(url: string, intent: ActionIntent, result: CheckResult, now = Date.now()): Promise<void> {
+  if (result.kind !== "assessment") return;
+  const sev = SEVERITY[result.assessment.decision] ?? 0;
+  if (!sev) return;
+  const key = `enforced:${await sha256Hex(url)}`;
+  const prev = (await chrome.storage.session.get(key))[key] as EnforcedEntry | undefined;
+  const prevFresh = prev && typeof prev.at === "number" && now - prev.at <= VERDICT_TTL_MS && prev.result?.kind === "assessment";
+  if (prevFresh && (SEVERITY[(prev.result as Extract<CheckResult, { kind: "assessment" }>).assessment.decision] ?? 0) > sev) return;
+  await chrome.storage.session.set({ [key]: { intent, result, at: now } satisfies EnforcedEntry });
+}
+
+/** The page's enforced action decision within the last 10 minutes, or null. */
+export async function readEnforced(url: string, now = Date.now()): Promise<{ intent: ActionIntent; result: CheckResult } | null> {
+  const key = `enforced:${await sha256Hex(url)}`;
+  const e = (await chrome.storage.session.get(key))[key] as Partial<EnforcedEntry> | undefined;
+  if (!e || typeof e.at !== "number" || now - e.at < 0 || now - e.at > VERDICT_TTL_MS || e.result?.kind !== "assessment" || !e.intent) {
+    return null;
+  }
+  return { intent: e.intent, result: e.result };
 }
 
 export async function recordOverride(taken: boolean): Promise<void> {

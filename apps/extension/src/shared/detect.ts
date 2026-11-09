@@ -2,7 +2,9 @@
 // these functions read element types, attributes and the text a page itself displays. They never
 // read what a user typed — no `.value` access on any input (enforced by eslint for this file).
 
-export type DetectedIntent = "login" | "payment";
+import type { ActionIntent } from "./types";
+
+export type DetectedIntent = ActionIntent;
 
 export interface FormMetadata {
   /** Absolute action URL (empty action → the page itself). `null` if unparseable. */
@@ -25,6 +27,21 @@ const PAY_PATH_RE = /(^|[/._-])(pay|payment|payments|checkout|donate)([/._-]|$)/
 /** UPI-looking handle in visible text; excludes e-mail addresses (handle@domain.tld). */
 const VPA_TEXT_RE = /(?<![\w.-])([a-z0-9][\w.-]{1,63}@[a-z][a-z-]{1,31})(?![\w-]|\.[a-z])/gi;
 const MAX_PAYEE_LEN = 128;
+
+// data_submission (§5.2, P2): a form asking for ≥ 3 personal fields, or one field that is sensitive on
+// its own. Recognised from the field's type / autocomplete / name / id — never from what is typed.
+const PERSONAL_AUTOCOMPLETE = new Set([
+  "name", "given-name", "family-name", "additional-name", "email", "tel", "tel-national", "street-address",
+  "address-line1", "address-line2", "address-level1", "address-level2", "postal-code", "country", "bday",
+  "bday-day", "bday-month", "bday-year", "sex", "username",
+]);
+const STRONG_AUTOCOMPLETE = new Set(["cc-number", "cc-csc", "cc-exp", "cc-exp-month", "cc-exp-year", "one-time-code"]);
+const PERSONAL_NAME_RE =
+  /(^|[\W_])(e-?mail|phone|mobile|tel|whatsapp|full.?name|first.?name|last.?name|surname|address|city|pin.?code|zip|postal|dob|birth|gender|father|mother|guardian)([\W_]|$)/i;
+const STRONG_NAME_RE =
+  /(^|[\W_])(aadhaa?r|pan.?(no|number|card)?|ssn|social.?security|passport|cvv|cvc|card.?(no|number)|account.?(no|number)|ifsc|otp|one.?time|national.?id)([\W_]|$)/i;
+// download (§5.2, P3): a link to a file type that runs, installs or unpacks code.
+const RISKY_FILE_RE = /\.(exe|msi|msix|appx|scr|bat|cmd|com|ps1|vbs|js|jar|apk|xapk|ipa|dmg|pkg|deb|rpm|iso|img|zip|rar|7z|tar|gz)$/i;
 
 function isHidden(el: Element): boolean {
   return Boolean(el.closest("[hidden], [aria-hidden='true']"));
@@ -129,6 +146,21 @@ export function findPayee(trigger: Element): string | null {
   return payeeWithin(trigger.ownerDocument, false);
 }
 
+/** Personal-data weight of a form: each personal field counts 1; a strong one (card, OTP, ID) counts 3. */
+export function personalFieldScore(form: HTMLFormElement): number {
+  let score = 0;
+  for (const el of Array.from(form.querySelectorAll("input, select, textarea"))) {
+    if (isHidden(el)) continue;
+    const type = (el.getAttribute("type") ?? "text").toLowerCase();
+    if (["hidden", "submit", "button", "reset", "image", "checkbox", "radio", "search", "file", "range", "color"].includes(type)) continue;
+    const ac = (el.getAttribute("autocomplete") ?? "").toLowerCase().split(/\s+/).pop() ?? "";
+    const id = `${el.getAttribute("name") ?? ""} ${el.getAttribute("id") ?? ""} ${el.getAttribute("aria-label") ?? ""} ${el.getAttribute("placeholder") ?? ""}`;
+    if (STRONG_AUTOCOMPLETE.has(ac) || STRONG_NAME_RE.test(id)) score += 3;
+    else if (type === "email" || type === "tel" || type === "date" || PERSONAL_AUTOCOMPLETE.has(ac) || PERSONAL_NAME_RE.test(id)) score += 1;
+  }
+  return score;
+}
+
 /** Classify a form submission as a sensitive action. `null` = not sensitive, let it through. */
 export function classifyForm(form: HTMLFormElement, submitter?: Element | null): DetectedIntent | null {
   const meta = describeForm(form);
@@ -145,6 +177,7 @@ export function classifyForm(form: HTMLFormElement, submitter?: Element | null):
       /* unparseable action: not classified */
     }
   }
+  if (personalFieldScore(form) >= 3) return "data_submission";
   return null;
 }
 
@@ -166,17 +199,22 @@ export function detectFormAction(form: HTMLFormElement, submitter?: Element | nu
  */
 export function detectPageAction(doc: Document): DetectedAction | null {
   let login: DetectedAction | null = null;
+  let data: DetectedAction | null = null;
   for (const form of Array.from(doc.forms)) {
     if (isHidden(form)) continue;
     const a = detectFormAction(form, null);
     if (a?.intent === "payment") return a;
-    if (a && !login) login = a;
+    if (a?.intent === "login" && !login) login = a;
+    if (a?.intent === "data_submission" && !data) data = a;
   }
   if (login) return login;
+  if (data) return data;
   for (const el of Array.from(doc.querySelectorAll(CLICKABLE))) {
     if (isHidden(el)) continue;
     const hit = detectClickAction(el);
-    if (hit) return hit.action;
+    // Only a payment holds the page. A download link is checked when it is clicked, not on sight —
+    // otherwise every page with an archive link would be held.
+    if (hit?.action.intent === "payment") return hit.action;
   }
   return null;
 }
@@ -207,6 +245,21 @@ export function detectClickAction(target: EventTarget | null): { element: Elemen
   if (inForm && isSubmit) return null;
 
   const href = el instanceof HTMLAnchorElement ? el.getAttribute("href") : null;
+  // A link that downloads a file (by extension or the download attribute): ask about its host first.
+  if (el instanceof HTMLAnchorElement && href) {
+    const file = resolveUrl(href, el.ownerDocument.baseURI);
+    if (file && /^https?:/i.test(file)) {
+      let path = "";
+      try {
+        path = new URL(file).pathname;
+      } catch {
+        path = "";
+      }
+      if (el.hasAttribute("download") || RISKY_FILE_RE.test(path)) {
+        return { element: el, action: { intent: "download", destination: file, payee: null } };
+      }
+    }
+  }
   const upiPayee = payeeFromUpiHref(href);
   if (upiPayee) {
     return { element: el, action: { intent: "payment", destination: null, payee: upiPayee } };

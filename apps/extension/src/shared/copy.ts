@@ -62,34 +62,59 @@ export const COPY = {
   coverageLine: "We checked {n}% of signal groups.",
   coverageMissing: "Coverage was not reported for this check.",
   decidedAgo: "Decided {ago}.",
-  checking: { payment: "Checking this payment…", login: "Checking this login…" },
-  stopped: { payment: "Payment stopped", login: "Login stopped" },
-  suspicious: { payment: "Check this payment first", login: "Check this login first" },
-  review: { payment: "This payment needs review", login: "This login needs review" },
+  checking: {
+    payment: "Checking this payment…",
+    login: "Checking this login…",
+    data_submission: "Checking this form before it sends your details…",
+    download: "Checking this download…",
+  },
+  stopped: { payment: "Payment stopped", login: "Login stopped", data_submission: "Form stopped", download: "Download stopped" },
+  suspicious: {
+    payment: "Check this payment first",
+    login: "Check this login first",
+    data_submission: "Check this form first",
+    download: "Check this download first",
+  },
+  review: {
+    payment: "This payment needs review",
+    login: "This login needs review",
+    data_submission: "This form needs review",
+    download: "This download needs review",
+  },
   couldNotVerify: "Could not verify this page",
   couldNotVerifyBody: {
     payment: "TrustLens could not check this payment. It was not checked — decide for yourself.",
     login: "TrustLens could not check this login. It was not checked — decide for yourself.",
+    data_submission: "TrustLens could not check this form. It was not checked — decide for yourself.",
+    download: "TrustLens could not check this download. It was not checked — decide for yourself.",
   },
   /** Page guard (BROWSER_PROTECTION_LOGIC.md §5.5): the page is held before it can be used. */
   page: {
     checking: {
       payment: "Checking this payment page before you use it…",
       login: "Checking this sign-in page before you use it…",
+      data_submission: "Checking this form page before you use it…",
+      download: "Checking this download…",
     },
     stopped: {
       payment: "TrustLens blocked this payment page",
       login: "TrustLens blocked this sign-in page",
+      data_submission: "TrustLens blocked this form page",
+      download: "TrustLens blocked this download",
       browse: "TrustLens blocked this page",
     },
     suspicious: {
       payment: "This payment page looks suspicious",
       login: "This sign-in page looks suspicious",
+      data_submission: "This form page looks suspicious",
+      download: "This download looks suspicious",
       browse: "This page looks suspicious",
     },
     review: {
       payment: "This payment page needs review",
       login: "This sign-in page needs review",
+      data_submission: "This form page needs review",
+      download: "This download needs review",
       browse: "This page needs review",
     },
     held: "TrustLens is holding this page until the check finishes. Nothing you type here is read.",
@@ -137,6 +162,13 @@ export const COPY = {
     failed: "Could not connect right now. Try again in a moment.",
   },
   popup: {
+    /** The decision shown came from an action check on this page, not the page view (§5.5). */
+    enforcedFrom: {
+      payment: "Enforced on this page's payment check",
+      login: "Enforced on this page's sign-in check",
+      data_submission: "Enforced on this page's form check",
+      download: "Enforced on this page's download check",
+    },
     currentPage: "This page",
     noPage: "Browser pages (new tab, settings, the web store) cannot be checked.",
     watchPage: "Watch this tab for logins and payments",

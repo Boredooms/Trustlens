@@ -118,8 +118,8 @@ Payee extraction patterns (regex, no network):
 | --- | --- | --- |
 | `login` | Submit on a form containing a password field | Yes, if decision is `BLOCK` |
 | `payment` | Click on an element whose href/text indicates payment (upi, pay, checkout, donate) | Yes for `BLOCK`; confirm for `WARN` |
-| `data_submission` (P2) | Submit of a form with ≥ 3 personal fields | Confirm for `WARN` |
-| `download` (P3) | Click on a file link | Warn only |
+| `data_submission` (v0.5.1) | Submit of a form with ≥ 3 personal fields (type / autocomplete / name / id: email, tel, name, address, date of birth…), or one strong field (card number, CVV, OTP, Aadhaar, PAN, SSN, passport) | Yes for `BLOCK`; confirm for `WARN`/`REVIEW` |
+| `download` (v0.5.1) | Click on a link to an executable / installer / archive (`.exe .msi .apk .dmg .pkg .zip .rar .7z .iso …`) or with a `download` attribute | Yes for `BLOCK`; confirm for `WARN`/`REVIEW`. Judged by the **file's host** (its site root; the API never fetches the file), with `destination_host` set |
 
 Interception uses `preventDefault()` + `stopImmediatePropagation()` in the capture phase. If the page
 has already attached a competing handler, we still stop the event; if navigation is triggered
@@ -163,7 +163,7 @@ use an opaque, blurred shield in the closed shadow root, take focus, and trap Ta
 
 | Trigger | What happens | Override |
 | --- | --- | --- |
-| The page contains a login form or a payment (same detection as §5.1, metadata only) | Covered as soon as the DOM exists ("Checking this payment/sign-in page before you use it…"); the server is asked with the page's own `intent`, `form_action` and displayed `payee`. `BLOCK`/`WARN`/`REVIEW` keep it covered; `ALLOW` releases it with the coverage toast | `BLOCK`: two clicks · `WARN`/`REVIEW`: one |
+| The page contains a login form, a payment, or a personal-data form (same detection as §5.1–§5.2, metadata only; priority payment → login → personal data) | Covered as soon as the DOM exists ("Checking this payment/sign-in page before you use it…"); the server is asked with the page's own `intent`, `form_action` and displayed `payee`. `BLOCK`/`WARN`/`REVIEW` keep it covered; `ALLOW` releases it with the coverage toast | `BLOCK`: two clicks · `WARN`/`REVIEW`: one |
 | The page's own browse verdict is `BLOCK` or `WARN` (a fresh cached verdict answers before paint) | Covering interstitial; skipped if the page guard already decided (the action-level answer is more specific) | same |
 | A click on a link to a host the server answered `BLOCK`/`WARN` for in the last 10 minutes | Navigation is stopped; "TrustLens stopped this link" names the destination host | same, then navigates as the link would have |
 
@@ -179,6 +179,9 @@ Rules:
   payee). Action results are cached for 10 minutes under the full request identity, so the submit
   reuses the guard's answer instead of a second wait.
 - "Go back" returns to the previous page; with no history the page stays covered.
+- **Popup shows what was enforced.** The service worker keeps, per page, the most severe action-level
+  decision of the last 10 minutes (BLOCK > WARN > REVIEW). When it is more severe than the page-view
+  verdict, the popup shows it, labelled with its source ("Enforced on this page's payment check").
 - A login/payment form rendered by script up to 8 s after load is still guarded.
 - Cost: a first visit to a login or payment page is held for the server round trip (≈ 10–30 s on a
   cold scan; immediate on a repeat within 10 minutes).

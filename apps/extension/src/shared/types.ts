@@ -7,7 +7,8 @@ export type Decision = (typeof DECISIONS)[number];
 export const RISK_LEVELS = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN"] as const;
 export type RiskLevel = (typeof RISK_LEVELS)[number];
 
-export type ActionIntent = "login" | "payment";
+/** API intents the extension asks about for an action (API_CONTRACTS.md Intent; RISK_ENGINE.md §8.2). */
+export type ActionIntent = "login" | "payment" | "data_submission" | "download";
 export type Intent = "browse" | ActionIntent;
 export type Match = "exact" | "none" | "unverifiable";
 

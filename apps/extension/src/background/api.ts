@@ -3,7 +3,7 @@
 import { parseAssessment } from "../shared/assessment";
 import { API_BASE_URL, EXT_VERSION } from "../shared/config";
 import { assessIdempotencyKey } from "../shared/hash";
-import type { CheckFailure, CheckResult, FailureCode } from "../shared/types";
+import type { CheckFailure, CheckResult, FailureCode, Intent } from "../shared/types";
 
 /**
  * A first visit to a real site runs a full server-side scan (DNS, TLS, page fetch, reputation): 10–30 s
@@ -124,7 +124,7 @@ export function failureFromResponse(res: ApiResponse): CheckFailure {
 
 export interface AssessBody {
   url: string;
-  intent: "browse" | "login" | "payment";
+  intent: Intent;
   form_action?: string;
   payee?: string;
   destination_host?: string;

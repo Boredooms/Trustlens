@@ -155,3 +155,73 @@ describe("detectPageAction (page guard, §5.5)", () => {
     expect(detectPageAction(document)).toBeNull();
   });
 });
+
+describe("data_submission and download detection (§5.2 P2/P3)", () => {
+  it("a form with ≥ 3 personal fields is data_submission; the form's action is its destination", async () => {
+    const { classifyForm, detectFormAction } = await import("../src/shared/detect");
+    document.body.innerHTML = `<form id="f" action="https://collect.badhost.example/kyc">
+      <input name="full_name"><input type="email" name="email"><input type="tel" name="mobile"><button>Claim</button></form>`;
+    const f = document.getElementById("f") as HTMLFormElement;
+    expect(classifyForm(f)).toBe("data_submission");
+    expect(detectFormAction(f)).toEqual({ intent: "data_submission", destination: "https://collect.badhost.example/kyc", payee: null });
+  });
+
+  it("one strong field (card, OTP, Aadhaar, SSN) is enough on its own", async () => {
+    const { classifyForm } = await import("../src/shared/detect");
+    for (const field of [
+      `<input autocomplete="cc-number">`,
+      `<input autocomplete="one-time-code">`,
+      `<input name="aadhaar_number">`,
+      `<input name="ssn">`,
+      `<input placeholder="CVV">`,
+    ]) {
+      document.body.innerHTML = `<form id="f" action="/x">${field}</form>`;
+      expect(classifyForm(document.getElementById("f") as HTMLFormElement)).toBe("data_submission");
+    }
+  });
+
+  it("ordinary forms are not personal-data submissions (newsletter, search, comment)", async () => {
+    const { classifyForm } = await import("../src/shared/detect");
+    for (const body of [
+      `<input type="email" name="email"><button>Subscribe</button>`,
+      `<input type="search" name="q"><button>Search</button>`,
+      `<textarea name="comment"></textarea><input name="title"><button>Post</button>`,
+      `<input type="hidden" name="phone"><input type="hidden" name="email"><input type="hidden" name="address">`,
+    ]) {
+      document.body.innerHTML = `<form id="f" action="/x">${body}</form>`;
+      expect(classifyForm(document.getElementById("f") as HTMLFormElement)).toBeNull();
+    }
+  });
+
+  it("a password still wins (login), and a payment still wins over personal data on the page", async () => {
+    const { classifyForm, detectPageAction } = await import("../src/shared/detect");
+    document.body.innerHTML = `<form id="f" action="/s"><input name="email"><input name="phone"><input name="address"><input type="password"></form>`;
+    expect(classifyForm(document.getElementById("f") as HTMLFormElement)).toBe("login");
+    document.body.innerHTML = LOOKALIKE + `<form action="/kyc"><input name="full_name"><input type="email"><input type="tel"></form>`;
+    expect(detectPageAction(document)?.intent).toBe("payment");
+    document.body.innerHTML = `<form action="https://x.example/kyc"><input name="full_name"><input type="email"><input type="tel"></form>`;
+    expect(detectPageAction(document)?.intent).toBe("data_submission");
+  });
+
+  it("a click on an executable / archive link (or a download attribute) is a download of that file", async () => {
+    const { detectClickAction } = await import("../src/shared/detect");
+    document.body.innerHTML = `
+      <a id="exe" href="https://files.badhost.example/setup.exe">Get it</a>
+      <a id="apk" href="/app/release.apk">Android</a>
+      <a id="attr" href="https://cdn.example/report" download>Report</a>
+      <a id="doc" href="https://docs.example/guide.html">Guide</a>`;
+    const at = (id: string) => detectClickAction(document.getElementById(id));
+    expect(at("exe")?.action).toEqual({ intent: "download", destination: "https://files.badhost.example/setup.exe", payee: null });
+    expect(at("apk")?.action.intent).toBe("download");
+    expect(at("attr")?.action.intent).toBe("download");
+    expect(at("doc")).toBeNull();
+  });
+});
+
+describe("page guard scope", () => {
+  it("a download link alone does not hold the page (it is checked on click)", async () => {
+    const { detectPageAction } = await import("../src/shared/detect");
+    document.body.innerHTML = `<p>Get the app</p><a href="https://files.example/setup.exe">Download</a><a href="/notes.zip">Notes</a>`;
+    expect(detectPageAction(document)).toBeNull();
+  });
+});

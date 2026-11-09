@@ -240,10 +240,11 @@ Never put a secret in a `VITE_*` variable or commit a `.env` file.
 **Load unpacked**). `trustlens-extension-local.zip` targets `localhost`. Verified in real Chromium against production:
 one-click pairing on the live dashboard, and Pay / Sign-in held and blocked on all three live lookalikes (10/10).
 
-Since v0.5.0 the extension also **guards pages before they can be used**: a page with a login form or a
-payment is covered as soon as it loads while the server checks that page's own form destination and
+Since v0.5.0 the extension also **guards pages before they can be used**: a page with a login form, a
+payment or a personal-data form (v0.5.1) is covered as soon as it loads while the server checks that page's own form destination and
 payee; a `BLOCK`/`WARN` keeps it covered (two clicks to override a block). A link to a host flagged in
-the last 10 minutes is stopped before navigating. Verified against production in real Chromium (13/13):
+the last 10 minutes is stopped before navigating, a click on an installer or archive is held while the
+file's host is checked, and the popup shows the decision that was actually enforced on the page. Verified against production in real Chromium (13/13):
 the live lookalike `/pay` is covered within 2 s with no click and stays blocked, a link to it from
 another site is stopped, and the genuine Northstar pay page is checked and released.
 

@@ -1,7 +1,9 @@
 // Content script: observes the page and enforces the server's decision.
 //   - Actions (§5.2): a login/payment submit or pay click is held until the server decides.
-//   - Page guard (§5.5): a page that asks for a password or a payment is covered before it can be
-//     used, and the server is asked with that page's own form destination and payee up front.
+//   - Page guard (§5.5): a page that asks for a password, a payment or personal data (≥ 3 personal
+//     fields, or a card / OTP / ID field) is covered before it can be used, and the server is asked
+//     with that page's own form destination and payee up front.
+//   - Downloads (§5.2): a click on an executable/archive link is held while the file's host is checked.
 //   - Page verdict: a BLOCK/WARN for the page itself covers it (two clicks past BLOCK, one past WARN).
 //   - Links: a click to a host the server flagged BLOCK/WARN in the last 10 minutes is stopped
 //     before navigating; an unknown destination is guarded when it loads.
@@ -27,6 +29,8 @@ const LATE_FORM_WINDOW_MS = 8_000;
 function init(): void {
   /** Elements whose next submit/click has been released by the user (after an overlay decision). */
   const releasedOnce = new WeakSet<Element>();
+  /** A released action click on its way through: the link pre-check must not stop it a second time. */
+  const passThrough = new WeakSet<Element>();
   /** Actions the user already released at the page guard: their submit is not asked about twice. */
   const releasedActions = new Set<string>();
   let busy = false;
@@ -236,6 +240,7 @@ function init(): void {
       if (!hit) return;
       if (releasedOnce.has(hit.element)) {
         releasedOnce.delete(hit.element);
+        passThrough.add(hit.element);
         return;
       }
       e.preventDefault();
@@ -256,6 +261,10 @@ function init(): void {
       if (!enabled || e.button !== 0 || e.defaultPrevented) return;
       const a = e.target instanceof Element ? e.target.closest("a[href]") : null;
       if (!(a instanceof HTMLAnchorElement)) return;
+      if (passThrough.has(a)) {
+        passThrough.delete(a);
+        return;
+      }
       let dest: URL;
       try {
         dest = new URL(a.href);

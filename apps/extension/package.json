@@ -1,6 +1,6 @@
 {
   "name": "@trustlens/extension",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "type": "module",
   "description": "TrustLens Chrome MV3 extension. Observes and enforces; the server decides.",
