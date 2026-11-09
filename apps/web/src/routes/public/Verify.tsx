@@ -53,7 +53,7 @@ export function Verify() {
   }, []);
 
   return (
-    <div className="mx-auto flex max-w-reading flex-col gap-6 px-4 py-16">
+    <div className="mx-auto flex max-w-reading flex-col gap-6 px-4 pb-16 pt-28">
       <div>
         <h1 className="text-3xl font-medium tracking-tight">Verify a threat report</h1>
         <p className="mt-2 text-sm text-muted-strong">
@@ -91,8 +91,21 @@ export function Verify() {
           </Card>
           <TamperCheck reportId={reportId} payload={q.data.payload} />
           <Card title="Verify without trusting TrustLens">
-            <p className="text-sm text-muted-strong">This command recomputes both hashes locally and reads the contract directly over RPC:</p>
-            <pre className="mt-2 overflow-x-auto rounded-md bg-surface-secondary p-3 text-xs">{`pnpm --filter @trustlens/contracts verify-report -- --report ${reportId}`}</pre>
+            {q.data.chain_id === 0 ? (
+              <>
+                <p className="text-sm text-muted-strong">
+                  This anchor lives in the simulated registry, so there is no public contract to query. The same contract and
+                  commitment formula run on a reproducible local chain, which deploys, registers, verifies and rejects a tampered
+                  copy without the TrustLens API:
+                </p>
+                <pre className="mt-2 overflow-x-auto rounded-md bg-surface-secondary p-3 text-xs">{"pnpm --filter @trustlens/contracts replay"}</pre>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-strong">This command recomputes both hashes locally and reads the contract directly over RPC:</p>
+                <pre className="mt-2 overflow-x-auto rounded-md bg-surface-secondary p-3 text-xs">{`pnpm --filter @trustlens/contracts verify-report -- --report ${reportId}`}</pre>
+              </>
+            )}
           </Card>
           <p className="text-xs text-muted">{INTEGRITY_CAVEAT}</p>
         </>

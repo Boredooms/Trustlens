@@ -137,7 +137,7 @@ export function Appeal() {
     document.title = "Appeal a decision · TrustLens";
   }, []);
   return (
-    <div className="mx-auto flex max-w-reading flex-col gap-6 px-4 py-16">
+    <div className="mx-auto flex max-w-reading flex-col gap-6 px-4 pb-16 pt-28">
       <div>
         <h1 className="text-3xl font-medium tracking-tight">Appeal a decision about your site</h1>
         <p className="mt-2 text-sm text-muted-strong">

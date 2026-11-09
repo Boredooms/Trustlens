@@ -50,6 +50,20 @@ describe("public /verify/:reportId", () => {
     expect(page?.textContent ?? "").not.toMatch(/\bsafe\b/i);
   });
 
+  it("a simulated-registry anchor is labelled as such and points to the reproducible chain, not an RPC read", async () => {
+    mockApi("user", [
+      on("GET", `/api/v1/public/verify/${RID}`, () =>
+        json({ ...verification(true), chain_id: 0, contract: "0x" + "7357".repeat(10) }),
+      ),
+    ]);
+    renderAt(`/verify/${RID}`);
+    expect(await screen.findByText(/Integrity verified: valid/, {}, LONG)).toBeInTheDocument();
+    expect(screen.getByText(/0 · simulated registry \(not a public blockchain\)/)).toBeInTheDocument();
+    expect(screen.getByText(/not a public blockchain\. The commitment is the same keccak256/)).toBeInTheDocument();
+    expect(screen.getByText("pnpm --filter @trustlens/contracts replay")).toBeInTheDocument();
+    expect(screen.queryByText(/verify-report -- --report/)).not.toBeInTheDocument();
+  });
+
   it("a tampered copy fails", async () => {
     const api = mockApi("user", [
       on("GET", `/api/v1/public/verify/${RID}`, () => json(verification(true))),
