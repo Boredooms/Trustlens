@@ -33,6 +33,7 @@
 | `ACCESS_TOKEN_MINUTES` | no | no | `15` | Access token lifetime |
 | `REFRESH_TOKEN_DAYS` | no | no | `30` | Refresh lifetime |
 | `ALLOWED_ORIGINS` | yes | no | `https://trustlens.example,http://localhost:5173` | CORS + CSRF origin check |
+| `ALLOWED_ORIGIN_REGEX` | no | no | `^https://trustlens-web(-[a-z0-9]+)?-boredooms-projects\.vercel\.app$` | Deploy-preview origins for CORS and the Clerk `azp` check. Must start `^https://`, end `$`, no `.*`/`.+`; startup aborts otherwise. Keep the team-scoped suffix so other accounts cannot match |
 
 ### 2.2 Scanning
 
@@ -100,7 +101,7 @@
 | `CLERK_SECRET_KEY` | yes | **yes** | Clerk Backend API (user delete, session revoke); never in the web bundle |
 | `CLERK_ISSUER` | yes | no | Session JWT `iss`, e.g. `https://<instance>.clerk.accounts.dev` |
 | `CLERK_JWKS_URL` | yes | no | `https://<instance>/.well-known/jwks.json` |
-| `CLERK_AUTHORIZED_PARTY` | yes | no | Expected `azp` — the web origin; tokens from elsewhere are rejected |
+| `CLERK_AUTHORIZED_PARTY` | yes | no | Expected `azp`: the web origin, or a comma-separated list (production + local). Previews may also match `ALLOWED_ORIGIN_REGEX`; tokens from elsewhere are rejected |
 | `CLERK_WEBHOOK_SECRET` | no | no | OPTIONAL. Svix signing secret for `user.created`/`user.deleted` sync |
 | `SUPABASE_URL` | yes | no | Project URL — Storage and `pg_dump` only, **not** auth |
 | `SUPABASE_SECRET_KEY` | yes | **yes** | `sb_secret_…` key. Storage uploads + deletion cleanup; never in a request path. The legacy name `SUPABASE_SERVICE_ROLE_KEY` is still accepted |

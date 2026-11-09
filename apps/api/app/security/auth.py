@@ -145,7 +145,7 @@ async def verify_clerk_jwt(token: str, settings: Settings) -> dict[str, Any]:
         )
     except JWTError:
         raise InvalidToken() from None
-    if claims.get("azp") != settings.clerk_authorized_party:
+    if not settings.azp_allowed(claims.get("azp")):
         log.warning("auth.azp_mismatch")
         raise InvalidToken()
     if not claims.get("sub"):

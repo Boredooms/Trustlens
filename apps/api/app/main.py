@@ -157,8 +157,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.allowed_origins,
+        allow_origin_regex=settings.allowed_origin_regex,
         allow_credentials=False,  # Bearer auth only; the API sets no cookie (ADR-015)
-        allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+        # PUT is the notes autosave (PUT /notes/{type}/{id}); without it the preflight fails.
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=[
             "Authorization",
             "Content-Type",

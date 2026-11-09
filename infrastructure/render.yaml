@@ -26,8 +26,12 @@ services:
         generateValue: true
       - key: IP_HASH_SALT
         generateValue: true
-      - key: ALLOWED_ORIGINS       # https://<vercel-app>,https://<preview-domain>
+      - key: ALLOWED_ORIGINS       # https://trustlens-web.vercel.app
         sync: false
+      - key: ALLOWED_ORIGIN_REGEX  # team-scoped Vercel previews (ENVIRONMENT_CONFIGURATION.md)
+        value: '^https://trustlens-web(-[a-z0-9]+)?-boredooms-projects\.vercel\.app$'
+      - key: SCAN_CONCURRENCY      # free plan: 512 MB, one worker (Dockerfile CMD)
+        value: "2"
       - key: CLERK_ISSUER
         sync: false
       - key: CLERK_JWKS_URL

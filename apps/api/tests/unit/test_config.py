@@ -117,3 +117,38 @@ def test_blank_clerk_party_is_rejected(settings_factory) -> None:  # type: ignor
 
 def test_settings_type_is_exported() -> None:
     assert Settings.model_fields["clerk_authorized_party"].is_required()
+
+
+# ── Deploy-preview origins and Clerk azp (ENVIRONMENT_CONFIGURATION.md §2.1) ────────
+PREVIEW_RE = r"^https://trustlens-web(-[a-z0-9]+)?-boredooms-projects\.vercel\.app$"
+
+
+def test_azp_accepts_list_and_team_scoped_previews(settings_factory) -> None:  # type: ignore[no-untyped-def]
+    s = settings_factory(
+        clerk_authorized_party="http://localhost:5173, https://trustlens-web.vercel.app",
+        allowed_origin_regex=PREVIEW_RE,
+    )
+    assert s.clerk_authorized_parties == [
+        "http://localhost:5173",
+        "https://trustlens-web.vercel.app",
+    ]
+    assert s.azp_allowed("https://trustlens-web.vercel.app")
+    assert s.azp_allowed("https://trustlens-web-a1b2c3d4-boredooms-projects.vercel.app")
+    assert not s.azp_allowed("https://trustlens-web-evil.vercel.app")
+    assert not s.azp_allowed("https://trustlens-web-x-boredooms-projects.vercel.app.evil.example")
+    assert not s.azp_allowed(None)
+    assert not s.azp_allowed("")
+
+
+@pytest.mark.parametrize(
+    "pattern",
+    [
+        r"https://trustlens\.vercel\.app",  # not anchored
+        r"^http://trustlens\.vercel\.app$",  # not https
+        r"^https://.*\.vercel\.app$",  # wildcard
+        r"^https://(unclosed$",  # invalid
+    ],
+)
+def test_origin_regex_must_be_anchored_https_and_narrow(settings_factory, pattern: str) -> None:  # type: ignore[no-untyped-def]
+    with pytest.raises(ValueError, match="ALLOWED_ORIGIN_REGEX"):
+        settings_factory(allowed_origin_regex=pattern)

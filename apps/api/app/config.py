@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import sys
 from functools import lru_cache
 from typing import Annotated, Any, Literal
@@ -60,6 +61,10 @@ class Settings(BaseSettings):
     allowed_origins: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["http://localhost:5173"]
     )
+    # Optional anchored pattern for deploy-preview origins, e.g.
+    # ^https://trustlens-web(-[a-z0-9]+)?-boredooms-projects\.vercel\.app$ — the team-scoped suffix
+    # cannot be claimed by another Vercel account. Applies to CORS and to the Clerk ``azp`` check.
+    allowed_origin_regex: str | None = None
 
     # ── 2.2 Scanning ────────────────────────────────────────────────────────────
     scan_concurrency: int = Field(default=4, ge=1, le=32)
@@ -180,6 +185,19 @@ class Settings(BaseSettings):
                 "ALLOWED_ORIGINS must not contain '*' — the API allows credentials and needs an "
                 "explicit allowlist"
             )
+        if self.allowed_origin_regex is not None:
+            pattern = self.allowed_origin_regex.strip()
+            if not (pattern.startswith("^https://") and pattern.endswith("$")):
+                raise ValueError(
+                    "ALLOWED_ORIGIN_REGEX must be anchored: start with ^https:// and end with $"
+                )
+            try:
+                re.compile(pattern)
+            except re.error as exc:
+                raise ValueError(f"ALLOWED_ORIGIN_REGEX is not a valid pattern: {exc}") from None
+            if ".*" in pattern or ".+" in pattern:
+                raise ValueError("ALLOWED_ORIGIN_REGEX must not contain .* or .+ wildcards")
+            self.allowed_origin_regex = pattern
         if self.environment == "production" and self.dev_auth_enabled:
             raise ValueError("DEV_AUTH_ENABLED must not be set in production")
         if self.environment == "production":
@@ -216,6 +234,19 @@ class Settings(BaseSettings):
         return self
 
     # ── Derived values ──────────────────────────────────────────────────────────
+    @property
+    def clerk_authorized_parties(self) -> list[str]:
+        """CLERK_AUTHORIZED_PARTY accepts one origin or a comma-separated list."""
+        return [p.strip() for p in self.clerk_authorized_party.split(",") if p.strip()]
+
+    def azp_allowed(self, azp: object) -> bool:
+        """Clerk ``azp``: an exact CLERK_AUTHORIZED_PARTY entry or an ALLOWED_ORIGIN_REGEX match."""
+        if not isinstance(azp, str) or not azp:
+            return False
+        if azp in self.clerk_authorized_parties:
+            return True
+        return bool(self.allowed_origin_regex and re.fullmatch(self.allowed_origin_regex, azp))
+
     @property
     def llm_configured(self) -> bool:
         return self.llm_api_key is not None and bool(self.llm_api_key.get_secret_value())

@@ -205,6 +205,36 @@ async def test_cors_allows_only_the_allowlist(client: httpx.AsyncClient) -> None
     assert "access-control-allow-origin" not in bad.headers
 
 
+async def test_cors_preflight_allows_put_for_notes_autosave(client: httpx.AsyncClient) -> None:
+    r = await client.options(
+        "/api/v1/notes/scan/01JAAAAAAAAAAAAAAAAAAAAAAA",
+        headers={"Origin": "http://localhost:5173", "Access-Control-Request-Method": "PUT"},
+    )
+    assert r.status_code == 200
+    assert "PUT" in r.headers.get("access-control-allow-methods", "")
+
+
+async def test_cors_origin_regex_admits_only_team_previews() -> None:
+    from app.main import create_app
+    from tests.conftest import make_settings
+
+    app = create_app(
+        make_settings(
+            allowed_origin_regex=r"^https://trustlens-web(-[a-z0-9]+)?-boredooms-projects\.vercel\.app$"
+        )
+    )
+    transport = httpx.ASGITransport(app=app)
+    pre = {"Access-Control-Request-Method": "GET"}
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
+        ok = "https://trustlens-web-9f8e7d6c-boredooms-projects.vercel.app"
+        good = await c.options("/health", headers={"Origin": ok, **pre})
+        bad = await c.options(
+            "/health", headers={"Origin": "https://trustlens-web-evil.vercel.app", **pre}
+        )
+    assert good.headers.get("access-control-allow-origin") == ok
+    assert "access-control-allow-origin" not in bad.headers
+
+
 # ── snake_case (ADR-007) ────────────────────────────────────────────────────────
 
 
