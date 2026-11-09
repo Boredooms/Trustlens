@@ -9,6 +9,7 @@ inspect-redirect, the append-only audit trigger and row-level security (DATABASE
 
 from __future__ import annotations
 
+import asyncio
 import os
 import time
 import uuid
@@ -467,6 +468,11 @@ async def test_inspect_redirect_blocks_private_target(client: httpx.AsyncClient)
 async def test_jobs_reconcile_keepalive_and_operator_trigger(
     app: FastAPI, client: httpx.AsyncClient
 ) -> None:
+    # Startup maintenance sweeps stale scans in the background (main.py). Let it finish first, or it
+    # can race this test and fail the row as STALE_ON_STARTUP before the job under test sees it.
+    pending = list(app.state.runtime.background_tasks)
+    if pending:
+        await asyncio.wait(pending, timeout=30)
     async with app.state.session_factory() as db:
         stale = Scan(
             id=new_ulid(),
