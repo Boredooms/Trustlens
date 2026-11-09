@@ -12,9 +12,6 @@ concurrency:
 permissions:
   contents: read
 
-# Throwaway password for the ephemeral CI Postgres service only.
-env:
-  CI_DB_PASSWORD: postgres
 
 jobs:
   secrets:
@@ -79,7 +76,7 @@ jobs:
         image: postgres:16
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: ${{ env.CI_DB_PASSWORD }}
+          POSTGRES_PASSWORD: pg   # throwaway, ephemeral CI service only
           POSTGRES_DB: trustlens_test
         ports: ["5433:5432"]
         options: >-
@@ -91,9 +88,9 @@ jobs:
       run:
         working-directory: apps/api
     env:
-      DIRECT_DATABASE_URL: postgresql://postgres:${{ env.CI_DB_PASSWORD }}@localhost:5433/trustlens_test
-      DATABASE_URL: postgresql+asyncpg://postgres:${{ env.CI_DB_PASSWORD }}@localhost:5433/trustlens_test
-      TEST_DATABASE_URL: postgresql+asyncpg://postgres:${{ env.CI_DB_PASSWORD }}@localhost:5433/trustlens_test
+      DIRECT_DATABASE_URL: postgresql://postgres:pg@localhost:5433/trustlens_test
+      DATABASE_URL: postgresql+asyncpg://postgres:pg@localhost:5433/trustlens_test
+      TEST_DATABASE_URL: postgresql+asyncpg://postgres:pg@localhost:5433/trustlens_test
       PYTHONIOENCODING: utf-8
     steps:
       - uses: actions/checkout@v4
