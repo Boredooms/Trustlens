@@ -33,7 +33,7 @@ do next. Facts below were checked on 2026-11-09 unless marked **unverified**.
 
 ## 4. Check gating that exists
 
-`.github/workflows/ci.yml`: secret scan (tracked files), `pnpm typecheck/lint/test/build` with a lockfile install, extension bundle check, API `ruff check`, `ruff format --check`, `mypy app`, `alembic upgrade head` and `pytest` on a Postgres 16 service, OpenAPI drift (`git diff --exit-code openapi.json`). `release.yml` is manual (migrate, Render hook, extension zip). **Neither has run on GitHub yet.**
+`.github/workflows/ci.yml`: secret scan (tracked files), `pnpm typecheck/lint/test/build` with a lockfile install, extension bundle check, API `ruff check`, `ruff format --check`, `mypy app`, `alembic upgrade head` and `pytest` on a Postgres 16 service, OpenAPI drift (`git diff --exit-code openapi.json`). `release.yml` is manual (migrate, Render hook, extension zip). `ci.yml` is **green on GitHub** (run 42629140843, commit `ebec472`: secret scan, JS, API with Postgres all success). `release.yml` has not been run.
 
 Local results: API 410 passed; web 106 tests; typecheck/lint clean; extension E2E 16/16 and 10/10 against live lookalikes; `docker build` of the API succeeds (**container not booted with real env**).
 
@@ -42,7 +42,7 @@ Local results: API 410 passed; web 106 tests; typecheck/lint clean; extension E2
 | # | Deliverable | Status |
 | --- | --- | --- |
 | 1 | Prototype | Works locally; no public dashboard URL until the API is hosted |
-| 2 | Public repo | Pushed to `Boredooms/Trustlens` (see report for result) |
+| 2 | Public repo | Pushed to `github.com/Boredooms/Trustlens` (`main`), CI green |
 | 3 | AI demo | Message analysis + cited narratives |
 | 4 | Cyber demo + TLS | Live lookalikes blocked at the action; cert posture separates misconfig from trust compromise |
 | 5, 6 | Web3 + evidence | Local deterministic chain, replay and verify scripts, anchors in hosted DB; no testnet |
@@ -60,7 +60,7 @@ No secrets in tracked files (staged scan clean; one **fake** webhook fixture str
 | API not deployed | repo owner | `render login`, create the service from `render.yaml`, set env names from `ENVIRONMENT_CONFIGURATION.md`, set `ALLOWED_ORIGINS` |
 | Dashboard not deployed | after API | `vercel deploy --prod` in `apps/web` with `VITE_API_BASE_URL` set |
 | Production Clerk instance | repo owner | create it, add its issuer/JWKS/azp to the API env |
-| CI never run | after push | open a PR, fix anything it finds |
+| `release.yml` never run | repo owner | add `DIRECT_DATABASE_URL`, `RENDER_DEPLOY_HOOK` secrets, then dispatch it |
 | SDK unpublished | repo owner | decide the npm scope (token authenticates as `boredooms`, not an org named `trustlens`); rename e.g. `@boredooms/trustlens-sdk`, remove `private`, `npm publish --access public` |
 | Public testnet | repo owner | provide a funded key and RPC; deploy `ThreatReportRegistry`; set `CHAIN_*` |
 | Extension store listing | repo owner | rebuild against the production API, then submit |
