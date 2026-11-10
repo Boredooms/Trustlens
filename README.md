@@ -51,7 +51,7 @@ caught, because its payee is not the one the real university registered.
 | **Dashboard** | Scan reports, message analysis, certificate posture, campaigns and entity graph, reports with on-chain anchors, analyst notes (block editor), scan assistant, developer keys, org verification | `apps/web` |
 | **API** | The only verdict producer: scanner, risk engine, intel, messages, anchors, notes. OpenAPI is the contract | `apps/api` |
 | **Browser extension** | Checks every page, holds a payment or login action until the server decides, shows *why* when it blocks. One-click pairing from the dashboard | `apps/extension` |
-| **SDK** | Typed client for `assess`, `verifyIdentity`, scans and usage | `packages/sdk` |
+| **SDK** | Typed client for `assess`, `verifyIdentity`, scans and usage. Published: [`@boredooms/trustlens-sdk`](https://www.npmjs.com/package/@boredooms/trustlens-sdk) | `packages/sdk` |
 | **Web3 registry** | `ThreatReportRegistry` contract. Anyone can verify a report without trusting TrustLens | `packages/contracts` |
 | **Demo fixtures** | Inert genuine and lookalike sites, deployable as real public hosts | `apps/demo-sites` |
 
@@ -262,7 +262,7 @@ another site is stopped, and the genuine Northstar pay page is checked and relea
 ### SDK
 
 ```bash
-npm install @boredooms/trustlens-sdk   # first publish: `npm login` then `npm publish` in packages/sdk
+npm install @boredooms/trustlens-sdk   # published on npm, v0.1.0
 ```
 ## Repository layout
 
@@ -285,7 +285,6 @@ releases/           packaged extension
 - The Northstar organisation profile is a demo profile; lookalike detection on `*.vercel.app` hosts relies on brand tokens and the registered payee.
 - Revocation is best-effort (OCSP, CRL fallback); a timeout is `unavailable`, never "good".
 - Header posture is one unauthenticated response; it is reported, never scored.
-- The SDK (`@boredooms/trustlens-sdk`) is ready to publish but not on npm yet; the first publish is interactive (`npm login` with the security key, then `npm publish`).
 
 ## License
 
