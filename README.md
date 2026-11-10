@@ -18,6 +18,17 @@ Action-integrity verification, TLS trust analysis and on-chain threat reporting.
 
 ---
 
+## Screenshots
+
+| | |
+| --- | --- |
+| ![Landing](public_pics/landing.png) Landing | ![Features](public_pics/features.png) What it checks |
+| ![Overview](public_pics/overview.png) Dashboard overview | ![Scan report](public_pics/scan-report.png) Scan report with coverage |
+| ![Messages](public_pics/messages.png) AI scam analysis (cited evidence) | ![Popup](public_pics/popup.png) Extension popup |
+| ![Blocked payment](public_pics/blocked-payment.png) Payment page blocked (payee mismatch) | ![Blocked sign-in](public_pics/blocked-signin.png) Sign-in page blocked (credential destination) |
+| ![How it works](public_pics/how-it-works.png) How it works | ![SDK on npm](public_pics/npm-sdk.png) `@boredooms/trustlens-sdk` on npm |
+
+![Footer](public_pics/footer.png)
 ## Why this is different
 
 Most tools ask *"is this URL known to be bad?"* TrustLens asks *"is this page allowed to ask for this?"*
